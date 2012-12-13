@@ -1,0 +1,14 @@
+= walters-indexer
+
+Code to harvest Walters metadata from DOR and index it into Solr for the SearchWorks application
+
+Relationship used for OAI harvest:  "Walters Art Museum": "is_member_of_collection_ww121ss5000"
+
+== Usage
+
+Check out code from git
+
+Execute:
+    $ bundle install
+
+Run it
