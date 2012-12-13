@@ -28,16 +28,20 @@ class Indexer
     harvestdor_client.druids_via_oai
   end
 
-  # return the mods for the druid as a Nokogiri::XML::Document object
+  # return the mods for the druid as a Stanford::Mods::Record object
   # @param [String] druid, e.g. ab123cd4567
-  # @return [Nokogiri::XML::Document]
+  # @return [Stanford::Mods::Record] created from the MODS xml for the druid
   def mods druid
-    harvestdor_client.mods druid
+    ng_doc = harvestdor_client.mods druid
+    raise "Empty MODS metadata for #{druid}: #{ng_doc.to_xml}" if ng_doc.root.xpath('//text()').empty?
+    r = Stanford::Mods::Record.new
+    r.from_nk_node(ng_doc.root)
+    r
   end
   
   # the contentMetadata for the druid as a Nokogiri::XML::Document object
   # @param [String] druid, e.g. ab123cd4567
-  # @return [Nokogiri::XML::Document] containing the content metadata for the druid
+  # @return [Nokogiri::XML::Document] containing the contentMetadata for the druid
   def content_metadata druid
     harvestdor_client.content_metadata druid
   end

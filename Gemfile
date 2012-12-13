@@ -1,7 +1,9 @@
 source :rubygems
 source "http://sul-gems.stanford.edu"
 
-gem 'harvestdor'  # sul-gem
+# sul-gems
+gem 'harvestdor'
+gem 'stanford-mods'
 
 gem 'nokogiri'
 gem 'rake'

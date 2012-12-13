@@ -1,4 +1,6 @@
 require 'spec_helper'
+require 'stanford-mods'
+require 'nokogiri'
 
 describe Indexer do
   
@@ -27,14 +29,32 @@ describe Indexer do
     @fi.druids
   end
   
-  it "mods method should call mods method on harvestdor_client" do
-    @hclient.should_receive(:mods).with('oo000oo0000')
-    @fi.mods('oo000oo0000')
+  it "mods method should raise exception if there is no mods for the druid" do
+    expect { @fi.mods('oo000oo0000') }.to raise_error(Harvestdor::Errors::MissingMods)
+  end
+  
+  it "mods method should raise exception if mods for the druid is empty" do
+    @hclient.should_receive(:mods).with('oo000oo0000').and_return(Nokogiri::XML('<mods/>'))
+    expect { @fi.mods('oo000oo0000') }.to raise_error(RuntimeError, /Empty MODS metadata for oo000oo0000: </)
+  end
+  
+  it "should get Stanford::Mods::Record from mods method" do
+    m = '<mods><note>hi</note></mods>'
+    @fi.send(:harvestdor_client).stub(:mods).with('oo000oo0000').and_return(Nokogiri::XML(m))
+    @fi.mods('oo000oo0000').should be_an_instance_of(Stanford::Mods::Record)
   end
   
   it "content_metadata method should call content_metadata method on harvestdor_client" do
     @hclient.should_receive(:content_metadata).with('oo000oo0000')
     @fi.content_metadata('oo000oo0000')
+  end
+  
+  it "content_metadata method should raise exception if there is no contentMetadata for the druid" do
+    expect { @fi.content_metadata('oo000oo0000') }.to raise_error(Harvestdor::Errors::MissingPurlPage)
+  end
+  
+  it "should write a Solr doc to the solr index" do
+    pending "to be implemented"
   end
 
 end
