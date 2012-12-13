@@ -1,8 +1,8 @@
 = walters-indexer
 
-Code to harvest Walters metadata from DOR and index it into Solr for the SearchWorks application
+Code to harvest Walters Art Museum metadata from DOR and index it into Solr for the SearchWorks application
 
-Relationship used for OAI harvest:  "Walters Art Museum": "is_member_of_collection_ww121ss5000"
+Relationship used for OAI harvest:  "is_member_of_collection_ww121ss5000"
 
 == Usage
 
