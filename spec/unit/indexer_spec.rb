@@ -1,6 +1,7 @@
 require 'spec_helper'
 require 'stanford-mods'
 require 'nokogiri'
+require 'rsolr'
 
 describe Indexer do
   
@@ -29,32 +30,55 @@ describe Indexer do
     @fi.druids
   end
   
-  it "mods method should raise exception if there is no mods for the druid" do
-    expect { @fi.mods('oo000oo0000') }.to raise_error(Harvestdor::Errors::MissingMods)
+  context "mods method" do
+    it "should raise exception if there is no mods for the druid" do
+      expect { @fi.mods('oo000oo0000') }.to raise_error(Harvestdor::Errors::MissingMods)
+    end
+    it "should raise exception if mods for the druid is empty" do
+      @hclient.should_receive(:mods).with('oo000oo0000').and_return(Nokogiri::XML('<mods/>'))
+      expect { @fi.mods('oo000oo0000') }.to raise_error(RuntimeError, /Empty MODS metadata for oo000oo0000: </)
+    end
+    it "should return Stanford::Mods::Record" do
+      m = '<mods><note>hi</note></mods>'
+      @fi.send(:harvestdor_client).stub(:mods).with('oo000oo0000').and_return(Nokogiri::XML(m))
+      @fi.mods('oo000oo0000').should be_an_instance_of(Stanford::Mods::Record)
+    end
   end
   
-  it "mods method should raise exception if mods for the druid is empty" do
-    @hclient.should_receive(:mods).with('oo000oo0000').and_return(Nokogiri::XML('<mods/>'))
-    expect { @fi.mods('oo000oo0000') }.to raise_error(RuntimeError, /Empty MODS metadata for oo000oo0000: </)
+  context "content_metadata method" do
+    it "should call content_metadata method on harvestdor_client" do
+      @hclient.should_receive(:content_metadata).with('oo000oo0000')
+      @fi.content_metadata('oo000oo0000')
+    end
+    it "should raise exception if there is no contentMetadata for the druid" do
+      expect { @fi.content_metadata('oo000oo0000') }.to raise_error(Harvestdor::Errors::MissingPurlPage)
+    end
   end
   
-  it "should get Stanford::Mods::Record from mods method" do
-    m = '<mods><note>hi</note></mods>'
-    @fi.send(:harvestdor_client).stub(:mods).with('oo000oo0000').and_return(Nokogiri::XML(m))
-    @fi.mods('oo000oo0000').should be_an_instance_of(Stanford::Mods::Record)
+  context "solr_client" do
+    it "should initialize the rsolr client using the options from the config" do
+      @fi.stub(:config).and_return { Confstruct::Configuration.new :solr => { :url => 'http://localhost:2345', :a => 1 } }
+      RSolr.should_receive(:connect).with(hash_including(:a => 1, :url => 'http://localhost:2345'))
+      @fi.solr_client
+    end
   end
   
-  it "content_metadata method should call content_metadata method on harvestdor_client" do
-    @hclient.should_receive(:content_metadata).with('oo000oo0000')
-    @fi.content_metadata('oo000oo0000')
-  end
-  
-  it "content_metadata method should raise exception if there is no contentMetadata for the druid" do
-    expect { @fi.content_metadata('oo000oo0000') }.to raise_error(Harvestdor::Errors::MissingPurlPage)
+  context "sw_solr_doc" do
+    it "should have id value of druid" do
+      pending "to be implemented"
+      @fi.sw_solr_doc('oo000oo0000')['id'].should == 'oo000oo0000'
+    end
+    it "should have an access_facet value of 'Online'" do
+      pending "to be implemented"
+    end
+    it "should have a url_fulltext field" do
+      pending "to be implemented"
+    end
   end
   
   it "should write a Solr doc to the solr index" do
     pending "to be implemented"
+    # doc with:  druid, access_facet, url_fulltext
   end
 
 end

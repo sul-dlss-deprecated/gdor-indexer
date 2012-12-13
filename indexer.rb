@@ -27,6 +27,10 @@ class Indexer
   def druids
     harvestdor_client.druids_via_oai
   end
+  
+  def solr_client
+    @solr_client ||= RSolr.connect(config.solr.to_hash)
+  end
 
   # return the mods for the druid as a Stanford::Mods::Record object
   # @param [String] druid, e.g. ab123cd4567
