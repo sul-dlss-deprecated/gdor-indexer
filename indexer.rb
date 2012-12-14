@@ -25,9 +25,25 @@ class Indexer
   # return Array of druids contained in the OAI harvest indicated by OAI params in yml configuration file
   # @return [Array<String>] or enumeration over it, if block is given.  (strings are druids, e.g. ab123cd1234)
   def druids
-    harvestdor_client.druids_via_oai
+    @druids ||= harvestdor_client.druids_via_oai
   end
   
+  # Create a Solr doc, as a Hash, to be added to the SearchWorks Solr index.  
+  # Solr doc contents are based on the mods, contentMetadata, etc. for the druid
+  # @param [String] druid, e.g. ab123cd4567
+  # @param [Hash] Hash representing the Solr docume
+  def sw_solr_doc druid
+    doc_hash = { 
+      :id => druid, 
+      :druid => druid, 
+      :access_facet => 'Online',
+      :url_fulltext => "#{config.purl}/#{druid}",
+      :modsxml => "#{mods(druid).to_xml}"
+    }
+#    doc_hash[:modsxml] = mods(druid).to_xml
+    doc_hash
+  end
+    
   def solr_client
     @solr_client ||= RSolr.connect(config.solr.to_hash)
   end
@@ -36,18 +52,20 @@ class Indexer
   # @param [String] druid, e.g. ab123cd4567
   # @return [Stanford::Mods::Record] created from the MODS xml for the druid
   def mods druid
-    ng_doc = harvestdor_client.mods druid
-    raise "Empty MODS metadata for #{druid}: #{ng_doc.to_xml}" if ng_doc.root.xpath('//text()').empty?
-    r = Stanford::Mods::Record.new
-    r.from_nk_node(ng_doc.root)
-    r
+    if @mods.nil?
+      ng_doc = harvestdor_client.mods druid
+      raise "Empty MODS metadata for #{druid}: #{ng_doc.to_xml}" if ng_doc.root.xpath('//text()').empty?
+      @mods = Stanford::Mods::Record.new
+      @mods.from_nk_node(ng_doc.root)
+    end
+    @mods
   end
   
   # the contentMetadata for the druid as a Nokogiri::XML::Document object
   # @param [String] druid, e.g. ab123cd4567
   # @return [Nokogiri::XML::Document] containing the contentMetadata for the druid
   def content_metadata druid
-    harvestdor_client.content_metadata druid
+    @content_metadata ||= harvestdor_client.content_metadata druid
   end
 
   protected #---------------------------------------------------------------------

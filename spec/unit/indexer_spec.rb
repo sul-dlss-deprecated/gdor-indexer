@@ -2,15 +2,17 @@ require 'spec_helper'
 require 'stanford-mods'
 require 'nokogiri'
 require 'rsolr'
+require 'equivalent-xml'
 
 describe Indexer do
   
   before(:all) do
     config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "walters_integration_spec.yml")
     @fi = Indexer.new(config_yml_path)
-    @hclient = @fi.send(:harvestdor_client)
     require 'yaml'
     @yaml = YAML.load_file(config_yml_path)
+    @hclient = @fi.send(:harvestdor_client)
+    @fake_druid = 'oo000oo0000'
   end
   
   describe "logging" do
@@ -32,26 +34,26 @@ describe Indexer do
   
   context "mods method" do
     it "should raise exception if there is no mods for the druid" do
-      expect { @fi.mods('oo000oo0000') }.to raise_error(Harvestdor::Errors::MissingMods)
+      expect { @fi.mods(@fake_druid) }.to raise_error(Harvestdor::Errors::MissingMods)
     end
     it "should raise exception if mods for the druid is empty" do
-      @hclient.should_receive(:mods).with('oo000oo0000').and_return(Nokogiri::XML('<mods/>'))
-      expect { @fi.mods('oo000oo0000') }.to raise_error(RuntimeError, /Empty MODS metadata for oo000oo0000: </)
+      @hclient.should_receive(:mods).with(@fake_druid).and_return(Nokogiri::XML('<mods/>'))
+      expect { @fi.mods(@fake_druid) }.to raise_error(RuntimeError, Regexp.new("^Empty MODS metadata for #{@fake_druid}: <"))
     end
     it "should return Stanford::Mods::Record" do
       m = '<mods><note>hi</note></mods>'
-      @fi.send(:harvestdor_client).stub(:mods).with('oo000oo0000').and_return(Nokogiri::XML(m))
-      @fi.mods('oo000oo0000').should be_an_instance_of(Stanford::Mods::Record)
+      @fi.send(:harvestdor_client).stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      @fi.mods(@fake_druid).should be_an_instance_of(Stanford::Mods::Record)
     end
   end
   
   context "content_metadata method" do
     it "should call content_metadata method on harvestdor_client" do
-      @hclient.should_receive(:content_metadata).with('oo000oo0000')
-      @fi.content_metadata('oo000oo0000')
+      @hclient.should_receive(:content_metadata).with(@fake_druid)
+      @fi.content_metadata(@fake_druid)
     end
     it "should raise exception if there is no contentMetadata for the druid" do
-      expect { @fi.content_metadata('oo000oo0000') }.to raise_error(Harvestdor::Errors::MissingPurlPage)
+      expect { @fi.content_metadata(@fake_druid) }.to raise_error(Harvestdor::Errors::MissingPurlPage)
     end
   end
   
@@ -63,17 +65,30 @@ describe Indexer do
     end
   end
   
-  context "sw_solr_doc" do
-    it "should have id value of druid" do
-      pending "to be implemented"
-      @fi.sw_solr_doc('oo000oo0000')['id'].should == 'oo000oo0000'
+  context "sw_solr_doc fields" do
+    before(:all) do
+      @doc_hash = @fi.sw_solr_doc(@fake_druid)
+    end
+    it "should have a druid field" do
+      @doc_hash[:druid].should == @fake_druid
+    end
+    it "should have a single id value of druid" do
+      @doc_hash[:id].should == @fake_druid
+    end
+    it "should have a url_fulltext field to the purl landing page" do
+      @doc_hash[:url_fulltext].should == "#{@yaml['purl']}/#{@fake_druid}"
     end
     it "should have an access_facet value of 'Online'" do
-      pending "to be implemented"
+      @doc_hash[:access_facet].should == 'Online'
     end
-    it "should have a url_fulltext field" do
-      pending "to be implemented"
+    it "should have the full MODS in the modsxml field" do
+      m = '<mods><note>hi</note></mods>'
+      @fi.send(:harvestdor_client).stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      doc_hash = @fi.sw_solr_doc(@fake_druid)
+      doc_hash[:modsxml].should be_equivalent_to m
     end
+#    :display_type
+#    :title
   end
   
   it "should write a Solr doc to the solr index" do
