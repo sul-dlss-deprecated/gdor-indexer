@@ -31,8 +31,9 @@ class Indexer
   # Create a Solr doc, as a Hash, to be added to the SearchWorks Solr index.  
   # Solr doc contents are based on the mods, contentMetadata, etc. for the druid
   # @param [String] druid, e.g. ab123cd4567
-  # @param [Hash] Hash representing the Solr docume
+  # @param [Hash] Hash representing the Solr document
   def sw_solr_doc druid
+    # FIXME:  will be getting this via SolrDocBuilder.to_hash
     doc_hash = { 
       :id => druid, 
       :druid => druid, 
@@ -40,7 +41,6 @@ class Indexer
       :url_fulltext => "#{config.purl}/#{druid}",
       :modsxml => "#{mods(druid).to_xml}"
     }
-#    doc_hash[:modsxml] = mods(druid).to_xml
     doc_hash
   end
     
