@@ -20,6 +20,10 @@ class SolrDocBuilder
   def title_sort
     @mods.sort_title
   end
+
+  alias :title_245a_display :title_245a_search
+  alias :title_display :title_245_search
+  alias :title_full_display :title_245_search
   
   
 end

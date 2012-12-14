@@ -37,25 +37,25 @@ describe 'SearchworksFields mixin for SolrDocBuilder class' do
       it "title_variant_search" do
         @sdb.title_variant_search.should == ["ta da!", 'and again']
       end
-      it "title_related_search" do
-        pending "to be implemented"
+      it "title_related_search should not be populated from mods" do
+        expect { @sdb.title_related_search }.to raise_error(NoMethodError)
       end
     end
     context "display fields" do
       it "title_display" do
-        pending "to be implemented"
+        @sdb.title_display.should == "The Jerk A Tale of Tourettes"
       end
       it "title_245a_display" do
-        pending "to be implemented"
+        @sdb.title_245a_display.should == "The Jerk"
       end
-      it "title_245c_display" do
-        pending "to be implemented"
+      it "title_245c_display should not be populated from mods" do
+        expect { @sdb.title_245c_display }.to raise_error(NoMethodError)
       end
       it "title_full_display" do
-        pending "to be implemented"
+        @sdb.title_full_display.should == "The Jerk A Tale of Tourettes"
       end
       it "title_variant_display should not be populated - it is a copy field" do
-        pending "to be implemented"
+        expect { @sdb.title_variant_display }.to raise_error(NoMethodError)
       end
     end
     it "title_sort" do
