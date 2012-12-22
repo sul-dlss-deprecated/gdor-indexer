@@ -47,13 +47,13 @@ describe Indexer do
     end
   end
   
-  context "content_metadata method" do
-    it "should call content_metadata method on harvestdor_client" do
-      @hclient.should_receive(:content_metadata).with(@fake_druid)
-      @indexer.content_metadata(@fake_druid)
+  context "public_xml method" do
+    it "should call public_xml method on harvestdor_client" do
+      @hclient.should_receive(:public_xml).with(@fake_druid)
+      @indexer.public_xml(@fake_druid)
     end
     it "should raise exception if there is no contentMetadata for the druid" do
-      expect { @indexer.content_metadata(@fake_druid) }.to raise_error(Harvestdor::Errors::MissingPurlPage)
+      expect { @indexer.public_xml(@fake_druid) }.to raise_error(Harvestdor::Errors::MissingPurlPage)
     end
   end
   

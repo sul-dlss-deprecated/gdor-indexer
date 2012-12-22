@@ -62,11 +62,11 @@ class Indexer
     @mods
   end
   
-  # the contentMetadata for the druid as a Nokogiri::XML::Document object
+  # the public_xml for the druid as a Nokogiri::XML::Document object
   # @param [String] druid, e.g. ab123cd4567
-  # @return [Nokogiri::XML::Document] containing the contentMetadata for the druid
-  def content_metadata druid
-    @content_metadata ||= harvestdor_client.content_metadata druid
+  # @return [Nokogiri::XML::Document] containing the public xml for the druid
+  def public_xml druid
+    @public_xml ||= harvestdor_client.public_xml druid
   end
 
   protected #---------------------------------------------------------------------
