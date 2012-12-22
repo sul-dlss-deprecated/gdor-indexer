@@ -12,7 +12,7 @@ describe SolrDocBuilder do
     before(:all) do
       @mods_xml = "<mods #{@ns_decl}><note>hi</note></mods>"
       @smr.from_str @mods_xml
-      sdb = SolrDocBuilder.new(@fake_druid, @smr) 
+      sdb = SolrDocBuilder.new(@fake_druid, @smr, nil) 
       @basic_doc_hash = sdb.mods_to_doc_hash
     end
     it "id field should be set to druid" do
@@ -32,7 +32,7 @@ describe SolrDocBuilder do
           <titleInfo type='alternative'><title>Alternative</title></titleInfo>
           </mods>"
         @smr.from_str m
-        sdb = SolrDocBuilder.new(@fake_druid, @smr) 
+        sdb = SolrDocBuilder.new(@fake_druid, @smr, nil) 
         @title_doc_hash = sdb.mods_to_doc_hash
       end
       it "should call the appropriate methods in the stanford-mods gem to populate the fields" do
@@ -41,7 +41,7 @@ describe SolrDocBuilder do
         @smr.should_receive(:sw_addl_titles)
         @smr.should_receive(:sw_sort_title)
         @smr.from_str "<mods #{@ns_decl}><note>hi</note></mods>"
-        sdb = SolrDocBuilder.new(@fake_druid, @smr)
+        sdb = SolrDocBuilder.new(@fake_druid, @smr, nil)
         sdb.mods_to_doc_hash
       end
       context "search fields" do
@@ -98,7 +98,7 @@ describe SolrDocBuilder do
                         <name type='conference'><namePart>conference</namePart></name>
                       </mods>"
         @smr.from_str(name_mods)
-        sdb = SolrDocBuilder.new(@fake_druid, @smr) 
+        sdb = SolrDocBuilder.new(@fake_druid, @smr, nil) 
         @author_doc_hash = sdb.mods_to_doc_hash
       end
       it "should call the appropriate methods in the stanford-mods gem to populate the fields" do
@@ -110,7 +110,7 @@ describe SolrDocBuilder do
         @smr.should_receive(:sw_meeting_authors)
         @smr.should_receive(:sw_sort_author)
         @smr.from_str "<mods #{@ns_decl}><note>hi</note></mods>"
-        sdb = SolrDocBuilder.new(@fake_druid, @smr) 
+        sdb = SolrDocBuilder.new(@fake_druid, @smr, nil) 
         sdb.mods_to_doc_hash
       end
       context "search fields" do
@@ -156,7 +156,7 @@ describe SolrDocBuilder do
     before(:all) do
       @mods_xml = "<mods #{@ns_decl}><note>hi</note></mods>"
       @smr.from_str @mods_xml
-      sdb = SolrDocBuilder.new(@fake_druid, @smr) 
+      sdb = SolrDocBuilder.new(@fake_druid, @smr, nil) 
       @doc_hash = sdb.addl_hash_fields
     end
     it "should have an access_facet value of 'Online'" do

@@ -8,14 +8,16 @@ class SolrDocBuilder
   attr_reader :druid
   # Stanford::Mods::Record 
   attr_reader :smods_rec
-  # Nokogiri::XML::Document The content metadata xml, used for knowing what kind of object this is
-#  attr_reader :content_metadata
+  # Nokogiri::XML::Document The public xml, containing contentMetadata, identityMetadata, etc.
+  attr_reader :public_xml
 
   # @param [String] druid, e.g. ab123cd4567
   # @param [Stanford::Mods::Record] the object associated with this druid
-  def initialize(druid, smods_rec)
+  # @param [Nokogiri::XML::Document] the public xml from the purl page for this druid, as a Nokogiri document
+  def initialize(druid, smods_rec, public_xml)
     @druid = druid
     @smods_rec = smods_rec
+    @public_xml = public_xml
   end
 
   # Create a Hash representing a Solr doc, with all mods related fields populated.

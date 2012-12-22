@@ -26,7 +26,7 @@ describe 'SearchworksFields mixin for SolrDocBuilder class' do
                       </titleInfo>
                     </mods>"
       @smr.from_str(title_mods)
-      @sdb = SolrDocBuilder.new(@fake_druid, @smr)
+      @sdb = SolrDocBuilder.new(@fake_druid, @smr, nil)
     end
   
     it "pub_date" do
