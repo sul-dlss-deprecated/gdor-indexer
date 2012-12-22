@@ -4,6 +4,9 @@ require 'harvestdor'
 # stdlib
 require 'logger'
 
+# local files
+require 'solr_doc_builder'
+
 # Base class to harvest from DOR via harvestdor gem
 class Indexer
 
@@ -31,16 +34,14 @@ class Indexer
   # Create a Solr doc, as a Hash, to be added to the SearchWorks Solr index.  
   # Solr doc contents are based on the mods, contentMetadata, etc. for the druid
   # @param [String] druid, e.g. ab123cd4567
+  # @param [Stanford::Mods::Record] MODS metadata as a Stanford::Mods::Record object
   # @param [Hash] Hash representing the Solr document
-  def sw_solr_doc druid
-    # FIXME:  will be getting this via SolrDocBuilder.to_hash
-    doc_hash = { 
-      :id => druid, 
-      :druid => druid, 
-      :access_facet => 'Online',
-      :url_fulltext => "#{config.purl}/#{druid}",
-      :modsxml => "#{mods(druid).to_xml}"
-    }
+  def sw_solr_doc druid, smods_rec
+# FIXME: call mods method here???    
+    sdb = SolrDocBuilder.new(druid, smods_rec)
+    doc_hash = sdb.mods_to_doc_hash
+    doc_hash[:access_facet] = 'Online'  
+    doc_hash[:url_fulltext] = "#{config.purl}/#{druid}"
     doc_hash
   end
     

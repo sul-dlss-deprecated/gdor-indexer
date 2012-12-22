@@ -8,16 +8,16 @@ describe Indexer do
   
   before(:all) do
     config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "walters_integration_spec.yml")
-    @fi = Indexer.new(config_yml_path)
+    @indexer = Indexer.new(config_yml_path)
     require 'yaml'
     @yaml = YAML.load_file(config_yml_path)
-    @hclient = @fi.send(:harvestdor_client)
+    @hclient = @indexer.send(:harvestdor_client)
     @fake_druid = 'oo000oo0000'
   end
   
   describe "logging" do
     it "should write the log file to the directory indicated by log_dir" do
-      @fi.logger.info("walters_integration_spec logging test message")
+      @indexer.logger.info("walters_integration_spec logging test message")
       File.exists?(File.join(@yaml['log_dir'], @yaml['log_name'])).should == true
     end
   end
@@ -29,45 +29,47 @@ describe Indexer do
   
   it "druids method should call druids_via_oai method on harvestdor_client" do
     @hclient.should_receive(:druids_via_oai)
-    @fi.druids
+    @indexer.druids
   end
   
   context "mods method" do
     it "should raise exception if there is no mods for the druid" do
-      expect { @fi.mods(@fake_druid) }.to raise_error(Harvestdor::Errors::MissingMods)
+      expect { @indexer.mods(@fake_druid) }.to raise_error(Harvestdor::Errors::MissingMods)
     end
     it "should raise exception if mods for the druid is empty" do
       @hclient.should_receive(:mods).with(@fake_druid).and_return(Nokogiri::XML('<mods/>'))
-      expect { @fi.mods(@fake_druid) }.to raise_error(RuntimeError, Regexp.new("^Empty MODS metadata for #{@fake_druid}: <"))
+      expect { @indexer.mods(@fake_druid) }.to raise_error(RuntimeError, Regexp.new("^Empty MODS metadata for #{@fake_druid}: <"))
     end
     it "should return Stanford::Mods::Record" do
       m = '<mods><note>hi</note></mods>'
-      @fi.send(:harvestdor_client).stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      @fi.mods(@fake_druid).should be_an_instance_of(Stanford::Mods::Record)
+      @indexer.send(:harvestdor_client).stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      @indexer.mods(@fake_druid).should be_an_instance_of(Stanford::Mods::Record)
     end
   end
   
   context "content_metadata method" do
     it "should call content_metadata method on harvestdor_client" do
       @hclient.should_receive(:content_metadata).with(@fake_druid)
-      @fi.content_metadata(@fake_druid)
+      @indexer.content_metadata(@fake_druid)
     end
     it "should raise exception if there is no contentMetadata for the druid" do
-      expect { @fi.content_metadata(@fake_druid) }.to raise_error(Harvestdor::Errors::MissingPurlPage)
+      expect { @indexer.content_metadata(@fake_druid) }.to raise_error(Harvestdor::Errors::MissingPurlPage)
     end
   end
   
   context "solr_client" do
     it "should initialize the rsolr client using the options from the config" do
-      @fi.stub(:config).and_return { Confstruct::Configuration.new :solr => { :url => 'http://localhost:2345', :a => 1 } }
+      @indexer.stub(:config).and_return { Confstruct::Configuration.new :solr => { :url => 'http://localhost:2345', :a => 1 } }
       RSolr.should_receive(:connect).with(hash_including(:a => 1, :url => 'http://localhost:2345'))
-      @fi.solr_client
+      @indexer.solr_client
     end
   end
   
   context "sw_solr_doc fields" do
     before(:all) do
-      @doc_hash = @fi.sw_solr_doc(@fake_druid)
+      smr = Stanford::Mods::Record.new
+      smr.from_str '<mods><note>hi</note></mods>'
+      @doc_hash = @indexer.sw_solr_doc(@fake_druid, smr)
     end
     
     # see https://consul.stanford.edu/display/NGDE/Required+and+Recommended+Solr+Fields+for+SearchWorks+documents
@@ -79,9 +81,9 @@ describe Indexer do
         @doc_hash[:url_fulltext].should == "#{@yaml['purl']}/#{@fake_druid}"
       end
       it "should have the full MODS in the modsxml field" do
-        m = '<mods><note>hi</note></mods>'
-        @fi.send(:harvestdor_client).stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        doc_hash = @fi.sw_solr_doc(@fake_druid)
+        pending "now elsewhere?"
+        @indexer.send(:harvestdor_client).stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        doc_hash = @indexer.sw_solr_doc(@fake_druid)
         doc_hash[:modsxml].should be_equivalent_to m
       end
       context "collection fields for item objects" do
