@@ -38,7 +38,7 @@ class Indexer
   # @param [Hash] Hash representing the Solr document
   def sw_solr_doc druid, smods_rec
 # FIXME: call mods method here???  call public_xml here???   
-    sdb = SolrDocBuilder.new(druid, smods_rec, nil)
+    sdb = SolrDocBuilder.new(druid, smods_rec, nil, logger)
     doc_hash = sdb.mods_to_doc_hash
     doc_hash[:access_facet] = 'Online'  
     doc_hash[:url_fulltext] = "#{config.purl}/#{druid}"
