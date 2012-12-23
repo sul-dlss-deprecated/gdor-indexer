@@ -11,7 +11,7 @@ describe 'SearchworksFields mixin for SolrDocBuilder class' do
     @cmd_type = 'image'
     @cmd_xml = "<contentMetadata type='#{@cmd_type}' objectId='#{@fake_druid}'></contentMetadata>"
     @pub_xml = "<publicObject id='druid#{@fake_druid}'>#{@cmd_xml}</publicObject>"
-    @sdb = SolrDocBuilder.new(@fake_druid, @smr, Nokogiri::XML(@pub_xml), nil)
+    @sdb = SolrDocBuilder.new(@fake_druid, @smr, Nokogiri::XML(@pub_xml), Logger.new(STDOUT))
   end
 
   context "fields from and methods pertaining to contentMetadata" do
@@ -32,7 +32,7 @@ describe 'SearchworksFields mixin for SolrDocBuilder class' do
       end
       it "should log an error message for an unrecognized contentMetadata type" do
         @sdb.stub(:dor_content_type).and_return('bogus')
-        @sdb.logger.should_receive(:error).with(/unrecognized DOR content type.*bogus/)
+        @sdb.logger.should_receive(:warn).with(/unrecognized DOR content type.*bogus/)
         @sdb.format
       end
     end
@@ -55,7 +55,7 @@ describe 'SearchworksFields mixin for SolrDocBuilder class' do
       end
       it "should log an error message if contentMetadata has no type" do
         @sdb.stub(:dor_content_type).and_return(nil)
-        @sdb.logger.should_receive(:error).with(/has no DOR content type/)
+        @sdb.logger.should_receive(:warn).with(/has no DOR content type/)
         @sdb.display_type
       end
     end

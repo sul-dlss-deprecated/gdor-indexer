@@ -12,7 +12,7 @@ class SolrDocBuilder
     if dor_content_type == 'image'
       'Image'
     else
-      logger.error "Object #{druid} has unrecognized DOR content type: #{dor_content_type}"
+      logger.warn "Object #{druid} has unrecognized DOR content type: #{dor_content_type}"
     end
   end
   
@@ -23,7 +23,7 @@ class SolrDocBuilder
     elsif dor_content_type
       dor_content_type
     else
-      logger.error "Object #{druid} has no DOR content type (possibly missing type attribute on <contentMetadata> element)"
+      logger.warn "Object #{druid} has no DOR content type (possibly missing type attribute on <contentMetadata> element)"
     end
   end
 
