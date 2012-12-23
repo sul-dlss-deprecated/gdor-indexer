@@ -37,7 +37,7 @@ describe SolrDocBuilder do
         @basic_doc_hash[:collection_type].should == nil
       end
     end
-        
+
     context "title fields" do
       before(:all) do
         m = "<mods #{@ns_decl}>
@@ -170,18 +170,20 @@ describe SolrDocBuilder do
     before(:all) do
       @mods_xml = "<mods #{@ns_decl}><note>hi</note></mods>"
       @smr.from_str @mods_xml
-      sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil) 
+      cmd_xml = "<contentMetadata type='image' objectId='#{@fake_druid}'></contentMetadata>"
+      @pub_xml = "<publicObject id='druid#{@fake_druid}'>#{cmd_xml}</publicObject>"
+      sdb = SolrDocBuilder.new(@fake_druid, @smr, Nokogiri::XML(@pub_xml), nil)
       @doc_hash = sdb.addl_hash_fields
     end
     it "should have an access_facet value of 'Online'" do
       @doc_hash[:access_facet].should == 'Online'
-    end    
+    end
+    it "should call the appropriate methods in searchworks_fields" do
+      sdb = SolrDocBuilder.new(@fake_druid, @smr, Nokogiri::XML(@pub_xml), nil)
+      sdb.should_receive(:display_type)
+      sdb.addl_hash_fields
+    end
   end
-  
-  context "content_metadata_to_doc_hash" do
-    
-  end
-
 
   context "collection?" do
     it "should return true if MODS has top level <typeOfResource collection='yes'>" do

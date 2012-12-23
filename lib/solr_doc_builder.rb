@@ -1,5 +1,6 @@
 require 'logger'
 
+require 'searchworks_fields'
 require 'stanford-mods'
 require 'stanford-mods/searchworks'
 
@@ -44,7 +45,7 @@ class SolrDocBuilder
     false
   end
 
-  # Create a Hash representing a Solr doc, with all mods related fields populated.
+  # Create a Hash representing a Solr doc, with all MODS related fields populated.
   # @return [Hash] Hash representing the Solr document
   def mods_to_doc_hash
     doc_hash = { 
@@ -53,7 +54,7 @@ class SolrDocBuilder
 # yet another thing to pass in.  Hmmmm.      
 #      :url_fulltext => "#{config.purl}/#{druid}",
       :modsxml => "#{@smods_rec.to_xml}",
-
+      
       # title fields
       :title_245a_search => @smods_rec.sw_short_title,
       :title_245_search => @smods_rec.sw_full_title,
@@ -83,10 +84,13 @@ class SolrDocBuilder
     doc_hash
   end
   
-  # NAOMI_MUST_COMMENT_THIS_METHOD
+  # Create a Hash with additional Solr fields not derived from the MODS.
+  # @return [Hash] additional fields for Solr document hash
   def addl_hash_fields
     doc_hash = {
-      :access_facet => 'Online',      
+      :access_facet => 'Online',
+# FIXME:  here? or elsewhere?
+      :display_type => display_type,  
     }
   end
 
