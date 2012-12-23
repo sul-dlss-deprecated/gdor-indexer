@@ -76,6 +76,10 @@ class SolrDocBuilder
 
       # TO DO?  iterate over all methods in searchworks_fields mixins
     }
+# FIXME: here or in special collection fields method    
+    if collection?
+      doc_hash[:collection_type] = 'Digital Collection'
+    end
     doc_hash
   end
   

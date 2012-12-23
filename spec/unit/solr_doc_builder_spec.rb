@@ -6,6 +6,10 @@ describe SolrDocBuilder do
     @fake_druid = 'oo000oo0000'
     @smr = Stanford::Mods::Record.new
     @ns_decl = "xmlns='#{Mods::MODS_NS}'"
+    coll_mods_xml = "<mods #{@ns_decl}><typeOfResource collection='yes'/></mods>"
+    @smr.from_str(coll_mods_xml)
+    sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil)
+    @coll_doc_hash = sdb.mods_to_doc_hash
   end
 
   context "mods_to_doc_hash" do
@@ -24,6 +28,16 @@ describe SolrDocBuilder do
     it "should have the full MODS in the modsxml field" do
       @basic_doc_hash[:modsxml].should be_equivalent_to @mods_xml
     end 
+    
+    context "collection_type" do
+      it "should be 'Digital Collection' if the object is a collection" do
+        @coll_doc_hash[:collection_type].should == 'Digital Collection'
+      end
+      it "should not be present if the object is not a collection" do
+        @basic_doc_hash[:collection_type].should == nil
+      end
+    end
+        
     context "title fields" do
       before(:all) do
         m = "<mods #{@ns_decl}>
