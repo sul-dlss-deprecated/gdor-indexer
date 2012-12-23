@@ -1,3 +1,5 @@
+require 'logger'
+
 require 'stanford-mods'
 require 'stanford-mods/searchworks'
 
@@ -10,14 +12,36 @@ class SolrDocBuilder
   attr_reader :smods_rec
   # Nokogiri::XML::Document The public xml, containing contentMetadata, identityMetadata, etc.
   attr_reader :public_xml
+  attr_reader :logger
 
   # @param [String] druid, e.g. ab123cd4567
   # @param [Stanford::Mods::Record] the object associated with this druid
   # @param [Nokogiri::XML::Document] the public xml from the purl page for this druid, as a Nokogiri document
-  def initialize(druid, smods_rec, public_xml)
+  def initialize(druid, smods_rec, public_xml, logger)
     @druid = druid
     @smods_rec = smods_rec
     @public_xml = public_xml
+    @logger = logger
+  end
+  
+  # If MODS record has a top level typeOfResource element with attribute collection set to 'yes,
+  #  (<mods><typeOfResource collection='yes'>) then return true; false otherwise
+  # @return true if MODS indicates this is a collection object
+  def collection?
+    @smods_rec.typeOfResource.each { |n|  
+      return true if n.collection == 'yes'
+    }
+    false
+  end
+  
+  # If MODS record has a top level typeOfResource element with value 'still image'
+  #  (<mods><typeOfResource>still image<typeOfResource>) then return true; false otherwise
+  # @return true if MODS indicates this is an image object
+  def image?
+    @smods_rec.typeOfResource.each { |n|  
+      return true if n.text == 'still image'
+    }
+    false
   end
 
   # Create a Hash representing a Solr doc, with all mods related fields populated.

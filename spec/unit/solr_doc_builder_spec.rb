@@ -12,7 +12,7 @@ describe SolrDocBuilder do
     before(:all) do
       @mods_xml = "<mods #{@ns_decl}><note>hi</note></mods>"
       @smr.from_str @mods_xml
-      sdb = SolrDocBuilder.new(@fake_druid, @smr, nil) 
+      sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil) 
       @basic_doc_hash = sdb.mods_to_doc_hash
     end
     it "id field should be set to druid" do
@@ -32,7 +32,7 @@ describe SolrDocBuilder do
           <titleInfo type='alternative'><title>Alternative</title></titleInfo>
           </mods>"
         @smr.from_str m
-        sdb = SolrDocBuilder.new(@fake_druid, @smr, nil) 
+        sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil) 
         @title_doc_hash = sdb.mods_to_doc_hash
       end
       it "should call the appropriate methods in the stanford-mods gem to populate the fields" do
@@ -41,7 +41,7 @@ describe SolrDocBuilder do
         @smr.should_receive(:sw_addl_titles)
         @smr.should_receive(:sw_sort_title)
         @smr.from_str "<mods #{@ns_decl}><note>hi</note></mods>"
-        sdb = SolrDocBuilder.new(@fake_druid, @smr, nil)
+        sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil)
         sdb.mods_to_doc_hash
       end
       context "search fields" do
@@ -98,7 +98,7 @@ describe SolrDocBuilder do
                         <name type='conference'><namePart>conference</namePart></name>
                       </mods>"
         @smr.from_str(name_mods)
-        sdb = SolrDocBuilder.new(@fake_druid, @smr, nil) 
+        sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil) 
         @author_doc_hash = sdb.mods_to_doc_hash
       end
       it "should call the appropriate methods in the stanford-mods gem to populate the fields" do
@@ -110,7 +110,7 @@ describe SolrDocBuilder do
         @smr.should_receive(:sw_meeting_authors)
         @smr.should_receive(:sw_sort_author)
         @smr.from_str "<mods #{@ns_decl}><note>hi</note></mods>"
-        sdb = SolrDocBuilder.new(@fake_druid, @smr, nil) 
+        sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil) 
         sdb.mods_to_doc_hash
       end
       context "search fields" do
@@ -156,7 +156,7 @@ describe SolrDocBuilder do
     before(:all) do
       @mods_xml = "<mods #{@ns_decl}><note>hi</note></mods>"
       @smr.from_str @mods_xml
-      sdb = SolrDocBuilder.new(@fake_druid, @smr, nil) 
+      sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil) 
       @doc_hash = sdb.addl_hash_fields
     end
     it "should have an access_facet value of 'Online'" do
@@ -168,12 +168,76 @@ describe SolrDocBuilder do
     
   end
 
-  before(:all) do
-    
+
+  context "collection?" do
+    it "should return true if MODS has top level <typeOfResource collection='yes'>" do
+      m = "<mods #{@ns_decl}><typeOfResource collection='yes'/></mods>"
+      @smr.from_str m
+      sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil)
+      sdb.should be_a_collection
+    end
+    it "should return false if MODS has no top level <typeOfResource> elements" do
+      m = "<mods #{@ns_decl}><note>boo</note></mods>"
+      @smr.from_str m
+      sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil)
+      sdb.should_not be_a_collection
+    end
+    it "should return false if MODS has top level <typeOfResource> elements without collection attribute" do
+      m = "<mods #{@ns_decl}><typeOfResource manuscript='yes'/></mods>"
+      @smr.from_str m
+      sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil)
+      sdb.should_not be_a_collection
+    end
+    it "should return false if MODS has top level <typeOfResource> element with collection not set to 'yes" do
+      m = "<mods #{@ns_decl}><typeOfResource collection='no'/></mods>"
+      @smr.from_str m
+      sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil)
+      sdb.should_not be_a_collection
+    end
+    it "should return true if MODS has multiple top level <typeOfResource> elements and at least one is a collection" do
+      m = "<mods #{@ns_decl}>
+            <typeOfResource>cartographic</typeOfResource>
+            <typeOfResource collection='yes'/>
+            <typeOfResource>still image</typeOfResource>
+          </mods>"
+      @smr.from_str m
+      sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil)
+      sdb.should be_a_collection
+    end
   end
 
-  # FIXME:  write test for sdb.to_doc_hash in SDB spec      
-#        @doc_hash = sdb.to_doc_hash
+  context "image?" do
+    it "should return true if MODS has top level <typeOfResource>still image</typeOfResource>" do
+      m = "<mods #{@ns_decl}><typeOfResource>still image</typeOfResource></mods>"
+      @smr.from_str m
+      sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil)
+      sdb.should be_an_image
+    end
+    it "should return false if MODS has no top level <typeOfResource> elements" do
+      m = "<mods #{@ns_decl}><note>boo</note></mods>"
+      @smr.from_str m
+      sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil)
+      sdb.should_not be_an_image
+    end
+    it "should return false if MODS has top level <typeOfResource> elements with other values" do
+      m = "<mods #{@ns_decl}><typeOfResource>moving image</typeOfResource></mods>"
+      @smr.from_str m
+      sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil)
+      sdb.should_not be_an_image
+    end
+    it "should return true if MODS has multiple top level <typeOfResource> elements and at least one is still image" do
+      m = "<mods #{@ns_decl}>
+            <typeOfResource>cartographic</typeOfResource>
+            <typeOfResource collection='yes'/>
+            <typeOfResource>still image</typeOfResource>
+          </mods>"
+      @smr.from_str m
+      sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil)
+      sdb.should be_an_image
+    end
+  end
+
+
 
   context "sw_solr_doc fields" do
     before(:all) do
