@@ -78,6 +78,13 @@ class SolrDocBuilder
       # TO DO?  iterate over all methods in searchworks_fields mixins
     }
 # FIXME: here or in special collection fields method    
+    vals = []
+    @smods_rec.accessCondition.each { |n| 
+      if n.text.size > 0
+        vals << n.text unless n.text.empty?
+      end
+    }
+    doc_hash[:access_condition_display] = vals unless vals.empty?
     if collection?
       doc_hash[:collection_type] = 'Digital Collection'
     end

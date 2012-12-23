@@ -37,6 +37,30 @@ describe SolrDocBuilder do
         @basic_doc_hash[:collection_type].should == nil
       end
     end
+    
+    context "access_condition_display" do
+      it "should be populated when the mods has a top level <accessCondition> element" do
+        m = "<mods #{@ns_decl}>
+              <accessCondition type='useAndReproduction'>All rights reserved.</accessCondition>
+            </mods>"
+        @smr.from_str m
+        sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil) 
+        sdb.mods_to_doc_hash[:access_condition_display].should == ['All rights reserved.']
+      end
+      it "should have a value for each accessCondition element" do
+        m = "<mods #{@ns_decl}>
+              <accessCondition>one</accessCondition>
+              <accessCondition></accessCondition>
+              <accessCondition>two</accessCondition>
+            </mods>"
+        @smr.from_str m
+        sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil) 
+        sdb.mods_to_doc_hash[:access_condition_display].should == ['one', 'two']
+      end
+      it "should not be present when there is no top level <accessCondition> element" do
+        @basic_doc_hash[:access_condition_display].should == nil
+      end
+    end
 
     context "title fields" do
       before(:all) do
