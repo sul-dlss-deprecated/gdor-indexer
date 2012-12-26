@@ -27,6 +27,30 @@ class SolrDocBuilder
     end
   end
 
+# FIXME:  this should be a hash  coll druid => coll title!
+  # @return [Array<String>] the druids (e.g. ww123yy1234) this object has isMemberOfColletion relationship with
+  def collection_druids
+# create nom-xml terminology for rels-ext in harvestdor?
+    @collection_druids ||= begin
+      ns_hash = {'rdf' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#', 'fedora' => "info:fedora/fedora-system:def/relations-external#", '' => ''}
+      is_member_of_nodes ||= public_xml.xpath('/publicObject/rdf:RDF/rdf:Description/fedora:isMemberOfCollection/@rdf:resource', ns_hash)
+      # from public_xml rels-ext
+      druids = []
+      is_member_of_nodes.each { |n| 
+        druids << n.value.split('druid:').last unless n.value.empty?
+      }
+      return nil if druids.empty?
+      druids
+    end
+  end
+  
+  # NAOMI_MUST_COMMENT_THIS_METHOD
+  def collection_titles
+    # from collection object identity metadata ->  public_xml for collection druid or argo Solr?
+    #collections[:names] << "#{id}-|-#{r["response"]["docs"][0]["obj_label_t"]}"
+  end
+
+
   protected #---------------------------------------------------------------------
   
   # the value of the type attribute for a DOR object's contentMetadata
@@ -41,8 +65,8 @@ class SolrDocBuilder
   # the contentMetadata for this object, derived from the public_xml
   # @return [Nokogiri::XML::Element] containing the contentMetadata
   def content_md 
+# FIXME:  create nom-xml terminology for contentMetadata in harvestdor?
     @content_md ||= public_xml.root.xpath('/publicObject/contentMetadata').first
   end
   
-  
-end
+end # SolrDocBuilder class

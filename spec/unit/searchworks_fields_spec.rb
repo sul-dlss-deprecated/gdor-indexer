@@ -10,7 +10,7 @@ describe 'SearchworksFields mixin for SolrDocBuilder class' do
     @ns_decl = "xmlns='#{Mods::MODS_NS}'"
     @cmd_type = 'image'
     @cmd_xml = "<contentMetadata type='#{@cmd_type}' objectId='#{@fake_druid}'></contentMetadata>"
-    @pub_xml = "<publicObject id='druid#{@fake_druid}'>#{@cmd_xml}</publicObject>"
+    @pub_xml = "<publicObject id='druid:#{@fake_druid}'>#{@cmd_xml}</publicObject>"
     @sdb = SolrDocBuilder.new(@fake_druid, @smr, Nokogiri::XML(@pub_xml), Logger.new(STDOUT))
   end
 
@@ -34,6 +34,48 @@ describe 'SearchworksFields mixin for SolrDocBuilder class' do
         @sdb.stub(:dor_content_type).and_return('bogus')
         @sdb.logger.should_receive(:warn).with(/unrecognized DOR content type.*bogus/)
         @sdb.format
+      end
+    end
+    
+    context "collection druids" do
+      it "collection_druids look for the object's collection druids in the rels-ext in the public_xml" do
+        coll_druid = 'ww121ss5000'
+        rels_ext_xml = "<rdf:RDF  xmlns:fedora='info:fedora/fedora-system:def/relations-external#' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
+          <rdf:Description rdf:about='info:fedora/druid:#{@fake_druid}'>
+            <fedora:isMemberOfCollection rdf:resource='info:fedora/druid:#{coll_druid}'/>
+          </rdf:Description></rdf:RDF>"
+        pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{rels_ext_xml}</publicObject>")
+        @sdb = SolrDocBuilder.new(@fake_druid, @smr, pub_xml, nil)
+        @sdb.collection_druids.should == [coll_druid]
+      end
+      it "collection_druids should get multiple collection druids when they exist" do
+        coll_druid = 'ww121ss5000'
+        coll_druid2 = 'ww121ss5001'
+        rels_ext_xml = "<rdf:RDF  xmlns:fedora='info:fedora/fedora-system:def/relations-external#' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
+          <rdf:Description rdf:about='info:fedora/druid:#{@fake_druid}'>
+            <fedora:isMemberOfCollection rdf:resource='info:fedora/druid:#{coll_druid}'/>
+            <fedora:isMemberOfCollection rdf:resource='info:fedora/druid:#{coll_druid2}'/>
+          </rdf:Description></rdf:RDF>"
+        pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{rels_ext_xml}</publicObject>")
+        @sdb = SolrDocBuilder.new(@fake_druid, @smr, pub_xml, nil)
+        @sdb.collection_druids.should == [coll_druid, coll_druid2]
+      end
+      it "collection_druids should be nil when no isMemberOf relationships exist" do
+        coll_druid = 'ww121ss5000'
+        rels_ext_xml = "<rdf:RDF  xmlns:fedora='info:fedora/fedora-system:def/relations-external#' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
+          <rdf:Description rdf:about='info:fedora/druid:#{@fake_druid}'>
+          </rdf:Description></rdf:RDF>"
+        pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{rels_ext_xml}</publicObject>")
+        @sdb = SolrDocBuilder.new(@fake_druid, @smr, pub_xml, nil)
+        @sdb.collection_druids.should == nil
+      end
+    end
+    context "collection_titles" do
+      it "should be the value of collection's identityMetadata objectLabel" do
+        pending "to be implemented"
+      end
+      it "should be retrieved via the collection object's purl page" do
+        pending "to be implemented"
       end
     end
     
