@@ -4,7 +4,7 @@ require 'searchworks_fields'
 require 'stanford-mods'
 require 'stanford-mods/searchworks'
 
-# NAOMI_MUST_COMMENT_THIS
+# Class to build the Hash representing a Solr document for a particular druid
 class SolrDocBuilder
 
   # The druid of the item
@@ -77,14 +77,13 @@ class SolrDocBuilder
 
       # TO DO?  iterate over all methods in searchworks_fields mixins
     }
-# FIXME: here or in special collection fields method    
+# FIXME:  this should be a method mods_el_vals(mods_term_name)    
     vals = []
     @smods_rec.accessCondition.each { |n| 
-      if n.text.size > 0
-        vals << n.text unless n.text.empty?
-      end
+      vals << n.text unless n.text.empty?
     }
     doc_hash[:access_condition_display] = vals unless vals.empty?
+# FIXME: here or in special collection fields method    
     if collection?
       doc_hash[:collection_type] = 'Digital Collection'
     end
