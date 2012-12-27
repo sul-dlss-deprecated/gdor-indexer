@@ -58,9 +58,9 @@ describe 'SearchworksFields mixin for SolrDocBuilder class' do
             <fedora:isMemberOfCollection rdf:resource='info:fedora/druid:#{coll_druid}'/>
           </rdf:Description></rdf:RDF>"
         pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{rels_ext_xml}</publicObject>")
-        @hdor_client.stub(:public_xml).with(@fake_druid).and_return(Nokogiri::XML(pub_xml))
-        @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
-        @sdb.collection_druids.should == [coll_druid]
+        @hdor_client.stub(:public_xml).with(@fake_druid).and_return(pub_xml)
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+        sdb.collection_druids.should == [coll_druid]
       end
       it "collection_druids should get multiple collection druids when they exist" do
         coll_druid = 'ww121ss5000'
@@ -71,8 +71,9 @@ describe 'SearchworksFields mixin for SolrDocBuilder class' do
             <fedora:isMemberOfCollection rdf:resource='info:fedora/druid:#{coll_druid2}'/>
           </rdf:Description></rdf:RDF>"
         pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{rels_ext_xml}</publicObject>")
-        @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
-        @sdb.collection_druids.should == [coll_druid, coll_druid2]
+        @hdor_client.stub(:public_xml).with(@fake_druid).and_return(pub_xml)
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+        sdb.collection_druids.should == [coll_druid, coll_druid2]
       end
       it "collection_druids should be nil when no isMemberOf relationships exist" do
         coll_druid = 'ww121ss5000'
@@ -80,8 +81,9 @@ describe 'SearchworksFields mixin for SolrDocBuilder class' do
           <rdf:Description rdf:about='info:fedora/druid:#{@fake_druid}'>
           </rdf:Description></rdf:RDF>"
         pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{rels_ext_xml}</publicObject>")
-        @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
-        @sdb.collection_druids.should == nil
+        @hdor_client.stub(:public_xml).with(@fake_druid).and_return(pub_xml)
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+        sdb.collection_druids.should == nil
       end
     end
     context "collection_titles" do
@@ -95,19 +97,19 @@ describe 'SearchworksFields mixin for SolrDocBuilder class' do
     
     context "display_type" do
       it "should be 'collection' if solr_doc_builder.collection?" do
-        coll_mods_xml = "<mods #{@ns_decl}><typeOfResource collection='yes'/></mods>"
-        @smr.from_str coll_mods_xml
+        coll_mods_xml = "<mods #{@ns_decl}><typeOfResource collection='yes'/><note>hi</note></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(coll_mods_xml))
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
         sdb.display_type.should == 'collection'
       end
       it "should be the same as <contentMetadata> type attribute if it's not a collection" do
         # NOTE: from the contentMetadata, not the mods
         m = "<mods #{@ns_decl}><typeOfResource>sound recording</typeOfResource></mods>"
-        @smr.from_str m
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
-        @sdb.display_type.should == @cmd_type
-        @sdb.stub(:dor_content_type).and_return('bogus')
-        @sdb.display_type.should == 'bogus'
+        sdb.display_type.should == @cntnt_md_type
+        sdb.stub(:dor_content_type).and_return('bogus')
+        sdb.display_type.should == 'bogus'
       end
       it "should log an error message if contentMetadata has no type" do
         @sdb.stub(:dor_content_type).and_return(nil)
