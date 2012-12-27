@@ -11,7 +11,6 @@ describe SolrDocBuilder do
   # "Doubles, stubs, and message expectations are all cleaned out after each example."
   # per https://www.relishapp.com/rspec/rspec-mocks/docs/scope
   
-  
   context "mods_to_doc_hash" do
     before(:all) do
       @mods_xml = "<mods #{@ns_decl}><note>hi</note></mods>"
@@ -24,8 +23,7 @@ describe SolrDocBuilder do
     context "basic fields" do
       before(:each) do
         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(@mods_xml))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
-        @basic_doc_hash = sdb.mods_to_doc_hash
+        @basic_doc_hash = SolrDocBuilder.new(@fake_druid, @hdor_client, nil).mods_to_doc_hash
       end
       it "id field should be set to druid" do
         @basic_doc_hash[:id].should == @fake_druid
@@ -79,22 +77,24 @@ describe SolrDocBuilder do
     end
 
     context "title fields" do
-      before(:each) do
-        title_mods = "<mods #{@ns_decl}>
+      before(:all) do
+        @title_mods = "<mods #{@ns_decl}>
           <titleInfo><title>Jerk</title><nonSort>The</nonSort><subTitle>is whom?</subTitle></titleInfo>
           <titleInfo><title>Joke</title></titleInfo>
           <titleInfo type='alternative'><title>Alternative</title></titleInfo>
           </mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(title_mods))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
-        @title_doc_hash = sdb.mods_to_doc_hash
+      end
+      before(:each) do
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(@title_mods))
+        @title_doc_hash = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) .mods_to_doc_hash
       end
       it "should call the appropriate methods in the stanford-mods gem to populate the fields" do
-        @smr.should_receive(:sw_short_title).twice
-        @smr.should_receive(:sw_full_title).exactly(3).times
-        @smr.should_receive(:sw_addl_titles)
-        @smr.should_receive(:sw_sort_title)
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+        smr = sdb.smods_rec
+        smr.should_receive(:sw_short_title).twice
+        smr.should_receive(:sw_full_title).exactly(3).times
+        smr.should_receive(:sw_addl_titles)
+        smr.should_receive(:sw_sort_title)
         sdb.mods_to_doc_hash
       end
       context "search fields" do
@@ -134,8 +134,8 @@ describe SolrDocBuilder do
     end # title fields  
 
     context "author fields" do
-      before(:each) do
-        name_mods = "<mods xmlns='#{Mods::MODS_NS}'>
+      before(:all) do
+        @name_mods = "<mods xmlns='#{Mods::MODS_NS}'>
                         <name type='personal'>
                           <namePart type='given'>John</namePart>
                           <namePart type='family'>Huston</namePart>
@@ -150,21 +150,22 @@ describe SolrDocBuilder do
                         </name>
                         <name type='conference'><namePart>conference</namePart></name>
                       </mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(name_mods))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
-        @author_doc_hash = sdb.mods_to_doc_hash
+      end
+      before(:each) do
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(@name_mods))
+        @author_doc_hash = SolrDocBuilder.new(@fake_druid, @hdor_client, nil).mods_to_doc_hash
       end
       it "should call the appropriate methods in the stanford-mods gem to populate the fields" do
-        @smr.should_receive(:sw_main_author)
-        @smr.should_receive(:sw_addl_authors)
-        @smr.should_receive(:sw_person_authors).exactly(3).times
-        @smr.should_receive(:sw_impersonal_authors)
-        @smr.should_receive(:sw_corporate_authors)
-        @smr.should_receive(:sw_meeting_authors)
-        @smr.should_receive(:sw_sort_author)
-        @smr.from_str "<mods #{@ns_decl}><note>hi</note></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(name_mods))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(@name_mods))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+        smr = sdb.smods_rec
+        smr.should_receive(:sw_main_author)
+        smr.should_receive(:sw_addl_authors)
+        smr.should_receive(:sw_person_authors).exactly(3).times
+        smr.should_receive(:sw_impersonal_authors)
+        smr.should_receive(:sw_corporate_authors)
+        smr.should_receive(:sw_meeting_authors)
+        smr.should_receive(:sw_sort_author)
         sdb.mods_to_doc_hash
       end
       context "search fields" do
@@ -216,8 +217,7 @@ describe SolrDocBuilder do
       @hc = double
       @hc.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(@mods_xml))
       @hc.stub(:public_xml).with(@fake_druid).and_return(Nokogiri::XML(@pub_xml))
-      sdb = SolrDocBuilder.new(@fake_druid, @hc, nil) 
-      @doc_hash = sdb.addl_hash_fields
+      @doc_hash = SolrDocBuilder.new(@fake_druid, @hc, nil) .addl_hash_fields
     end
     it "should have an access_facet value of 'Online'" do
       @doc_hash[:access_facet].should == 'Online'
@@ -299,8 +299,8 @@ describe SolrDocBuilder do
             <typeOfResource collection='yes'/>
             <typeOfResource>still image</typeOfResource>
           </mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
       sdb.should be_an_image
     end
   end
@@ -313,18 +313,18 @@ describe SolrDocBuilder do
     before(:each) do
       @real_hdor_client = @indexer.send(:harvestdor_client)
     end
-    context "mods method (called in initialize method)" do
+    context "smods_rec method (called in initialize method)" do
       it "should return Stanford::Mods::Record object" do
         @real_hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML("<mods #{@ns_decl}><note>hi</note></mods>"))
         @real_hdor_client.stub(:public_xml).with(@fake_druid).and_return(nil)
         sdb = SolrDocBuilder.new(@fake_druid, @real_hdor_client, nil)
-        sdb.mods(@fake_druid).should be_an_instance_of(Stanford::Mods::Record)
+        sdb.smods_rec.should be_an_instance_of(Stanford::Mods::Record)
       end
-      it "should raise exception if mods for the druid is empty" do
+      it "should raise exception if MODS xml for the druid is empty" do
         @real_hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML("<mods #{@ns_decl}/>"))
         expect { SolrDocBuilder.new(@fake_druid, @real_hdor_client, nil) }.to raise_error(RuntimeError, Regexp.new("^Empty MODS metadata for #{@fake_druid}: <"))
       end
-      it "should raise exception if there is no mods for the druid" do
+      it "should raise exception if there is no MODS xml for the druid" do
         expect { SolrDocBuilder.new(@fake_druid, @real_hdor_client, nil) }.to raise_error(Harvestdor::Errors::MissingMods)
       end
     end
@@ -347,11 +347,9 @@ describe SolrDocBuilder do
       end
     end
     
-  end
+  end # context using Harvestdor::Client
 
-  
-
-
+  #------------------------------------------------------------------------------------------------
 
   context "sw_solr_doc fields" do
     before(:all) do
