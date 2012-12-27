@@ -4,14 +4,51 @@ describe SolrDocBuilder do
 
   before(:all) do
     @fake_druid = 'oo000oo0000'
-    @smr = Stanford::Mods::Record.new
+#    @smr = Stanford::Mods::Record.new
     @ns_decl = "xmlns='#{Mods::MODS_NS}'"
-    coll_mods_xml = "<mods #{@ns_decl}><typeOfResource collection='yes'/></mods>"
-    @smr.from_str(coll_mods_xml)
-    sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil)
-    @coll_doc_hash = sdb.mods_to_doc_hash
+#    @smr.from_str(coll_mods_xml)
+  end
+  
+  before(:each) do
+    # "Doubles, stubs, and message expectations are all cleaned out after each example."
+    # per https://www.relishapp.com/rspec/rspec-mocks/docs/scope
+    @hclient = double()
+#    coll_mods_xml = "<mods #{@ns_decl}><typeOfResource collection='yes'/><note>hi</note></mods>"
+    mods_xml = "<mods #{@ns_decl}><note>hi</note></mods>"
+    @hclient.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(mods_xml))
+    @hclient.stub(:public_xml).with(@fake_druid).and_return(nil)
+#    @sdb = SolrDocBuilder.new(@fake_druid, @hclient, nil)
+#      @coll_doc_hash = @sdb.mods_to_doc_hash
   end
 
+  context "mods method (called in initialize method)" do
+    it "should return Stanford::Mods::Record object" do
+      @hclient.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML("<mods #{@ns_decl}><note>hi</note></mods>"))
+      sdb = SolrDocBuilder.new(@fake_druid, @hclient, nil)
+      sdb.mods(@fake_druid).should be_an_instance_of(Stanford::Mods::Record)
+    end
+    it "should raise exception if mods for the druid is empty" do
+      @hclient.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML("<mods #{@ns_decl}/>"))
+      expect { SolrDocBuilder.new(@fake_druid, @hclient, nil) }.to raise_error(RuntimeError, Regexp.new("^Empty MODS metadata for #{@fake_druid}: <"))
+    end
+    it "should raise exception if there is no mods for the druid" do
+      config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "walters_integration_spec.yml")
+      indexer = Indexer.new(config_yml_path)
+      hclient = indexer.send(:harvestdor_client)
+      expect { SolrDocBuilder.new(@fake_druid, hclient, nil) }.to raise_error(Harvestdor::Errors::MissingMods)
+    end
+  end
+  
+  context "public_xml method" do
+    it "should call public_xml method on harvestdor_client" do
+      @hclient.should_receive(:public_xml).with(@fake_druid)
+      @sdb.public_xml(@fake_druid)
+    end
+    it "should raise exception if there is no contentMetadata for the druid" do
+      expect { @sdb.public_xml(@fake_druid) }.to raise_error(Harvestdor::Errors::MissingPurlPage)
+    end
+  end
+  
   context "mods_to_doc_hash" do
     before(:all) do
       @mods_xml = "<mods #{@ns_decl}><note>hi</note></mods>"

@@ -1,5 +1,6 @@
 require 'logger'
 
+require 'harvestdor'
 require 'searchworks_fields'
 require 'stanford-mods'
 require 'stanford-mods/searchworks'
@@ -18,11 +19,12 @@ class SolrDocBuilder
   # @param [String] druid, e.g. ab123cd4567
   # @param [Stanford::Mods::Record] the object associated with this druid
   # @param [Nokogiri::XML::Document] the public xml from the purl page for this druid, as a Nokogiri document
-  def initialize(druid, smods_rec, public_xml, logger)
+  def initialize(druid, harvestdor_client, logger)
     @druid = druid
-    @smods_rec = smods_rec
-    @public_xml = public_xml
+    @harvestdor_client = harvestdor_client
     @logger = logger
+    @smods_rec = mods(druid)
+    @public_xml = public_xml(druid)
   end
   
   # If MODS record has a top level typeOfResource element with attribute collection set to 'yes,
@@ -98,6 +100,26 @@ class SolrDocBuilder
 # FIXME:  here? or elsewhere?
       :display_type => display_type,  
     }
+  end
+  
+  # return the mods for the druid as a Stanford::Mods::Record object
+  # @param [String] druid, e.g. ab123cd4567
+  # @return [Stanford::Mods::Record] created from the MODS xml for the druid
+  def mods druid
+    if @mods_rec.nil?
+      ng_doc = @harvestdor_client.mods druid
+      raise "Empty MODS metadata for #{druid}: #{ng_doc.to_xml}" if ng_doc.root.xpath('//text()').empty?
+      @mods_rec = Stanford::Mods::Record.new
+      @mods_rec.from_nk_node(ng_doc.root)
+    end
+    @mods_rec
+  end
+  
+  # the public_xml for the druid as a Nokogiri::XML::Document object
+  # @param [String] druid, e.g. ab123cd4567
+  # @return [Nokogiri::XML::Document] containing the public xml for the druid
+  def public_xml druid
+    @public_xml ||= @harvestdor_client.public_xml druid
   end
 
 end # SolrDocBuilder class

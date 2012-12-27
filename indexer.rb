@@ -36,9 +36,9 @@ class Indexer
   # @param [String] druid, e.g. ab123cd4567
   # @param [Stanford::Mods::Record] MODS metadata as a Stanford::Mods::Record object
   # @param [Hash] Hash representing the Solr document
-  def sw_solr_doc druid, smods_rec
-# FIXME: call mods method here???  call public_xml here???   
-    sdb = SolrDocBuilder.new(druid, smods_rec, nil, logger)
+  def sw_solr_doc druid
+# FIXME: this needs work   
+    sdb = SolrDocBuilder.new(druid, harvestdor_client, logger)
     doc_hash = sdb.mods_to_doc_hash
     doc_hash[:access_facet] = 'Online'  
     doc_hash[:url_fulltext] = "#{config.purl}/#{druid}"
@@ -47,26 +47,6 @@ class Indexer
     
   def solr_client
     @solr_client ||= RSolr.connect(config.solr.to_hash)
-  end
-
-  # return the mods for the druid as a Stanford::Mods::Record object
-  # @param [String] druid, e.g. ab123cd4567
-  # @return [Stanford::Mods::Record] created from the MODS xml for the druid
-  def mods druid
-    if @mods.nil?
-      ng_doc = harvestdor_client.mods druid
-      raise "Empty MODS metadata for #{druid}: #{ng_doc.to_xml}" if ng_doc.root.xpath('//text()').empty?
-      @mods = Stanford::Mods::Record.new
-      @mods.from_nk_node(ng_doc.root)
-    end
-    @mods
-  end
-  
-  # the public_xml for the druid as a Nokogiri::XML::Document object
-  # @param [String] druid, e.g. ab123cd4567
-  # @return [Nokogiri::XML::Document] containing the public xml for the druid
-  def public_xml druid
-    @public_xml ||= harvestdor_client.public_xml druid
   end
 
   protected #---------------------------------------------------------------------
