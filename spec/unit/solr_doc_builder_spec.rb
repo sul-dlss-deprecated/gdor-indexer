@@ -4,74 +4,51 @@ describe SolrDocBuilder do
 
   before(:all) do
     @fake_druid = 'oo000oo0000'
-#    @smr = Stanford::Mods::Record.new
     @ns_decl = "xmlns='#{Mods::MODS_NS}'"
-#    @smr.from_str(coll_mods_xml)
   end
   
-  before(:each) do
-    # "Doubles, stubs, and message expectations are all cleaned out after each example."
-    # per https://www.relishapp.com/rspec/rspec-mocks/docs/scope
-    @hclient = double()
-#    coll_mods_xml = "<mods #{@ns_decl}><typeOfResource collection='yes'/><note>hi</note></mods>"
-    mods_xml = "<mods #{@ns_decl}><note>hi</note></mods>"
-    @hclient.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(mods_xml))
-    @hclient.stub(:public_xml).with(@fake_druid).and_return(nil)
-#    @sdb = SolrDocBuilder.new(@fake_druid, @hclient, nil)
-#      @coll_doc_hash = @sdb.mods_to_doc_hash
-  end
-
-  context "mods method (called in initialize method)" do
-    it "should return Stanford::Mods::Record object" do
-      @hclient.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML("<mods #{@ns_decl}><note>hi</note></mods>"))
-      sdb = SolrDocBuilder.new(@fake_druid, @hclient, nil)
-      sdb.mods(@fake_druid).should be_an_instance_of(Stanford::Mods::Record)
-    end
-    it "should raise exception if mods for the druid is empty" do
-      @hclient.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML("<mods #{@ns_decl}/>"))
-      expect { SolrDocBuilder.new(@fake_druid, @hclient, nil) }.to raise_error(RuntimeError, Regexp.new("^Empty MODS metadata for #{@fake_druid}: <"))
-    end
-    it "should raise exception if there is no mods for the druid" do
-      config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "walters_integration_spec.yml")
-      indexer = Indexer.new(config_yml_path)
-      hclient = indexer.send(:harvestdor_client)
-      expect { SolrDocBuilder.new(@fake_druid, hclient, nil) }.to raise_error(Harvestdor::Errors::MissingMods)
-    end
-  end
+  # NOTE:  
+  # "Doubles, stubs, and message expectations are all cleaned out after each example."
+  # per https://www.relishapp.com/rspec/rspec-mocks/docs/scope
   
-  context "public_xml method" do
-    it "should call public_xml method on harvestdor_client" do
-      @hclient.should_receive(:public_xml).with(@fake_druid)
-      @sdb.public_xml(@fake_druid)
-    end
-    it "should raise exception if there is no contentMetadata for the druid" do
-      expect { @sdb.public_xml(@fake_druid) }.to raise_error(Harvestdor::Errors::MissingPurlPage)
-    end
-  end
   
   context "mods_to_doc_hash" do
     before(:all) do
       @mods_xml = "<mods #{@ns_decl}><note>hi</note></mods>"
-      @smr.from_str @mods_xml
-      sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil) 
-      @basic_doc_hash = sdb.mods_to_doc_hash
     end
-    it "id field should be set to druid" do
-      @basic_doc_hash[:id].should == @fake_druid
+    before(:each) do
+      @hdor_client = double()
+      @hdor_client.stub(:public_xml).with(@fake_druid).and_return(nil)
     end
-    it "should have a druid field" do
-      @basic_doc_hash[:druid].should == @fake_druid
+    
+    context "basic fields" do
+      before(:each) do
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(@mods_xml))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+        @basic_doc_hash = sdb.mods_to_doc_hash
+      end
+      it "id field should be set to druid" do
+        @basic_doc_hash[:id].should == @fake_druid
+      end
+      it "should have a druid field" do
+        @basic_doc_hash[:druid].should == @fake_druid
+      end
+      it "should have the full MODS in the modsxml field" do
+        @basic_doc_hash[:modsxml].should be_equivalent_to @mods_xml
+      end 
     end
-    it "should have the full MODS in the modsxml field" do
-      @basic_doc_hash[:modsxml].should be_equivalent_to @mods_xml
-    end 
     
     context "collection_type" do
       it "should be 'Digital Collection' if the object is a collection" do
-        @coll_doc_hash[:collection_type].should == 'Digital Collection'
+        coll_mods_xml = "<mods #{@ns_decl}><typeOfResource collection='yes'/><note>hi</note></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(coll_mods_xml))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+        sdb.mods_to_doc_hash[:collection_type].should == 'Digital Collection'
       end
       it "should not be present if the object is not a collection" do
-        @basic_doc_hash[:collection_type].should == nil
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(@mods_xml))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+        sdb.mods_to_doc_hash[:collection_type].should == nil
       end
     end
     
@@ -80,8 +57,8 @@ describe SolrDocBuilder do
         m = "<mods #{@ns_decl}>
               <accessCondition type='useAndReproduction'>All rights reserved.</accessCondition>
             </mods>"
-        @smr.from_str m
-        sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil) 
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
         sdb.mods_to_doc_hash[:access_condition_display].should == ['All rights reserved.']
       end
       it "should have a value for each accessCondition element" do
@@ -90,24 +67,26 @@ describe SolrDocBuilder do
               <accessCondition></accessCondition>
               <accessCondition>two</accessCondition>
             </mods>"
-        @smr.from_str m
-        sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil) 
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
         sdb.mods_to_doc_hash[:access_condition_display].should == ['one', 'two']
       end
       it "should not be present when there is no top level <accessCondition> element" do
-        @basic_doc_hash[:access_condition_display].should == nil
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(@mods_xml))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+        sdb.mods_to_doc_hash[:access_condition_display].should == nil
       end
     end
 
     context "title fields" do
-      before(:all) do
-        m = "<mods #{@ns_decl}>
+      before(:each) do
+        title_mods = "<mods #{@ns_decl}>
           <titleInfo><title>Jerk</title><nonSort>The</nonSort><subTitle>is whom?</subTitle></titleInfo>
           <titleInfo><title>Joke</title></titleInfo>
           <titleInfo type='alternative'><title>Alternative</title></titleInfo>
           </mods>"
-        @smr.from_str m
-        sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil) 
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(title_mods))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
         @title_doc_hash = sdb.mods_to_doc_hash
       end
       it "should call the appropriate methods in the stanford-mods gem to populate the fields" do
@@ -115,8 +94,7 @@ describe SolrDocBuilder do
         @smr.should_receive(:sw_full_title).exactly(3).times
         @smr.should_receive(:sw_addl_titles)
         @smr.should_receive(:sw_sort_title)
-        @smr.from_str "<mods #{@ns_decl}><note>hi</note></mods>"
-        sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil)
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
         sdb.mods_to_doc_hash
       end
       context "search fields" do
@@ -156,7 +134,7 @@ describe SolrDocBuilder do
     end # title fields  
 
     context "author fields" do
-      before(:all) do
+      before(:each) do
         name_mods = "<mods xmlns='#{Mods::MODS_NS}'>
                         <name type='personal'>
                           <namePart type='given'>John</namePart>
@@ -172,8 +150,8 @@ describe SolrDocBuilder do
                         </name>
                         <name type='conference'><namePart>conference</namePart></name>
                       </mods>"
-        @smr.from_str(name_mods)
-        sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil) 
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(name_mods))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
         @author_doc_hash = sdb.mods_to_doc_hash
       end
       it "should call the appropriate methods in the stanford-mods gem to populate the fields" do
@@ -185,7 +163,8 @@ describe SolrDocBuilder do
         @smr.should_receive(:sw_meeting_authors)
         @smr.should_receive(:sw_sort_author)
         @smr.from_str "<mods #{@ns_decl}><note>hi</note></mods>"
-        sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil) 
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(name_mods))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
         sdb.mods_to_doc_hash
       end
       context "search fields" do
@@ -230,45 +209,53 @@ describe SolrDocBuilder do
   context "addl_hash_fields" do
     before(:all) do
       @mods_xml = "<mods #{@ns_decl}><note>hi</note></mods>"
-      @smr.from_str @mods_xml
       cmd_xml = "<contentMetadata type='image' objectId='#{@fake_druid}'></contentMetadata>"
       @pub_xml = "<publicObject id='druid#{@fake_druid}'>#{cmd_xml}</publicObject>"
-      sdb = SolrDocBuilder.new(@fake_druid, @smr, Nokogiri::XML(@pub_xml), nil)
+    end
+    before(:each) do
+      @hc = double
+      @hc.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(@mods_xml))
+      @hc.stub(:public_xml).with(@fake_druid).and_return(Nokogiri::XML(@pub_xml))
+      sdb = SolrDocBuilder.new(@fake_druid, @hc, nil) 
       @doc_hash = sdb.addl_hash_fields
     end
     it "should have an access_facet value of 'Online'" do
       @doc_hash[:access_facet].should == 'Online'
     end
     it "should call the appropriate methods in searchworks_fields" do
-      sdb = SolrDocBuilder.new(@fake_druid, @smr, Nokogiri::XML(@pub_xml), nil)
+      sdb = SolrDocBuilder.new(@fake_druid, @hc, nil) 
       sdb.should_receive(:display_type)
       sdb.addl_hash_fields
     end
   end
 
   context "collection?" do
+    before(:each) do
+      @hdor_client = double()
+      @hdor_client.stub(:public_xml).with(@fake_druid).and_return(nil)
+    end
     it "should return true if MODS has top level <typeOfResource collection='yes'>" do
-      m = "<mods #{@ns_decl}><typeOfResource collection='yes'/></mods>"
-      @smr.from_str m
-      sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil)
+      m = "<mods #{@ns_decl}><typeOfResource collection='yes'/><note>boo</note></mods>"
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
       sdb.should be_a_collection
     end
     it "should return false if MODS has no top level <typeOfResource> elements" do
       m = "<mods #{@ns_decl}><note>boo</note></mods>"
-      @smr.from_str m
-      sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil)
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
       sdb.should_not be_a_collection
     end
     it "should return false if MODS has top level <typeOfResource> elements without collection attribute" do
-      m = "<mods #{@ns_decl}><typeOfResource manuscript='yes'/></mods>"
-      @smr.from_str m
-      sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil)
+      m = "<mods #{@ns_decl}><typeOfResource manuscript='yes'/><note>boo</note></mods>"
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
       sdb.should_not be_a_collection
     end
     it "should return false if MODS has top level <typeOfResource> element with collection not set to 'yes" do
-      m = "<mods #{@ns_decl}><typeOfResource collection='no'/></mods>"
-      @smr.from_str m
-      sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil)
+      m = "<mods #{@ns_decl}><typeOfResource collection='no'/><note>boo</note></mods>"
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
       sdb.should_not be_a_collection
     end
     it "should return true if MODS has multiple top level <typeOfResource> elements and at least one is a collection" do
@@ -277,29 +264,33 @@ describe SolrDocBuilder do
             <typeOfResource collection='yes'/>
             <typeOfResource>still image</typeOfResource>
           </mods>"
-      @smr.from_str m
-      sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil)
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
       sdb.should be_a_collection
     end
   end
 
   context "image?" do
+    before(:each) do
+      @hdor_client = double()
+      @hdor_client.stub(:public_xml).with(@fake_druid).and_return(nil)
+    end
     it "should return true if MODS has top level <typeOfResource>still image</typeOfResource>" do
       m = "<mods #{@ns_decl}><typeOfResource>still image</typeOfResource></mods>"
-      @smr.from_str m
-      sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil)
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
       sdb.should be_an_image
     end
     it "should return false if MODS has no top level <typeOfResource> elements" do
       m = "<mods #{@ns_decl}><note>boo</note></mods>"
-      @smr.from_str m
-      sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil)
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
       sdb.should_not be_an_image
     end
     it "should return false if MODS has top level <typeOfResource> elements with other values" do
       m = "<mods #{@ns_decl}><typeOfResource>moving image</typeOfResource></mods>"
-      @smr.from_str m
-      sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil)
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
       sdb.should_not be_an_image
     end
     it "should return true if MODS has multiple top level <typeOfResource> elements and at least one is still image" do
@@ -308,11 +299,57 @@ describe SolrDocBuilder do
             <typeOfResource collection='yes'/>
             <typeOfResource>still image</typeOfResource>
           </mods>"
-      @smr.from_str m
-      sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil)
+          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
       sdb.should be_an_image
     end
   end
+
+  context "using Harvestdor::Client" do
+    before(:all) do
+      config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "walters_integration_spec.yml")
+      @indexer = Indexer.new(config_yml_path)
+    end
+    before(:each) do
+      @real_hdor_client = @indexer.send(:harvestdor_client)
+    end
+    context "mods method (called in initialize method)" do
+      it "should return Stanford::Mods::Record object" do
+        @real_hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML("<mods #{@ns_decl}><note>hi</note></mods>"))
+        @real_hdor_client.stub(:public_xml).with(@fake_druid).and_return(nil)
+        sdb = SolrDocBuilder.new(@fake_druid, @real_hdor_client, nil)
+        sdb.mods(@fake_druid).should be_an_instance_of(Stanford::Mods::Record)
+      end
+      it "should raise exception if mods for the druid is empty" do
+        @real_hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML("<mods #{@ns_decl}/>"))
+        expect { SolrDocBuilder.new(@fake_druid, @real_hdor_client, nil) }.to raise_error(RuntimeError, Regexp.new("^Empty MODS metadata for #{@fake_druid}: <"))
+      end
+      it "should raise exception if there is no mods for the druid" do
+        expect { SolrDocBuilder.new(@fake_druid, @real_hdor_client, nil) }.to raise_error(Harvestdor::Errors::MissingMods)
+      end
+    end
+
+    context "public_xml method (called in initialize method)" do
+      it "should call public_xml method on harvestdor_client" do
+        @real_hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML("<mods #{@ns_decl}><note>hi</note></mods>"))
+        @real_hdor_client.should_receive(:public_xml).with(@fake_druid)
+        sdb = SolrDocBuilder.new(@fake_druid, @real_hdor_client, nil)
+      end
+      it "should raise exception if there is no contentMetadata for the druid" do
+        @real_hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML("<mods #{@ns_decl}><note>hi</note></mods>"))
+        expect { SolrDocBuilder.new(@fake_druid, @real_hdor_client, nil) }.to raise_error(Harvestdor::Errors::MissingPurlPage)
+      end
+    end
+    
+    context "getting a collection's goodies" do
+      it "does something" do
+        pending "to be implemented"
+      end
+    end
+    
+  end
+
+  
 
 
 
