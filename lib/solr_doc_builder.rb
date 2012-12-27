@@ -23,8 +23,8 @@ class SolrDocBuilder
     @druid = druid
     @harvestdor_client = harvestdor_client
     @logger = logger
-    @smods_rec = mods(druid)
-    @public_xml = public_xml(druid)
+    @smods_rec = smods_rec
+    @public_xml = public_xml
   end
   
   # If MODS record has a top level typeOfResource element with attribute collection set to 'yes,
@@ -103,11 +103,10 @@ class SolrDocBuilder
   end
   
   # return the mods for the druid as a Stanford::Mods::Record object
-  # @param [String] druid, e.g. ab123cd4567
   # @return [Stanford::Mods::Record] created from the MODS xml for the druid
-  def mods druid
+  def smods_rec
     if @mods_rec.nil?
-      ng_doc = @harvestdor_client.mods druid
+      ng_doc = @harvestdor_client.mods @druid
       raise "Empty MODS metadata for #{druid}: #{ng_doc.to_xml}" if ng_doc.root.xpath('//text()').empty?
       @mods_rec = Stanford::Mods::Record.new
       @mods_rec.from_nk_node(ng_doc.root)
@@ -116,10 +115,9 @@ class SolrDocBuilder
   end
   
   # the public_xml for the druid as a Nokogiri::XML::Document object
-  # @param [String] druid, e.g. ab123cd4567
   # @return [Nokogiri::XML::Document] containing the public xml for the druid
-  def public_xml druid
-    @public_xml ||= @harvestdor_client.public_xml druid
+  def public_xml 
+    @public_xml ||= @harvestdor_client.public_xml @druid
   end
 
 end # SolrDocBuilder class
