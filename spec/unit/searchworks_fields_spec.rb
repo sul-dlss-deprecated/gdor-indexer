@@ -6,24 +6,37 @@ describe 'SearchworksFields mixin for SolrDocBuilder class' do
 
   before(:all) do
     @fake_druid = 'oo000oo0000'
-    @smr = Stanford::Mods::Record.new
     @ns_decl = "xmlns='#{Mods::MODS_NS}'"
-    @cmd_type = 'image'
-    @cmd_xml = "<contentMetadata type='#{@cmd_type}' objectId='#{@fake_druid}'></contentMetadata>"
-    @pub_xml = "<publicObject id='druid:#{@fake_druid}'>#{@cmd_xml}</publicObject>"
-    @sdb = SolrDocBuilder.new(@fake_druid, @smr, Nokogiri::XML(@pub_xml), Logger.new(STDOUT))
+    @ng_mods_xml = Nokogiri::XML("<mods #{@ns_decl}><note>hi</note></mods>")
   end
-
+    
+  # NOTE:  
+  # "Doubles, stubs, and message expectations are all cleaned out after each example."
+  # per https://www.relishapp.com/rspec/rspec-mocks/docs/scope
+  
   context "fields from and methods pertaining to contentMetadata" do
+    before(:all) do
+      @cntnt_md_type = 'image'
+      @cntnt_md_xml = "<contentMetadata type='#{@cntnt_md_type}' objectId='#{@fake_druid}'></contentMetadata>"
+      @pub_xml = "<publicObject id='druid:#{@fake_druid}'>#{@cntnt_md_xml}</publicObject>"
+      @ng_pub_xml = Nokogiri::XML(@pub_xml)
+    end
+    before(:each) do
+      @hdor_client = double()
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+      @hdor_client.stub(:public_xml).with(@fake_druid).and_return(@ng_pub_xml)
+      @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+    end
+
     it "content_md should get the contentMetadata from the public_xml" do
       content_md = @sdb.send(:content_md)
       content_md.should be_an_instance_of(Nokogiri::XML::Element)
       content_md.name.should == 'contentMetadata'
 # NOTE:  the below isn't working -- probably due to Nokogiri attribute bug introduced      
-  #    content_md.should be_equivalent_to(@cmd_xml)
+  #    content_md.should be_equivalent_to(@cntnt_md_xml)
     end
     it "dor_content_type should be the value of the type attribute on the contentMetadata element" do
-      @sdb.send(:dor_content_type).should == @cmd_type
+      @sdb.send(:dor_content_type).should == @cntnt_md_type
     end
     
     context "format" do
@@ -45,7 +58,8 @@ describe 'SearchworksFields mixin for SolrDocBuilder class' do
             <fedora:isMemberOfCollection rdf:resource='info:fedora/druid:#{coll_druid}'/>
           </rdf:Description></rdf:RDF>"
         pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{rels_ext_xml}</publicObject>")
-        @sdb = SolrDocBuilder.new(@fake_druid, @smr, pub_xml, nil)
+        @hdor_client.stub(:public_xml).with(@fake_druid).and_return(Nokogiri::XML(pub_xml))
+        @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
         @sdb.collection_druids.should == [coll_druid]
       end
       it "collection_druids should get multiple collection druids when they exist" do
@@ -57,7 +71,7 @@ describe 'SearchworksFields mixin for SolrDocBuilder class' do
             <fedora:isMemberOfCollection rdf:resource='info:fedora/druid:#{coll_druid2}'/>
           </rdf:Description></rdf:RDF>"
         pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{rels_ext_xml}</publicObject>")
-        @sdb = SolrDocBuilder.new(@fake_druid, @smr, pub_xml, nil)
+        @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
         @sdb.collection_druids.should == [coll_druid, coll_druid2]
       end
       it "collection_druids should be nil when no isMemberOf relationships exist" do
@@ -66,7 +80,7 @@ describe 'SearchworksFields mixin for SolrDocBuilder class' do
           <rdf:Description rdf:about='info:fedora/druid:#{@fake_druid}'>
           </rdf:Description></rdf:RDF>"
         pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{rels_ext_xml}</publicObject>")
-        @sdb = SolrDocBuilder.new(@fake_druid, @smr, pub_xml, nil)
+        @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
         @sdb.collection_druids.should == nil
       end
     end
@@ -83,14 +97,14 @@ describe 'SearchworksFields mixin for SolrDocBuilder class' do
       it "should be 'collection' if solr_doc_builder.collection?" do
         coll_mods_xml = "<mods #{@ns_decl}><typeOfResource collection='yes'/></mods>"
         @smr.from_str coll_mods_xml
-        sdb = SolrDocBuilder.new(@fake_druid, @smr, Nokogiri::XML(@pub_xml), nil)
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
         sdb.display_type.should == 'collection'
       end
       it "should be the same as <contentMetadata> type attribute if it's not a collection" do
         # NOTE: from the contentMetadata, not the mods
         m = "<mods #{@ns_decl}><typeOfResource>sound recording</typeOfResource></mods>"
         @smr.from_str m
-        sdb = SolrDocBuilder.new(@fake_druid, @smr, Nokogiri::XML(@pub_xml), nil)
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
         @sdb.display_type.should == @cmd_type
         @sdb.stub(:dor_content_type).and_return('bogus')
         @sdb.display_type.should == 'bogus'
@@ -101,27 +115,11 @@ describe 'SearchworksFields mixin for SolrDocBuilder class' do
         @sdb.display_type
       end
     end
-  end
+  end # fields from and methods pertaining to contentMetadata
+  
+  # --------------------------------------------------------------------------------------
 
   context "pub date fields" do
-    before(:all) do
-      title_mods = "<mods xmlns='#{Mods::MODS_NS}'>
-                      <titleInfo>
-                        <title>Jerk</title>
-                        <subTitle>A Tale of Tourettes</subTitle>
-                        <nonSort>The</nonSort>
-                      </titleInfo>
-                      <titleInfo type='alternative'>
-                        <title>ta da!</title>
-                      </titleInfo>
-                      <titleInfo type='alternative'>
-                        <title>and again</title>
-                      </titleInfo>
-                    </mods>"
-      @smr.from_str(title_mods)
-      @sdb = SolrDocBuilder.new(@fake_druid, @smr, nil, nil)
-    end
-  
     it "pub_date" do
       pending "to be implemented"
     end
