@@ -1,8 +1,5 @@
 require 'spec_helper'
-require 'stanford-mods'
-require 'nokogiri'
 require 'rsolr'
-require 'equivalent-xml'
 
 describe Indexer do
   
