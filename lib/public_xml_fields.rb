@@ -27,7 +27,7 @@ class SolrDocBuilder
     end
   end
 
-# FIXME:  this should be a hash  coll druid => coll title!
+  # get the druids from isMemberOfCollection relationships in rels-ext from public_xml
   # @return [Array<String>] the druids (e.g. ww123yy1234) this object has isMemberOfColletion relationship with
   def collection_druids
 # TODO: create nom-xml terminology for rels-ext in harvestdor?
@@ -44,13 +44,6 @@ class SolrDocBuilder
     end
   end
   
-  # NAOMI_MUST_COMMENT_THIS_METHOD
-  def collection_titles
-    # from collection object identity metadata ->  public_xml for collection druid or argo Solr?
-    #collections[:names] << "#{id}-|-#{r["response"]["docs"][0]["obj_label_t"]}"
-  end
-
-
   protected #---------------------------------------------------------------------
   
   # the value of the type attribute for a DOR object's contentMetadata

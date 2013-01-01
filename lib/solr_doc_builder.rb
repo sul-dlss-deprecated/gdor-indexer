@@ -1,7 +1,7 @@
 require 'logger'
 
 require 'harvestdor'
-require 'searchworks_fields'
+require 'public_xml_fields'
 require 'stanford-mods'
 require 'stanford-mods/searchworks'
 
@@ -77,7 +77,7 @@ class SolrDocBuilder
       :author_person_display => @smods_rec.sw_person_authors,
       :author_person_full_display => @smods_rec.sw_person_authors,
 
-      # TO DO?  iterate over all methods in searchworks_fields mixins
+      # TO DO?  iterate over all methods in public_xml_fields mixins
     }
 # FIXME:  this should be a method mods_el_vals(mods_term_name)    
     vals = []

@@ -222,7 +222,7 @@ describe SolrDocBuilder do
     it "should have an access_facet value of 'Online'" do
       @doc_hash[:access_facet].should == 'Online'
     end
-    it "should call the appropriate methods in searchworks_fields" do
+    it "should call the appropriate methods in public_xml_fields" do
       sdb = SolrDocBuilder.new(@fake_druid, @hc, nil) 
       sdb.should_receive(:display_type)
       sdb.addl_hash_fields
