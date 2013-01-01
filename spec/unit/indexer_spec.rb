@@ -37,16 +37,99 @@ describe Indexer do
     end
   end
   
-  context "sw_solr_doc fields" do
-# FIXME: these should all be tests that solrdocbuilder methods are called
+  context "identity_md_obj_label" do
     before(:all) do
-      smr = Stanford::Mods::Record.new
-      smr.from_str '<mods><note>hi</note></mods>'
-#      @doc_hash = @indexer.sw_solr_doc(@fake_druid)
+      @coll_title = "My Collection Has a Lovely Title"
+      @ng_id_md_xml = Nokogiri::XML("<identityMetadata><objectLabel>#{@coll_title}</objectLabel></identityMetadata>")
     end
+    before(:each) do
+      @hclient.stub(:identity_metadata).with(@fake_druid).and_return(@ng_id_md_xml)
+    end
+    it "should retrieve the identityMetadata via the harvestdor client" do
+      @hclient.should_receive(:identity_metadata).with(@fake_druid)
+      @indexer.identity_md_obj_label(@fake_druid)
+    end
+    it "should get the value of the objectLabel element in the identityMetadata" do
+      @indexer.identity_md_obj_label(@fake_druid).should == @coll_title
+    end
+  end
+  
+  context "sw_solr_doc fields" do
+    context "coll_hash (which maps coll druids to coll titles without extra calls to purl server)" do
+      before(:all) do
+        @ns_decl = "xmlns='#{Mods::MODS_NS}'"
+        @coll_druid = 'ww121ss5000'
+        rels_ext_xml = "<rdf:RDF  xmlns:fedora='info:fedora/fedora-system:def/relations-external#' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
+          <rdf:Description rdf:about='info:fedora/druid:#{@fake_druid}'>
+            <fedora:isMemberOfCollection rdf:resource='info:fedora/druid:#{@coll_druid}'/>
+          </rdf:Description></rdf:RDF>"
+        @pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{rels_ext_xml}</publicObject>")
+        @coll_title = "My Collection Has an Interesting Title"
+      end
+      before(:each) do
+        @hclient.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML("<mods #{@ns_decl}><note>hi</note></mods>"))
+        @hclient.stub(:public_xml).with(@fake_druid).and_return(@pub_xml)
+        @indexer.stub(:identity_md_obj_label).with(@coll_druid).and_return(@coll_title)
+      end
+      it "should add any missing druids" do
+        @indexer.coll_hash.keys.should == []
+        @indexer.sw_solr_doc(@fake_druid)
+        @indexer.coll_hash.keys.should == [@coll_druid]
+      end
+      it "should retrieve missing collection titles via identity_md_obj_label" do
+        @indexer.sw_solr_doc(@fake_druid)
+        @indexer.coll_hash[@coll_druid].should == @coll_title
+      end
+      it "should be used to add collection field to solr doc" do
+        doc_hash = @indexer.sw_solr_doc(@fake_druid)
+        doc_hash[:collection].should == [@coll_druid]
+      end
+      it "should add two collection field values when object belongs to two collections" do
+        item_druid = 'oo123oo4567'
+        coll_druid1 = 'oo111oo2222'
+        coll_druid2 = 'oo333oo4444'
+        rels_ext_xml = "<rdf:RDF  xmlns:fedora='info:fedora/fedora-system:def/relations-external#' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
+          <rdf:Description rdf:about='info:fedora/druid:#{item_druid}'>
+            <fedora:isMemberOfCollection rdf:resource='info:fedora/druid:#{coll_druid1}'/>
+            <fedora:isMemberOfCollection rdf:resource='info:fedora/druid:#{coll_druid2}'/>
+          </rdf:Description></rdf:RDF>"
+        pub_xml = Nokogiri::XML("<publicObject id='druid:#{item_druid}'>#{rels_ext_xml}</publicObject>")
+        @hclient.stub(:public_xml).with(item_druid).and_return(pub_xml)
+        @hclient.stub(:mods).with(item_druid).and_return(Nokogiri::XML("<mods #{@ns_decl}><note>hi</note></mods>"))
+        @indexer.stub(:identity_md_obj_label).with(coll_druid1).and_return('foo')
+        @indexer.stub(:identity_md_obj_label).with(coll_druid2).and_return('bar')
+        doc_hash = @indexer.sw_solr_doc(item_druid)
+        doc_hash[:collection].should == [coll_druid1, coll_druid2]
+        doc_hash[:collection_with_title].should == ["#{coll_druid1}-|-foo", "#{coll_druid2}-|-bar"]
+      end
+      it "should add no collection field values if there are none" do
+        item_druid = 'oo123oo4567'
+        rels_ext_xml = "<rdf:RDF  xmlns:fedora='info:fedora/fedora-system:def/relations-external#' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
+          <rdf:Description rdf:about='info:fedora/druid:#{item_druid}'>
+          </rdf:Description></rdf:RDF>"
+        pub_xml = Nokogiri::XML("<publicObject id='druid:#{item_druid}'>#{rels_ext_xml}</publicObject>")
+        @hclient.stub(:public_xml).with(item_druid).and_return(pub_xml)
+        @hclient.stub(:mods).with(item_druid).and_return(Nokogiri::XML("<mods #{@ns_decl}><note>hi</note></mods>"))
+        doc_hash = @indexer.sw_solr_doc(item_druid)
+        doc_hash[:collection].should == nil
+        doc_hash[:collection_with_title].should == nil
+      end
+      it "should be used to add collection_with_title field to solr doc" do
+        doc_hash = @indexer.sw_solr_doc(@fake_druid)
+        doc_hash[:collection_with_title].should == ["#{@coll_druid}-|-#{@coll_title}"]
+      end
+    end
+   
+# FIXME: these should all be tests that solrdocbuilder methods are called
     
     # see https://consul.stanford.edu/display/NGDE/Required+and+Recommended+Solr+Fields+for+SearchWorks+documents
     context "DOR specific" do
+      before(:all) do
+        smr = Stanford::Mods::Record.new
+        smr.from_str '<mods><note>hi</note></mods>'
+  #      @doc_hash = @indexer.sw_solr_doc(@fake_druid)
+      end
+
       it "should have a druid field" do
         pending
         @doc_hash[:druid].should == @fake_druid

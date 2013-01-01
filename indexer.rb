@@ -30,6 +30,12 @@ class Indexer
   def druids
     @druids ||= harvestdor_client.druids_via_oai
   end
+
+  # coll_hash is in the indexer so each item doesn't need to look up the collection title -- we only look it up once per harvest.
+  # @return [Hash<String, String>] collection druids as keys, and the objectLabel from the collection's identityMetadata as the value
+  def coll_hash
+    @coll_hash ||= {}
+  end
   
   # Create a Solr doc, as a Hash, to be added to the SearchWorks Solr index.  
   # Solr doc contents are based on the mods, contentMetadata, etc. for the druid
@@ -40,6 +46,21 @@ class Indexer
 # FIXME: this needs work   
     sdb = SolrDocBuilder.new(druid, harvestdor_client, logger)
     doc_hash = sdb.mods_to_doc_hash
+
+    # determine collection druids and their titles and add to solr doc
+    coll_druids = sdb.collection_druids
+    if coll_druids
+      doc_hash[:collection] = []
+      doc_hash[:collection_with_title] = []
+      sdb.collection_druids.each { |coll_druid|  
+        if !coll_hash.keys.include? coll_druid
+          @coll_hash[coll_druid] = identity_md_obj_label(coll_druid)
+        end
+        doc_hash[:collection] << coll_druid
+        doc_hash[:collection_with_title] << "#{coll_druid}-|-#{coll_hash[coll_druid]}"
+      }
+    end
+
     doc_hash[:access_facet] = 'Online'  
     doc_hash[:url_fulltext] = "#{config.purl}/#{druid}"
     doc_hash
@@ -47,6 +68,15 @@ class Indexer
     
   def solr_client
     @solr_client ||= RSolr.connect(config.solr.to_hash)
+  end
+  
+  # given a druid, get its objectLabel from its purl page identityMetadata
+  # @param [String] druid, e.g. ab123cd4567
+  # @return [String] the value of the <objectLabel> element in the identityMetadata for the object
+  def identity_md_obj_label druid
+    ng_imd = harvestdor_client.identity_metadata druid
+    # TODO: create nom-xml terminology for identityMetadata in harvestdor?
+    ng_imd.xpath('identityMetadata/objectLabel').text
   end
 
   protected #---------------------------------------------------------------------
