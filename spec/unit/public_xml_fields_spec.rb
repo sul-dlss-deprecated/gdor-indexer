@@ -50,6 +50,35 @@ describe 'SearchworksFields mixin for SolrDocBuilder class' do
       end
     end
     
+    context "display_type" do
+      it "should be 'collection' if solr_doc_builder.collection?" do
+        coll_mods_xml = "<mods #{@ns_decl}><typeOfResource collection='yes'/><note>hi</note></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(coll_mods_xml))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+        sdb.display_type.should == 'collection'
+      end
+      it "should be the same as <contentMetadata> type attribute if it's not a collection" do
+        # NOTE: from the contentMetadata, not the mods
+        m = "<mods #{@ns_decl}><typeOfResource>sound recording</typeOfResource></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+        sdb.display_type.should == @cntnt_md_type
+        sdb.stub(:dor_content_type).and_return('bogus')
+        sdb.display_type.should == 'bogus'
+      end
+      it "should log an error message if contentMetadata has no type" do
+        @sdb.stub(:dor_content_type).and_return(nil)
+        @sdb.logger.should_receive(:warn).with(/has no DOR content type/)
+        @sdb.display_type
+      end
+    end
+  end # fields from and methods pertaining to contentMetadata
+  
+  context "fields from and methods pertaining to rels-ext" do
+    before(:each) do
+      @hdor_client = double()
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+    end
     context "collection druids" do
       it "collection_druids look for the object's collection druids in the rels-ext in the public_xml" do
         coll_druid = 'ww121ss5000'
@@ -85,39 +114,8 @@ describe 'SearchworksFields mixin for SolrDocBuilder class' do
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
         sdb.collection_druids.should == nil
       end
-    end
-    context "collection_titles" do
-      it "should be the value of collection's identityMetadata objectLabel" do
-        pending "to be implemented"
-      end
-      it "should be retrieved via the collection object's purl page" do
-        pending "to be implemented"
-      end
-    end
-    
-    context "display_type" do
-      it "should be 'collection' if solr_doc_builder.collection?" do
-        coll_mods_xml = "<mods #{@ns_decl}><typeOfResource collection='yes'/><note>hi</note></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(coll_mods_xml))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
-        sdb.display_type.should == 'collection'
-      end
-      it "should be the same as <contentMetadata> type attribute if it's not a collection" do
-        # NOTE: from the contentMetadata, not the mods
-        m = "<mods #{@ns_decl}><typeOfResource>sound recording</typeOfResource></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
-        sdb.display_type.should == @cntnt_md_type
-        sdb.stub(:dor_content_type).and_return('bogus')
-        sdb.display_type.should == 'bogus'
-      end
-      it "should log an error message if contentMetadata has no type" do
-        @sdb.stub(:dor_content_type).and_return(nil)
-        @sdb.logger.should_receive(:warn).with(/has no DOR content type/)
-        @sdb.display_type
-      end
-    end
-  end # fields from and methods pertaining to contentMetadata
+    end # collection druids    
+  end # fields from and methods pertaining to rels-ext
   
   # --------------------------------------------------------------------------------------
 
