@@ -30,7 +30,7 @@ class SolrDocBuilder
 # FIXME:  this should be a hash  coll druid => coll title!
   # @return [Array<String>] the druids (e.g. ww123yy1234) this object has isMemberOfColletion relationship with
   def collection_druids
-# create nom-xml terminology for rels-ext in harvestdor?
+# TODO: create nom-xml terminology for rels-ext in harvestdor?
     @collection_druids ||= begin
       ns_hash = {'rdf' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#', 'fedora' => "info:fedora/fedora-system:def/relations-external#", '' => ''}
       is_member_of_nodes ||= public_xml.xpath('/publicObject/rdf:RDF/rdf:Description/fedora:isMemberOfCollection/@rdf:resource', ns_hash)
