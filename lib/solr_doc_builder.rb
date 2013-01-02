@@ -85,10 +85,12 @@ class SolrDocBuilder
       vals << n.text unless n.text.empty?
     }
     doc_hash[:access_condition_display] = vals unless vals.empty?
+    
 # FIXME: here or in special collection fields method    
     if collection?
       doc_hash[:collection_type] = 'Digital Collection'
     end
+    
     doc_hash
   end
   
@@ -100,6 +102,8 @@ class SolrDocBuilder
 # FIXME:  here? or elsewhere?
       :display_type => display_type,  
     }
+    doc_hash[:img_info] = image_ids unless !image_ids
+    doc_hash
   end
   
   # return the mods for the druid as a Stanford::Mods::Record object

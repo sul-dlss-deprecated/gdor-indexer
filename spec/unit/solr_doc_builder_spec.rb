@@ -36,13 +36,13 @@ describe SolrDocBuilder do
     end
     
     context "collection_type" do
-      it "should be 'Digital Collection' if the object is a collection" do
+      it "should be 'Digital Collection' if MODS has <typeOfResource collection='yes'/>" do
         coll_mods_xml = "<mods #{@ns_decl}><typeOfResource collection='yes'/><note>hi</note></mods>"
         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(coll_mods_xml))
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
         sdb.mods_to_doc_hash[:collection_type].should == 'Digital Collection'
       end
-      it "should not be present if the object is not a collection" do
+      it "should not be present if if MODS doesn't have <typeOfResource collection='yes'/>" do
         @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
         sdb.mods_to_doc_hash[:collection_type].should == nil
@@ -74,7 +74,7 @@ describe SolrDocBuilder do
         sdb.mods_to_doc_hash[:access_condition_display].should == nil
       end
     end
-
+    
     context "title fields" do
       before(:all) do
         title_mods = "<mods #{@ns_decl}>
@@ -217,7 +217,7 @@ describe SolrDocBuilder do
       @hc = double
       @hc.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
       @hc.stub(:public_xml).with(@fake_druid).and_return(@ng_pub_xml)
-      @doc_hash = SolrDocBuilder.new(@fake_druid, @hc, nil) .addl_hash_fields
+      @doc_hash = SolrDocBuilder.new(@fake_druid, @hc, nil).addl_hash_fields
     end
     it "should have an access_facet value of 'Online'" do
       @doc_hash[:access_facet].should == 'Online'
@@ -225,9 +225,20 @@ describe SolrDocBuilder do
     it "should call the appropriate methods in public_xml_fields" do
       sdb = SolrDocBuilder.new(@fake_druid, @hc, nil) 
       sdb.should_receive(:display_type)
+      sdb.should_receive(:image_ids)
       sdb.addl_hash_fields
     end
-  end
+    context "img_info" do
+      it "should have img_info as an Array of file ids from content metadata" do
+        ng_xml = Nokogiri::XML("<contentMetadata>
+              <resource type='image'><file id='foo'/></resource>
+              <resource type='image'><file id='bar'/></resource></contentMetadata>")
+        sdb = SolrDocBuilder.new(@fake_druid, @hc, nil) 
+        sdb.stub(:content_md).and_return(ng_xml.root)
+        sdb.addl_hash_fields[:img_info].should == ['foo', 'bar']
+      end
+    end
+  end  # addl_hash_fields
 
   context "collection?" do
     before(:each) do
