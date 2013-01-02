@@ -1,10 +1,10 @@
 # A mixin to the SolrDocBuilder class.
-# Methods for SearchWorks Solr field values
+# Methods for Solr field values determined from the DOR object's purl page public xml 
 class SolrDocBuilder
 
   # select one or more format values from the controlled vocabulary here:
   #   http://searchworks-solr-lb.stanford.edu:8983/solr/select?facet.field=format&rows=0&facet.sort=index
-  # based on the dor_content_type  and/or what's in the Mods
+  # based on the dor_content_type
   # @return [String] value in the SearchWorks controlled vocabulary
   def format
     # information on DOR content types:
@@ -17,6 +17,9 @@ class SolrDocBuilder
   end
   
   #  TODO:  ask Jessie if this Solr field is still used by SearchWorks
+  # information on DOR content types:
+  #   https://consul.stanford.edu/display/chimera/DOR+content+types%2C+resource+types+and+interpretive+metadata
+  # @return [String] 'collection' or DOR content type
   def display_type
     if collection?
       'collection'
@@ -26,9 +29,23 @@ class SolrDocBuilder
       logger.warn "Object #{druid} has no DOR content type (possibly missing type attribute on <contentMetadata> element)"
     end
   end
+  
+  # Retrieve the image file ids from the contentMetadata: xpath  contentMetadata/resource[@type='image']/file/@id
+  #  but with jp2 file extension stripped off.
+  # @return [Array<String>] the ids of the image files, without file type extension (e.g. 'W188_000002_300')
+  def image_ids
+    @image_ids ||= begin
+      ids = []
+      content_md.xpath('./resource[@type="image"]/file/@id').each { |node|
+        ids << node.text.gsub(".jp2", '')
+      }
+      return nil if ids.empty?
+      ids
+    end
+  end
 
   # get the druids from isMemberOfCollection relationships in rels-ext from public_xml
-  # @return [Array<String>] the druids (e.g. ww123yy1234) this object has isMemberOfColletion relationship with
+  # @return [Array<String>] the druids (e.g. ww123yy1234) this object has isMemberOfColletion relationship with, or nil if none
   def collection_druids
 # TODO: create nom-xml terminology for rels-ext in harvestdor?
     @collection_druids ||= begin

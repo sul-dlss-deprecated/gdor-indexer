@@ -35,6 +35,7 @@ describe 'SearchworksFields mixin for SolrDocBuilder class' do
 # NOTE:  the below isn't working -- probably due to Nokogiri attribute bug introduced      
   #    content_md.should be_equivalent_to(@cntnt_md_xml)
     end
+    
     it "dor_content_type should be the value of the type attribute on the contentMetadata element" do
       @sdb.send(:dor_content_type).should == @cntnt_md_type
     end
@@ -72,6 +73,57 @@ describe 'SearchworksFields mixin for SolrDocBuilder class' do
         @sdb.display_type
       end
     end
+    
+    context "image_ids" do
+      before(:all) do
+        @content_md_start = "<contentMetadata objectId='#{@fake_druid}'>"
+        @content_md_end = "</contentMetadata>"
+      end
+      before(:each) do
+        @hdor_client = double()
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+        @hdor_client.stub(:public_xml).with(@fake_druid).and_return(nil)
+        @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+      end
+      it "should be nil if there are no <resource> elements in the contentMetadata" do
+        ng_xml = Nokogiri::XML("#{@content_md_start}#{@content_md_end}")
+        @sdb.stub(:content_md).and_return(ng_xml.root)
+        @sdb.image_ids.should == nil
+      end
+      it "should ignore <resource> elements with attribute type other than 'image'" do
+        ng_xml = Nokogiri::XML("#{@content_md_start}<resource type='blarg'><file id='foo'/></resource>#{@content_md_end}")
+        @sdb.stub(:content_md).and_return(ng_xml.root)
+        @sdb.image_ids.should == nil
+      end
+      it "should be ignore all but <file> element children of the image resource element" do
+        ng_xml = ng_xml = Nokogiri::XML("#{@content_md_start}<resource type='image'><label id='foo'>bar</label></resource>#{@content_md_end}")
+        @sdb.stub(:content_md).and_return(ng_xml.root)
+        @sdb.image_ids.should == nil
+      end
+      it "should be nil if there are no id elements on file elements" do
+        ng_xml = Nokogiri::XML("#{@content_md_start}<resource type='image'><file/></resource>#{@content_md_end}")
+        @sdb.stub(:content_md).and_return(ng_xml.root)
+        @sdb.image_ids.should == nil
+      end
+      it "should be an Array of size one if there is a single <resource><file id='something'> in the content metadata" do
+        ng_xml = Nokogiri::XML("#{@content_md_start}<resource type='image'><file id='foo'/></resource>#{@content_md_end}")
+        @sdb.stub(:content_md).and_return(ng_xml.root)
+        @sdb.image_ids.should == ['foo']
+      end
+      it "should be the same size as the number of <resource><file id='something'> in the content metadata" do
+        ng_xml = Nokogiri::XML("#{@content_md_start}
+              <resource type='image'><file id='foo'/></resource>
+              <resource type='image'><file id='bar'/></resource>#{@content_md_end}")
+        @sdb.stub(:content_md).and_return(ng_xml.root)
+        @sdb.image_ids.should == ['foo', 'bar']
+      end
+      it "endings of .jp2 should be stripped" do
+        ng_xml = Nokogiri::XML("#{@content_md_start}<resource type='image'><file id='W188_000001_300.jp2'/></resource>#{@content_md_end}")
+        @sdb.stub(:content_md).and_return(ng_xml.root)
+        @sdb.image_ids.should == ['W188_000001_300']
+      end
+    end
+    
   end # fields from and methods pertaining to contentMetadata
   
   context "fields from and methods pertaining to rels-ext" do
