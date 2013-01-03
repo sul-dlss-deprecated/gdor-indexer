@@ -2,7 +2,7 @@ require 'spec_helper'
 # FIXME:  should all these be required, chain-wise, in Indexer class?
 require 'public_xml_fields'
 
-describe 'SearchworksFields mixin for SolrDocBuilder class' do
+describe 'public_xml_fields mixin for SolrDocBuilder class' do
 
   before(:all) do
     @fake_druid = 'oo000oo0000'
