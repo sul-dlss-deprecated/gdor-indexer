@@ -7,11 +7,12 @@ class SolrDocBuilder
   #   mods/subject/topic
   # @return [Array<String>] values for the topic_search Solr field for this document or nil if none
   def topic_search
-    vals = []
-    @smods_rec.accessCondition.each { |n| 
-      vals << n.text unless n.text.empty?
+    vals = mods_values(:genre)
+    # FIXME:  want convenience method for multi-level nodes???
+    @smods_rec.subject.topic.each { |n| 
+      vals << n.text unless n.text.empty? 
     }
-    doc_hash[:access_condition_display] = vals unless vals.empty?
+    vals
   end
   
   # subject search fields

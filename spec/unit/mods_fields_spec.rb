@@ -44,41 +44,25 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
     end
     before(:each) do
       @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods)      
-      @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+      @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
     end
     
     context "topic_search" do
       it "should contain subject <topic> element data" do
-        pending "to be implemented"
         @sdb.topic_search.should include(@topic)
       end
       it "should contain <genre> element data" do
-        pending "to be implemented"
         @sdb.topic_search.should include(@genre)
       end
-      it "should not contain subject <cartographics> element data" do
-        pending "to be implemented"
-      end
-      it "should not contain subject <geographic> element data" do
-        pending "to be implemented"
-      end
-      it "should not contain subject <geographicCode> element data" do
-        pending "to be implemented"
-      end
-      it "should not contain subject <hierarcicalGeographic> element data" do
-        pending "to be implemented"
-      end
-      it "should not contain *subject* <name> element data" do
-        pending "to be implemented"
-      end
-      it "should not contain subject <occupation> element data" do
-        pending "to be implemented"
-      end
-      it "should not contain subject <temporal> element data" do
-        pending "to be implemented"
-      end
-      it "should not contain *subject* <titleInfo> element data" do
-        pending "to be implemented"
+      it "should not contain other subject element data" do
+        @sdb.topic_search.should_not include(@cart_coord)
+        @sdb.topic_search.should_not include(@geo)
+        @sdb.topic_search.should_not include(@geo_code)
+        @sdb.topic_search.should_not include(@hier_geo_country)
+        @sdb.topic_search.should_not include(@s_name)
+        @sdb.topic_search.should_not include(@occupation)
+        @sdb.topic_search.should_not include(@temporal)
+        @sdb.topic_search.should_not include(@s_title)
       end
       # more refinements of genre elements (with authorities, etc?)
       # more refinements of topic elements ??
