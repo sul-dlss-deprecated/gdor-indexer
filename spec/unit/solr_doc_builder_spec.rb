@@ -135,7 +135,7 @@ describe SolrDocBuilder do
 
     context "author fields" do
       before(:all) do
-        name_mods = "<mods xmlns='#{Mods::MODS_NS}'>
+        name_mods = "<mods #{@ns_decl}>
                         <name type='personal'>
                           <namePart type='given'>John</namePart>
                           <namePart type='family'>Huston</namePart>
@@ -205,6 +205,49 @@ describe SolrDocBuilder do
         @author_doc_hash[:author_sort].should == "Crusty The Clown"
       end
     end # author fields
+
+    context "subject fields" do
+      before(:all) do
+        @genre = 'genre top level'
+        @cart_coord = '6 00 S, 71 30 E'
+        @s_genre = 'genre in subject'
+        @geo = 'Somewhere'
+        @geo_code = 'us'
+        @hier_geo_country = 'France'
+        @s_name = 'name in subject'
+        @occupation = 'worker bee'
+        @temporal = 'temporal'
+        @s_title = 'title in subject'
+        @topic = 'topic'
+        m = "<mods #{@ns_decl}>
+          <genre>#{@genre}</genre>
+          <subject><cartographics><coordinates>#{@cart_coord}</coordinates></cartographics></subject>
+          <subject><genre>#{@s_genre}</genre></subject>
+          <subject><geographic>#{@geo}</geographic></subject>
+          <subject><geographicCode authority='iso3166'>#{@geo_code}</geographicCode></subject>
+          <subject><hierarchicalGeographic><country>#{@hier_geo_country}</country></hierarchicalGeographic></subject>
+          <subject><name><namePart>#{@s_name}</namePart></name></subject>
+          <subject><occupation>#{@occupation}</occupation></subject>
+          <subject><temporal>#{@temporal}</temporal></subject>
+          <subject><titleInfo><title>#{@s_title}</title></titleInfo></subject>
+          <subject><topic>#{@topic}</topic></subject>      
+        </mods>"
+        @ng_subject_mods = Nokogiri::XML(m)
+      end
+      before(:each) do
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_subject_mods)
+        @subject_doc_hash = SolrDocBuilder.new(@fake_druid, @hdor_client, nil).mods_to_doc_hash        
+      end
+      it "should call the appropriate methods in mods_fields to populate the fields" do
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+        sdb.should_receive(:topic_search)
+        sdb.mods_to_doc_hash
+      end
+      it "topic_search" do
+        @subject_doc_hash[:topic_search].should == [@genre, @topic]
+      end
+    end
+    
   end # mods_to_doc_hash
   
   context "addl_hash_fields" do
