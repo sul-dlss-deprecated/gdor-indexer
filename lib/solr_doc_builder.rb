@@ -2,6 +2,7 @@ require 'logger'
 
 require 'harvestdor'
 require 'public_xml_fields'
+require 'mods_fields'
 require 'stanford-mods'
 require 'stanford-mods/searchworks'
 
@@ -76,20 +77,31 @@ class SolrDocBuilder
       :author_meeting_display => @smods_rec.sw_meeting_authors,
       :author_person_display => @smods_rec.sw_person_authors,
       :author_person_full_display => @smods_rec.sw_person_authors,
+      
+      # subject search fields
+      :topic_search => 'foo',  # genre, subject/topic
+      :geographic_search => 'foo', # subject/geographic, subject/hierarchicalGeographic,  (also translate subject/geographicCode ...)
+      :subject_other_search => 'foo', # subject/name, subject/occupation, subject/titleInfo 
+      :subject_other_subvy_search => 'foo', # subject/temporal, subject/genre
+      :subject_all_search => 'foo', # all of the above 
+      # subject facet fields
+      # remove trailing punct  [\\\\,;] --> in stanford-mods gem (?)
+      :topic_facet => 'foo',  # subject/name, subject/occupation, subject/titleInfo, subject/topic
+      :geographic_facet => 'foo', # subject/geographic, subject/hierarchicalGeographic,  (also translate subject/geographicCode ...)
+      :era_facet => 'foo', # subject/temporal
+
 
       # TO DO?  iterate over all methods in public_xml_fields mixins
     }
-# FIXME:  this should be a method mods_el_vals(mods_term_name)    
-    vals = []
-    @smods_rec.accessCondition.each { |n| 
-      vals << n.text unless n.text.empty?
-    }
-    doc_hash[:access_condition_display] = vals unless vals.empty?
+    vals =  mods_values(:accessCondition)
+    doc_hash[:access_condition_display] = vals if vals
     
 # FIXME: here or in special collection fields method    
     if collection?
       doc_hash[:collection_type] = 'Digital Collection'
     end
+    
+    # all_search
     
     doc_hash
   end
