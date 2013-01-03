@@ -77,7 +77,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
         </mods>"
         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-        sdb.topic_search.should == ["#{@topic}"]
+        sdb.topic_search.should == [@topic]
       end
       it "should not be nil if there are only <genre> elements (no subject/topic elements)" do
         m = "<mods #{@ns_decl}>
@@ -85,7 +85,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
         </mods>"
         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-        sdb.topic_search.should == ["#{@genre}"]
+        sdb.topic_search.should == [@genre]
       end
       context "topic subelement" do
         it "should have a separate value for each topic element" do
