@@ -93,7 +93,7 @@ class SolrDocBuilder
 
       # TO DO?  iterate over all methods in public_xml_fields mixins
     }
-    vals =  mods_values(:accessCondition)
+    vals =  @smods_rec.term_values(:accessCondition)
     doc_hash[:access_condition_display] = vals if vals
     
 # FIXME: here or in special collection fields method    
