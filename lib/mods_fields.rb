@@ -25,7 +25,7 @@ class SolrDocBuilder
     # FIXME:  want convenience method for multi-level nodes???
     @smods_rec.subject.temporal.each { |n| 
       vals << n.text unless n.text.empty? 
-      @logger.info("#{@druid} has subject temporal element with untranslated encoding: #{n.to_xml}") if n.encoding
+      @logger.info("#{@druid} has subject temporal element with untranslated encoding: #{n.to_xml}") unless n.encoding.empty?
     }
     @smods_rec.subject.genre.each { |n| 
       vals << n.text unless n.text.empty? 

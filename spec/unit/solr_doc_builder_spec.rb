@@ -236,17 +236,21 @@ describe SolrDocBuilder do
       end
       before(:each) do
         @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_subject_mods)
-        @subject_doc_hash = SolrDocBuilder.new(@fake_druid, @hdor_client, nil).mods_to_doc_hash        
+        @subject_doc_hash = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT)).mods_to_doc_hash
       end
       it "should call the appropriate methods in mods_fields to populate the fields" do
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
         sdb.should_receive(:topic_search)
+        sdb.should_receive(:subject_other_subvy_search)
         sdb.mods_to_doc_hash
       end
       it "topic_search" do
         @subject_doc_hash[:topic_search].should == [@genre, @topic]
       end
-    end
+      it "subject_other_subvy_search" do
+        @subject_doc_hash[:subject_other_subvy_search].should == [@temporal, @s_genre]
+      end
+    end # subject fields
     
   end # mods_to_doc_hash
   
