@@ -63,6 +63,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       end
       it "should not contain other subject element data" do
         @sdb.topic_search.should_not include(@cart_coord)
+        @sdb.topic_search.should_not include(@s_genre)
         @sdb.topic_search.should_not include(@geo)
         @sdb.topic_search.should_not include(@geo_code)
         @sdb.topic_search.should_not include(@hier_geo_country)
@@ -72,30 +73,29 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
         @sdb.topic_search.should_not include(@s_title)
       end
       it "should not be nil if there are only subject/topic elements (no <genre>)" do
-        m = "<mods #{@ns_decl}>
-          <subject><topic>#{@topic}</topic></subject>
-        </mods>"
+        m = "<mods #{@ns_decl}><subject><topic>#{@topic}</topic></subject></mods>"
         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
         sdb.topic_search.should == [@topic]
       end
       it "should not be nil if there are only <genre> elements (no subject/topic elements)" do
-        m = "<mods #{@ns_decl}>
-          <genre>#{@genre}</genre>
-        </mods>"
+        m = "<mods #{@ns_decl}><genre>#{@genre}</genre></mods>"
         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
         sdb.topic_search.should == [@genre]
       end
       context "topic subelement" do
         it "should have a separate value for each topic element" do
-          m = "<mods #{@ns_decl}><subject>
+          m = "<mods #{@ns_decl}>
+                <subject>
                   <topic>first</topic>
                   <topic>second</topic>
-                </subject></mods>"
+                </subject>
+                <subject><topic>third</topic></subject>
+              </mods>"
           @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-          sdb.topic_search.should == ['first', 'second']
+          sdb.topic_search.should == ['first', 'second', 'third']
         end
         it "should be nil if there are only empty values in the MODS" do
           m = "<mods #{@ns_decl}><subject><topic/></subject><note>notit</note></mods>"
@@ -106,6 +106,91 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       end
     end # topic_search
     
+    context "subject_other_subvy_search" do
+      it "should be nil if there are no values in the MODS" do
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_no_subject)
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+        sdb.subject_other_subvy_search.should == nil
+      end
+      it "should contain subject <temporal> subelement data" do
+        @sdb.subject_other_subvy_search.should include(@temporal)
+      end
+      it "should contain subject <genre> SUBelement data" do
+        @sdb.subject_other_subvy_search.should include(@s_genre)
+      end
+      it "should not contain other subject element data" do
+        @sdb.subject_other_subvy_search.should_not include(@genre)
+        @sdb.subject_other_subvy_search.should_not include(@cart_coord)
+        @sdb.subject_other_subvy_search.should_not include(@geo)
+        @sdb.subject_other_subvy_search.should_not include(@geo_code)
+        @sdb.subject_other_subvy_search.should_not include(@hier_geo_country)
+        @sdb.subject_other_subvy_search.should_not include(@s_name)
+        @sdb.subject_other_subvy_search.should_not include(@occupation)
+        @sdb.subject_other_subvy_search.should_not include(@topic)
+        @sdb.subject_other_subvy_search.should_not include(@s_title)
+      end
+      it "should not be nil if there are only subject/temporal elements (no subject/genre)" do
+        m = "<mods #{@ns_decl}><subject><temporal>#{@temporal}</temporal></subject></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+        sdb.subject_other_subvy_search.should == [@temporal]
+      end
+      it "should not be nil if there are only subject/genre elements (no subject/temporal)" do
+        m = "<mods #{@ns_decl}><subject><genre>#{@s_genre}</genre></subject></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+        sdb.subject_other_subvy_search.should == [@s_genre]
+      end
+      context "temporal subelement" do
+        it "should have a separate value for each temporal element" do
+          m = "<mods #{@ns_decl}>
+                <subject>
+                  <temporal>1890-1910</temporal>
+                	<temporal>20th century</temporal>
+                </subject>
+                <subject><temporal>another</temporal></subject>
+              </mods>"
+          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+          sdb.subject_other_subvy_search.should == ['1890-1910', '20th century', 'another']
+        end
+        it "should log an info message when it encounters an encoding it doesn't translate" do
+          m = "<mods #{@ns_decl}><subject><temporal encoding='iso8601'>197505</temporal></subject></mods>"
+          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+          sdb.logger.should_receive(:info).with(/#{@fake_druid} has subject temporal element with untranslated encoding: <temporal encoding=.*>197505<\/temporal>/)
+          sdb.subject_other_subvy_search
+        end
+        it "should be nil if there are only empty values in the MODS" do
+          m = "<mods #{@ns_decl}><subject><temporal/></subject><note>notit</note></mods>"
+          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+          sdb.subject_other_subvy_search.should == nil
+        end
+      end
+      context "genre subelement" do
+        it "should have a separate value for each genre element" do
+          m = "<mods #{@ns_decl}>
+                <subject>
+                  <genre>first</genre>
+                  <genre>second</genre>
+                </subject>
+                <subject><genre>third</genre></subject>
+              </mods>"
+          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+          sdb.subject_other_subvy_search.should == ['first', 'second', 'third']
+        end
+        it "should be nil if there are only empty values in the MODS" do
+          m = "<mods #{@ns_decl}><subject><genre/></subject><note>notit</note></mods>"
+          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+          sdb.subject_other_subvy_search.should == nil
+        end
+      end
+    end # subject_other_subvy_search
+
+
     context "topic" do
       before(:all) do
         m = "<mods #{@ns_decl}>

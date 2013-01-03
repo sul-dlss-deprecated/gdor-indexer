@@ -15,12 +15,29 @@ class SolrDocBuilder
     return nil if vals.empty?
     vals
   end
+
+  # Values are the contents of:
+  #   subject/temporal
+  #   subject/genre
+  # @return [Array<String>] values for the topic_search Solr field for this document or nil if none
+  def subject_other_subvy_search
+    vals = []
+    # FIXME:  want convenience method for multi-level nodes???
+    @smods_rec.subject.temporal.each { |n| 
+      vals << n.text unless n.text.empty? 
+      @logger.info("#{@druid} has subject temporal element with untranslated encoding: #{n.to_xml}") if n.encoding
+    }
+    @smods_rec.subject.genre.each { |n| 
+      vals << n.text unless n.text.empty? 
+    }
+    return nil if vals.empty?
+    vals
+  end
   
   # subject search fields
-#  :topic_search => 'foo',  # genre, subject/topic
+
 #  :geographic_search => 'foo', # subject/geographic, subject/hierarchicalGeographic,  (also translate subject/geographicCode ...)
 #  :subject_other_search => 'foo', # subject/name, subject/occupation, subject/titleInfo 
-#  :subject_other_subvy_search => 'foo', # subject/temporal, subject/genre
 #  :subject_all_search => 'foo', # all of the above 
   # subject facet fields
   # remove trailing punct  [\\\\,;] --> in stanford-mods gem (?)
