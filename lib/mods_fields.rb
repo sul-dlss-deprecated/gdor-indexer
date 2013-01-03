@@ -7,11 +7,12 @@ class SolrDocBuilder
   #   mods/subject/topic
   # @return [Array<String>] values for the topic_search Solr field for this document or nil if none
   def topic_search
-    vals = mods_values(:genre)
+    vals = mods_values(:genre) || []
     # FIXME:  want convenience method for multi-level nodes???
     @smods_rec.subject.topic.each { |n| 
       vals << n.text unless n.text.empty? 
     }
+    return nil if vals.empty?
     vals
   end
   
@@ -42,11 +43,8 @@ class SolrDocBuilder
         val << sep + n.text unless n.text.empty?
       }
     end
-    if val.empty?
-      nil
-    else
-      val.strip
-    end
+    return nil if val.strip.empty?
+    val.strip
   rescue NoMethodError
     @logger.error("#{@druid} tried to get mods_value for unknown message: #{message_sym}")
     nil
@@ -63,11 +61,8 @@ class SolrDocBuilder
         vals << n.text unless n.text.empty?
       }
     end
-    if vals.empty?
-      nil
-    else
-      vals
-    end
+    return nil if vals.empty?
+    vals
   rescue NoMethodError
     @logger.error("#{@druid} tried to get mods_values for unknown message: #{message_sym}")
     nil
