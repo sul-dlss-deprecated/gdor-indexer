@@ -21,28 +21,21 @@ class SolrDocBuilder
   #   subject/geographicCode  (only include the translated value if it isn't already present from other mods geo fields)
   # @return [Array<String>] values for the geographic_search Solr field for this document or nil if none
   def geographic_search
-    vals = @smods_rec.term_values([:subject, :geographic]) || []
-    gvals = @smods_rec.term_values([:subject, :hierarchicalGeographic])
-    vals.concat(gvals) if gvals
-    cvals = @smods_rec.subject.geographicCode.translated_value
-    if cvals
-      cvals.each { |val|  
-        vals << val if !vals.include?(val)
-      }
-    end
+    result = @smods_rec.sw_geographic_search
 
+# TODO:  this should go into stanford-mods ... but then we have to set that gem up with a Logger
     # print a message for any unrecognized encodings
+    xvals = @smods_rec.subject.geographicCode.translated_value
     codes = @smods_rec.term_values([:subject, :geographicCode]) 
-    if codes && codes.size > cvals.size
+    if codes && codes.size > xvals.size
       @smods_rec.subject.geographicCode.each { |n|
         if n.authority != 'marcgac' && n.authority != 'marccountry'
           @logger.info("#{@druid} has subject geographicCode element with untranslated encoding (#{n.authority}): #{n.to_xml}")
         end
       }
     end
-
-    return nil if vals.empty?
-    vals    
+    
+    result
   end
 
   # Values are the contents of:
@@ -65,7 +58,6 @@ class SolrDocBuilder
   
   # subject search fields
 
-#  :geographic_search => 'foo', # subject/geographic, subject/hierarchicalGeographic,  (also translate subject/geographicCode ...)
 #  :subject_other_search => 'foo', # subject/name, subject/occupation, subject/titleInfo 
 #  :subject_all_search => 'foo', # all of the above 
   # subject facet fields

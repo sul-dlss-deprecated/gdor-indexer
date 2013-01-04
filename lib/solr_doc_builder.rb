@@ -1,10 +1,9 @@
 require 'logger'
 
 require 'harvestdor'
-require 'public_xml_fields'
-require 'mods_fields'
 require 'stanford-mods'
-require 'stanford-mods/searchworks'
+require 'mods_fields'
+require 'public_xml_fields'
 
 # Class to build the Hash representing a Solr document for a particular druid
 class SolrDocBuilder

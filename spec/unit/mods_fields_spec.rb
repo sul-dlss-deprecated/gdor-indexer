@@ -1,6 +1,4 @@
 require 'spec_helper'
-# FIXME:  should all these be required, chain-wise, in Indexer class?
-require 'mods_fields'
 
 describe 'mods_fields mixin for SolrDocBuilder class' do
 
@@ -107,205 +105,19 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
     end # topic_search
     
     context "geographic_search" do
-      it "should be nil if there are no values in the MODS" do
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_no_subject)
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-        sdb.geographic_search.should == nil
-      end
-      it "should contain subject <geographic> subelement data" do
-        @sdb.geographic_search.should include(@geo)
-      end
-      it "should contain subject <hierarchicalGeographic> subelement data" do
-        @sdb.geographic_search.should include(@hier_geo_country)
-      end
-      it "should contain translation of <geographicCode> subelement data with translated authorities" do
-        m = "<mods #{@ns_decl}><subject><geographicCode authority='marcgac'>e-er</geographicCode></subject></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-        sdb.geographic_search.should include('Estonia')
-      end
-      it "should not contain other subject element data" do
-        @sdb.geographic_search.should_not include(@genre)
-        @sdb.geographic_search.should_not include(@cart_coord)
-        @sdb.geographic_search.should_not include(@s_genre)
-        @sdb.geographic_search.should_not include(@s_name)
-        @sdb.geographic_search.should_not include(@occupation)
-        @sdb.geographic_search.should_not include(@temporal)
-        @sdb.geographic_search.should_not include(@topic)
-        @sdb.geographic_search.should_not include(@s_title)
-      end
-      it "should not be nil if there are only subject/geographic elements" do
+      it "should call sw_geographic_search (from stanford-mods gem)" do
         m = "<mods #{@ns_decl}><subject><geographic>#{@geo}</geographic></subject></mods>"
         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-        sdb.geographic_search.should == [@geo]
+        sdb.smods_rec.should_receive(:sw_geographic_search)
+        sdb.geographic_search
       end
-      it "should not be nil if there are only subject/hierarchicalGeographic" do
-        m = "<mods #{@ns_decl}><subject><hierarchicalGeographic>#{@hier_geo_country}</hierarchicalGeographic></subject></mods>"
+      it "should log an info message when it encounters a geographicCode encoding it doesn't translate" do
+        m = "<mods #{@ns_decl}><subject><geographicCode authority='iso3166'>ca</geographicCode></subject></mods>"
         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-        sdb.geographic_search.should == [@hier_geo_country]
-      end
-      it "should not be nil if there are only subject/geographicCode elements" do
-        m = "<mods #{@ns_decl}><subject><geographicCode authority='marcgac'>e-er</geographicCode></subject></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-        sdb.geographic_search.should == ['Estonia']
-      end
-      context "geographic subelement" do
-        it "should have a separate value for each geographic element" do
-          m = "<mods #{@ns_decl}>
-                <subject>
-                <geographic>Mississippi</geographic>
-                <geographic>Tippah County</geographic>
-                </subject>
-                <subject><geographic>Washington (D.C.)</geographic></subject>
-              </mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-          sdb.geographic_search.should == ['Mississippi', 'Tippah County', 'Washington (D.C.)']
-        end
-        it "should be nil if there are only empty values in the MODS" do
-          m = "<mods #{@ns_decl}><subject><geographic/></subject><note>notit</note></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-          sdb.geographic_search.should == nil
-        end
-      end
-      context "hierarchicalGeographic subelement" do
-        before(:all) do
-          m = "<mods #{@ns_decl}>
-          <subject>
-            <hierarchicalGeographic>
-            	<country>Canada</country>
-            	<province>British Columbia</province>
-            	<city>Vancouver</city>
-            </hierarchicalGeographic>
-          </subject>
-          <subject>
-          	<hierarchicalGeographic>
-        	  	<country>France</country>
-        	  	<state>Doubs</state>
-          	</hierarchicalGeographic>
-          </subject>
-          <subject>
-          	<hierarchicalGeographic>
-        	  	<country>France</country>
-        	  	<region>Franche Comte</region>
-          	</hierarchicalGeographic>
-          </subject>        
-          <subject>
-          	<hierarchicalGeographic>
-        	  	<country>United States</country>
-        	  	<state>Kansas</state>
-        	  	<county>Butler</county>
-        	  	<city>Augusta</city>
-          	</hierarchicalGeographic>
-          </subject>
-          <subject>
-          	<hierarchicalGeographic>
-        	  	<area>Intercontinental areas (Western Hemisphere)</area>
-          	</hierarchicalGeographic>
-          </subject>
-          </mods>"
-        end
-        # sub elements!  should be cat together into a single value???
-        it "should do something sensible with the hierarchical information (sort of lcsh-ish?)" do
-          pending "to be implemented"
-        end
-        it "should have a separate value for each hierarchicalGeographic element" do
-          m = "<mods #{@ns_decl}>
-                <subject>
-                  <hierarchicalGeographic>first</hierarchicalGeographic>
-                  <hierarchicalGeographic>second</hierarchicalGeographic>
-                </subject>
-                <subject><hierarchicalGeographic>third</hierarchicalGeographic></subject>
-              </mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-          sdb.geographic_search.should == ['first', 'second', 'third']
-        end
-        it "should be nil if there are only empty values in the MODS" do
-          m = "<mods #{@ns_decl}><subject><hierarchicalGeographic/></subject><note>notit</note></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-          sdb.geographic_search.should == nil
-        end
-      end
-      context "geographicCode subelement" do
-        before(:all) do
-          @mods = "<mods #{@ns_decl}>
-            <subject><geographicCode authority='marcgac'>n-us-md</geographicCode></subject>
-            <subject><geographicCode authority='marcgac'>e-er</geographicCode></subject>
-            <subject><geographicCode authority='marccountry'>mg</geographicCode></subject>
-            <subject><geographicCode authority='iso3166'>us</geographicCode></subject>
-          </mods>"
-        end
-        before(:each) do
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(@mods))
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-          @geo_search_from_codes = sdb.geographic_search
-        end
-        it "should not add untranslated values" do
-          @geo_search_from_codes.should_not include('n-us-md')
-          @geo_search_from_codes.should_not include('e-er')
-          @geo_search_from_codes.should_not include('mg')
-          @geo_search_from_codes.should_not include('us')
-        end
-        it "should translate marcgac codes" do
-          @geo_search_from_codes.should include('Estonia')
-        end
-        it "should translate marccountry codes" do
-          @geo_search_from_codes.should include('Madagascar')
-        end
-        it "should not translate other codes" do
-          @geo_search_from_codes.should_not include('United States')
-        end
-        it "should have a separate value for each geographicCode element" do
-          m = "<mods #{@ns_decl}>
-                <subject>
-                  <geographicCode authority='marcgac'>e-er</geographicCode>
-                	<geographicCode authority='marccountry'>mg</geographicCode>
-                </subject>
-                <subject><geographicCode authority='marcgac'>n-us-md</geographicCode></subject>
-              </mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-          sdb.geographic_search.should == ['Estonia', 'Madagascar', 'Maryland']
-        end
-        it "should be nil if there are only empty values in the MODS" do
-          m = "<mods #{@ns_decl}><subject><geographicCode/></subject><note>notit</note></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-          sdb.geographic_search.should == nil
-        end
-        it "should add the translated value if it wasn't present already" do
-          m = "<mods #{@ns_decl}>
-            <subject><geographic>Somewhere</geographic></subject>
-            <subject><geographicCode authority='marcgac'>e-er</geographicCode></subject>
-          </mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-          sdb.geographic_search.size.should == 2
-          sdb.geographic_search.should include('Estonia')
-        end
-        it "should not add the translated value if it was already present" do
-          m = "<mods #{@ns_decl}>
-            <subject><geographic>Estonia</geographic></subject>
-            <subject><geographicCode authority='marcgac'>e-er</geographicCode></subject>
-          </mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-          sdb.geographic_search.size.should == 1
-          sdb.geographic_search.should == ['Estonia']
-        end
-        it "should log an info message when it encounters an encoding it doesn't translate" do
-          m = "<mods #{@ns_decl}><subject><geographicCode authority='iso3166'>ca</geographicCode></subject></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-          sdb.logger.should_receive(:info).with(/#{@fake_druid} has subject geographicCode element with untranslated encoding \(iso3166\): <geographicCode authority=.*>ca<\/geographicCode>/)
-          sdb.geographic_search
-        end
+        sdb.logger.should_receive(:info).with(/#{@fake_druid} has subject geographicCode element with untranslated encoding \(iso3166\): <geographicCode authority=.*>ca<\/geographicCode>/)
+        sdb.geographic_search
       end
     end # geographic_search
 

@@ -1,6 +1,4 @@
 require 'spec_helper'
-# FIXME:  should all these be required, chain-wise, in Indexer class?
-require 'public_xml_fields'
 
 describe 'public_xml_fields mixin for SolrDocBuilder class' do
 
