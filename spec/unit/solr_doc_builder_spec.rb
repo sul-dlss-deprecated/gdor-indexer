@@ -241,11 +241,15 @@ describe SolrDocBuilder do
       it "should call the appropriate methods in mods_fields to populate the fields" do
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
         sdb.should_receive(:topic_search)
+        sdb.should_receive(:geographic_search)
         sdb.should_receive(:subject_other_subvy_search)
         sdb.mods_to_doc_hash
       end
       it "topic_search" do
         @subject_doc_hash[:topic_search].should == [@genre, @topic]
+      end
+      it "geographic_search" do
+        @subject_doc_hash[:geographic_search].should == [@geo, @hier_geo_country]
       end
       it "subject_other_subvy_search" do
         @subject_doc_hash[:subject_other_subvy_search].should == [@temporal, @s_genre]

@@ -80,7 +80,7 @@ class SolrDocBuilder
       
       # subject search fields
       :topic_search => topic_search, 
-      :geographic_search => 'foo', # subject/geographic, subject/hierarchicalGeographic,  (also translate subject/geographicCode ...)
+      :geographic_search => geographic_search,
       :subject_other_search => 'foo', # subject/name, subject/occupation, subject/titleInfo 
       :subject_other_subvy_search => subject_other_subvy_search,
       :subject_all_search => 'foo', # all of the above 
