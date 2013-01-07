@@ -39,6 +39,22 @@ class SolrDocBuilder
   end
 
   # Values are the contents of:
+  #   subject/name
+  #   subject/occupation  - no subelements
+  #   subject/titleInfo
+  # @return [Array<String>] values for the subject_other_search Solr field for this document or nil if none
+  def subject_other_search
+    vals = @smods_rec.term_values([:subject, :occupation]) || []
+    nvals = @smods_rec.sw_subject_names
+    vals.concat(nvals) if nvals
+    tvals = @smods_rec.sw_subject_titles
+    vals.concat(tvals) if tvals
+
+    return nil if vals.empty?
+    vals
+  end
+
+  # Values are the contents of:
   #   subject/temporal
   #   subject/genre
   # @return [Array<String>] values for the subject_other_subvy_search Solr field for this document or nil if none
@@ -58,7 +74,6 @@ class SolrDocBuilder
   
   # subject search fields
 
-#  :subject_other_search => 'foo', # subject/name, subject/occupation, subject/titleInfo 
 #  :subject_all_search => 'foo', # all of the above 
   # subject facet fields
   # remove trailing punct  [\\\\,;] --> in stanford-mods gem (?)

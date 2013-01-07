@@ -242,6 +242,7 @@ describe SolrDocBuilder do
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
         sdb.should_receive(:topic_search)
         sdb.should_receive(:geographic_search)
+        sdb.should_receive(:subject_other_search)
         sdb.should_receive(:subject_other_subvy_search)
         sdb.mods_to_doc_hash
       end
@@ -250,6 +251,9 @@ describe SolrDocBuilder do
       end
       it "geographic_search" do
         @subject_doc_hash[:geographic_search].should == [@geo, @hier_geo_country]
+      end
+      it "subject_other_search" do
+        @subject_doc_hash[:subject_other_search].should == [@occupation, @s_name, @s_title]
       end
       it "subject_other_subvy_search" do
         @subject_doc_hash[:subject_other_subvy_search].should == [@temporal, @s_genre]

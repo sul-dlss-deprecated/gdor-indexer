@@ -120,6 +120,83 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
         sdb.geographic_search
       end
     end # geographic_search
+    
+    context "subject_other_search" do
+      it "should call sw_subject_names (from stanford-mods gem)" do
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods)
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+        sdb.smods_rec.should_receive(:sw_subject_names)
+        sdb.subject_other_search
+      end
+      it "should call sw_subject_titles (from stanford-mods gem)" do
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods)
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+        sdb.smods_rec.should_receive(:sw_subject_titles)
+        sdb.subject_other_search
+      end
+      it "should be nil if there are no values in the MODS" do
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_no_subject)
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+        sdb.subject_other_search.should == nil
+      end
+      it "should contain subject <name> SUBelement data" do
+        @sdb.subject_other_search.should include(@s_name)
+      end
+      it "should contain subject <occupation> subelement data" do
+        @sdb.subject_other_search.should include(@occupation)
+      end
+      it "should contain subject <titleInfo> SUBelement data" do
+        @sdb.subject_other_search.should include(@s_title)
+      end
+      it "should not contain other subject element data" do
+        @sdb.subject_other_search.should_not include(@genre)
+        @sdb.subject_other_search.should_not include(@cart_coord)
+        @sdb.subject_other_search.should_not include(@s_genre)
+        @sdb.subject_other_search.should_not include(@geo)
+        @sdb.subject_other_search.should_not include(@geo_code)
+        @sdb.subject_other_search.should_not include(@hier_geo_country)
+        @sdb.subject_other_search.should_not include(@temporal)
+        @sdb.subject_other_search.should_not include(@topic)
+      end
+      it "should not be nil if there are only subject/name elements" do
+        m = "<mods #{@ns_decl}><subject><name><namePart>#{@s_name}</namePart></name></subject></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+        sdb.subject_other_search.should == [@s_name]
+      end
+      it "should not be nil if there are only subject/occupation elements" do
+        m = "<mods #{@ns_decl}><subject><occupation>#{@occupation}</occupation></subject></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+        sdb.subject_other_search.should == [@occupation]
+      end
+      it "should not be nil if there are only subject/titleInfo elements" do
+        m = "<mods #{@ns_decl}><subject><titleInfo><title>#{@s_title}</title></titleInfo></subject></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+        sdb.subject_other_search.should == [@s_title]
+      end
+      context "occupation subelement" do
+        it "should have a separate value for each occupation element" do
+          m = "<mods #{@ns_decl}>
+                <subject>
+                  <occupation>first</occupation>
+                  <occupation>second</occupation>
+                </subject>
+                <subject><occupation>third</occupation></subject>
+              </mods>"
+          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+          sdb.subject_other_search.should == ['first', 'second', 'third']
+        end
+        it "should be nil if there are only empty values in the MODS" do
+          m = "<mods #{@ns_decl}><subject><occupation/></subject><note>notit</note></mods>"
+          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+          sdb.subject_other_search.should == nil
+        end
+      end
+    end # subject_other_search
 
     context "subject_other_subvy_search" do
       it "should be nil if there are no values in the MODS" do
