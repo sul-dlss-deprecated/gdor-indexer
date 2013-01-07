@@ -238,16 +238,21 @@ describe SolrDocBuilder do
         @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_subject_mods)
         @subject_doc_hash = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT)).mods_to_doc_hash
       end
-      it "should call the appropriate methods in mods_fields to populate the fields" do
+      it "should call the appropriate methods in mods_fields mixin to populate the Solr fields" do
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
         sdb.should_receive(:topic_search)
         sdb.should_receive(:geographic_search)
         sdb.should_receive(:subject_other_search)
         sdb.should_receive(:subject_other_subvy_search)
         sdb.should_receive(:subject_all_search)
+        sdb.should_receive(:topic_facet)
+        sdb.should_receive(:geographic_facet)
+        sdb.should_receive(:era_facet)
         sdb.mods_to_doc_hash
       end
       it "topic_search" do
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_subject_mods)
+        @subject_doc_hash = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT)).mods_to_doc_hash
         @subject_doc_hash[:topic_search].should == [@genre, @topic]
       end
       it "geographic_search" do
@@ -269,6 +274,18 @@ describe SolrDocBuilder do
         @subject_doc_hash[:subject_all_search].should include(@s_title)
         @subject_doc_hash[:subject_all_search].should include(@temporal)
         @subject_doc_hash[:subject_all_search].should include(@s_genre)
+      end
+      it "topic_facet" do
+        @subject_doc_hash[:topic_facet].should include(@topic)
+        @subject_doc_hash[:topic_facet].should include(@s_name)
+        @subject_doc_hash[:topic_facet].should include(@occupation)
+        @subject_doc_hash[:topic_facet].should include(@s_title)
+      end
+      it "geographic_facet" do
+        @subject_doc_hash[:geographic_facet].should include(@geo)
+      end
+      it "era_facet" do
+        @subject_doc_hash[:era_facet].should include(@temporal)
       end
     end # subject fields
     

@@ -83,12 +83,13 @@ class SolrDocBuilder
       :subject_other_search => subject_other_search, 
       :subject_other_subvy_search => subject_other_subvy_search,
       :subject_all_search => subject_all_search, 
-      # subject facet fields
-      # remove trailing punct  [\\\\,;] --> in stanford-mods gem (?)
-      :topic_facet => 'foo',  # subject/name, subject/occupation, subject/titleInfo, subject/topic
-      :geographic_facet => 'foo', # subject/geographic, subject/hierarchicalGeographic,  (also translate subject/geographicCode ...)
-      :era_facet => 'foo', # subject/temporal
+      :topic_facet => topic_facet,
+      :geographic_facet => geographic_facet,
+      :era_facet => era_facet,
 
+      # remaining
+      # all mods elements
+      #  all searchworks fields per sw_index.properties and  schema.xml
 
       # TO DO?  iterate over all methods in public_xml_fields mixins
     }
