@@ -85,7 +85,7 @@ describe SolrDocBuilder do
       end
     end
     
-    context "summary_search (MODS abstract)" do
+    context "<abstract> --> summary_search" do
       it "should be populated when the MODS has a top level <abstract> element" do
         m = "<mods #{@ns_decl}><abstract>blah blah</abstract></mods>"
         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
@@ -112,6 +112,12 @@ describe SolrDocBuilder do
         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
         sdb.doc_hash_from_mods[:summary_search].should ==  nil
+      end
+      it "summary_display should not be populated - it is a copy field" do
+        m = "<mods #{@ns_decl}><abstract>blah blah</abstract></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
+        sdb.doc_hash_from_mods[:summary_display].should == nil
       end
     end # summary_search / <abstract>
 
@@ -140,6 +146,39 @@ describe SolrDocBuilder do
         sdb.doc_hash_from_mods[:access_condition_display].should == nil
       end
     end
+    
+    context "<physicalDescription><extent> --> physical" do
+      it "should be populated when the MODS has mods/physicalDescription/extent element" do
+        m = "<mods #{@ns_decl}><physicalDescription><extent>blah blah</extent></physicalDescription></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
+        sdb.doc_hash_from_mods[:physical].should == ['blah blah']
+      end
+      it "should have a value for each extent element" do
+        m = "<mods #{@ns_decl}>
+              <physicalDescription>
+                <extent>one</extent>
+                <extent>two</extent>
+              </physicalDescription>
+              <physicalDescription><extent>three</extent></physicalDescription>
+            </mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
+        sdb.doc_hash_from_mods[:physical].should == ['one', 'two', 'three']
+      end
+      it "should not be present when there is no top level <physicalDescription> element" do
+        m = "<mods #{@ns_decl}><relatedItem><physicalDescription><extent>foo</extent></physicalDescription></relatedItem></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+        sdb.doc_hash_from_mods[:physical].should == nil
+      end
+      it "should not be present if there are only empty physicalDescription or extent elements in the MODS" do
+        m = "<mods #{@ns_decl}><physicalDescription/><physicalDescription><extent/></physicalDescription><note>notit</note></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
+        sdb.doc_hash_from_mods[:physical].should ==  nil
+      end      
+    end # physical field from physicalDescription/extent
 
     it "should call sw_language_facet in stanford-mods gem to populate language field" do
       @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
