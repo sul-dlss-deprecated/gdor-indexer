@@ -110,6 +110,14 @@ describe SolrDocBuilder do
         sdb.doc_hash_from_mods[:access_condition_display].should == nil
       end
     end
+
+    it "should call sw_language_facet in stanford-mods gem to populate language field" do
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+      smr = sdb.smods_rec
+      smr.should_receive(:sw_language_facet)
+      sdb.doc_hash_from_mods
+    end
     
     context "title fields" do
       before(:all) do
@@ -127,8 +135,8 @@ describe SolrDocBuilder do
       it "should call the appropriate methods in the stanford-mods gem to populate the fields" do
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
         smr = sdb.smods_rec
-        smr.should_receive(:sw_short_title).twice
-        smr.should_receive(:sw_full_title).exactly(3).times
+        smr.should_receive(:sw_short_title).at_least(:once)
+        smr.should_receive(:sw_full_title).at_least(:once)
         smr.should_receive(:sw_addl_titles)
         smr.should_receive(:sw_sort_title)
         sdb.doc_hash_from_mods

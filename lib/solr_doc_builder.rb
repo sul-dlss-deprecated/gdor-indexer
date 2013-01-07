@@ -106,8 +106,10 @@ class SolrDocBuilder
       :geographic_facet => geographic_facet,
       :era_facet => era_facet,
 
-      # remaining
-      # all mods elements
+      :language => @smods_rec.sw_language_facet,
+      
+      # remaining: go through all MODS elements (per MODS spec, not wiki doc)
+      
     }
     vals =  @smods_rec.term_values(:accessCondition)
     doc_hash[:access_condition_display] = vals if vals
