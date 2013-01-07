@@ -111,8 +111,11 @@ class SolrDocBuilder
       # remaining: go through all MODS elements (per MODS spec, not wiki doc)
       
     }
+    # hash entries only added if there are values
     vals =  @smods_rec.term_values(:accessCondition)
     doc_hash[:access_condition_display] = vals if vals
+    vals =  @smods_rec.term_values(:abstract)
+    doc_hash[:summary_search] = vals if vals
     doc_hash[:collection_type] = 'Digital Collection' if collection?
     
     # all_search

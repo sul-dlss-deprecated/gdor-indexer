@@ -83,10 +83,40 @@ describe SolrDocBuilder do
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
         sdb.doc_hash_from_mods[:collection_type].should == nil
       end
-    end    
+    end
+    
+    context "summary_search (MODS abstract)" do
+      it "should be populated when the MODS has a top level <abstract> element" do
+        m = "<mods #{@ns_decl}><abstract>blah blah</abstract></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
+        sdb.doc_hash_from_mods[:summary_search].should == ['blah blah']
+      end
+      it "should have a value for each abstract element" do
+        m = "<mods #{@ns_decl}>
+              <abstract>one</abstract>
+              <abstract>two</abstract>
+            </mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
+        sdb.doc_hash_from_mods[:summary_search].should == ['one', 'two']
+      end
+      it "should not be present when there is no top level <abstract> element" do
+        m = "<mods #{@ns_decl}><relatedItem><abstract>blah blah</abstract></relatedItem></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+        sdb.doc_hash_from_mods[:summary_search].should == nil
+      end
+      it "should not be present if there are only empty abstract elements in the MODS" do
+        m = "<mods #{@ns_decl}><abstract/><note>notit</note></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
+        sdb.doc_hash_from_mods[:summary_search].should ==  nil
+      end
+    end # summary_search / <abstract>
 
     context "access_condition_display" do
-      it "should be populated when the mods has a top level <accessCondition> element" do
+      it "should be populated when the MODS has a top level <accessCondition> element" do
         m = "<mods #{@ns_decl}>
               <accessCondition type='useAndReproduction'>All rights reserved.</accessCondition>
             </mods>"
