@@ -109,7 +109,6 @@ class SolrDocBuilder
       :language => @smods_rec.sw_language_facet,
       
       # remaining: go through all MODS elements (per MODS spec, not wiki doc)
-      
     }
     
     # these hash entries only added if there are values  (FIXME: should also be true for above)
@@ -119,6 +118,8 @@ class SolrDocBuilder
     doc_hash[:access_condition_display] = vals if vals
     vals = @smods_rec.term_values([:physical_description, :extent])
     doc_hash[:physical] = vals if vals
+    vals = @smods_rec.term_values(:tableOfContents)
+    doc_hash[:toc_search] = vals if vals
     doc_hash[:collection_type] = 'Digital Collection' if collection?
     
     # all_search

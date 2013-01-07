@@ -133,7 +133,6 @@ describe SolrDocBuilder do
       it "should have a value for each accessCondition element" do
         m = "<mods #{@ns_decl}>
               <accessCondition>one</accessCondition>
-              <accessCondition></accessCondition>
               <accessCondition>two</accessCondition>
             </mods>"
         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
@@ -141,10 +140,25 @@ describe SolrDocBuilder do
         sdb.doc_hash_from_mods[:access_condition_display].should == ['one', 'two']
       end
       it "should not be present when there is no top level <accessCondition> element" do
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+        m = "<mods #{@ns_decl}><relatedItem><accessCondition>foo</accessCondition></relatedItem></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
         sdb.doc_hash_from_mods[:access_condition_display].should == nil
       end
+      it "should not be present if there are only empty accessCondition elements in the MODS" do
+        m = "<mods #{@ns_decl}><accessCondition/><note>notit</note></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
+        sdb.doc_hash_from_mods[:access_condition_display].should ==  nil
+      end      
+    end
+    
+    it "language: should call sw_language_facet in stanford-mods gem to populate language field" do
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+      smr = sdb.smods_rec
+      smr.should_receive(:sw_language_facet)
+      sdb.doc_hash_from_mods
     end
     
     context "<physicalDescription><extent> --> physical" do
@@ -180,12 +194,34 @@ describe SolrDocBuilder do
       end      
     end # physical field from physicalDescription/extent
 
-    it "should call sw_language_facet in stanford-mods gem to populate language field" do
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
-      smr = sdb.smods_rec
-      smr.should_receive(:sw_language_facet)
-      sdb.doc_hash_from_mods
+    context "<tableOfContents> --> toc_search" do
+      it "should be populated when the MODS has a top level <accessCondition> element" do
+        m = "<mods #{@ns_decl}><tableOfContents>erg</tableOfContents></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
+        sdb.doc_hash_from_mods[:toc_search].should == ['erg']
+      end
+      it "should have a value for each tableOfContents element" do
+        m = "<mods #{@ns_decl}>
+              <tableOfContents>one</tableOfContents>
+              <tableOfContents>two</tableOfContents>
+            </mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
+        sdb.doc_hash_from_mods[:toc_search].should == ['one', 'two']
+      end
+      it "should not be present when there is no top level <tableOfContents> element" do
+        m = "<mods #{@ns_decl}><relatedItem><tableOfContents>foo</tableOfContents></relatedItem></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+        sdb.doc_hash_from_mods[:toc_search].should == nil
+      end
+      it "should not be present if there are only empty tableOfContents elements in the MODS" do
+        m = "<mods #{@ns_decl}><tableOfContents/><note>notit</note></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
+        sdb.doc_hash_from_mods[:toc_search].should ==  nil
+      end      
     end
     
     context "title fields" do
