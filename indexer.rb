@@ -45,7 +45,9 @@ class Indexer
   def sw_solr_doc druid
 # FIXME: this needs work   
     sdb = SolrDocBuilder.new(druid, harvestdor_client, logger)
-    doc_hash = sdb.mods_to_doc_hash
+    doc_hash = sdb.doc_hash
+
+    # add things from Indexer level class (info kept here for caching purposes)
 
     # determine collection druids and their titles and add to solr doc
     coll_druids = sdb.collection_druids
@@ -61,7 +63,6 @@ class Indexer
       }
     end
 
-    doc_hash[:access_facet] = 'Online'  
     doc_hash[:url_fulltext] = "#{config.purl}/#{druid}"
     doc_hash
   end

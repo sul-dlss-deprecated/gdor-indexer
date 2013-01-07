@@ -27,6 +27,30 @@ class SolrDocBuilder
     @public_xml = public_xml
   end
   
+  # Create a Hash representing the Solr doc to be written to Solr, based on MODS and public_xml
+  # @return [Hash] Hash representing the Solr document
+  def doc_hash
+    doc_hash = {
+      :id => @druid, 
+      :druid => @druid, 
+      :modsxml => "#{@smods_rec.to_xml}",
+    }
+    
+    doc_hash[:access_facet] = 'Online'
+    # from public_xml_fields
+    doc_hash[:display_type] = display_type  # defined in public_xml_fields
+    doc_hash[:img_info] = image_ids unless !image_ids
+    doc_hash[:format] = format
+
+    doc_hash.merge!(doc_hash_from_mods) if doc_hash_from_mods
+    
+    # TODO:  verify:  all searchworks fields per sw_index.properties and  schema.xml
+
+    doc_hash
+  end
+  
+  
+  
   # If MODS record has a top level typeOfResource element with attribute collection set to 'yes,
   #  (<mods><typeOfResource collection='yes'>) then return true; false otherwise
   # @return true if MODS indicates this is a collection object
@@ -49,13 +73,8 @@ class SolrDocBuilder
 
   # Create a Hash representing a Solr doc, with all MODS related fields populated.
   # @return [Hash] Hash representing the Solr document
-  def mods_to_doc_hash
+  def doc_hash_from_mods
     doc_hash = { 
-      :id => @druid, 
-      :druid => @druid, 
-# yet another thing to pass in.  Hmmmm.      
-#      :url_fulltext => "#{config.purl}/#{druid}",
-      :modsxml => "#{@smods_rec.to_xml}",
       
       # title fields
       :title_245a_search => @smods_rec.sw_short_title,
@@ -89,34 +108,16 @@ class SolrDocBuilder
 
       # remaining
       # all mods elements
-      #  all searchworks fields per sw_index.properties and  schema.xml
-
-      # TO DO?  iterate over all methods in public_xml_fields mixins
     }
     vals =  @smods_rec.term_values(:accessCondition)
     doc_hash[:access_condition_display] = vals if vals
-    
-# FIXME: here or in special collection fields method    
-    if collection?
-      doc_hash[:collection_type] = 'Digital Collection'
-    end
+    doc_hash[:collection_type] = 'Digital Collection' if collection?
     
     # all_search
     
     doc_hash
   end
   
-  # Create a Hash with additional Solr fields not derived from the MODS.
-  # @return [Hash] additional fields for Solr document hash
-  def addl_hash_fields
-    doc_hash = {
-      :access_facet => 'Online',
-# FIXME:  here? or elsewhere?
-      :display_type => display_type,  
-    }
-    doc_hash[:img_info] = image_ids unless !image_ids
-    doc_hash
-  end
   
   # return the mods for the druid as a Stanford::Mods::Record object
   # @return [Stanford::Mods::Record] created from the MODS xml for the druid
