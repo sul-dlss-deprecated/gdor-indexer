@@ -67,6 +67,8 @@ describe SolrDocBuilder do
       @hdor_client.stub(:public_xml).with(@fake_druid).and_return(nil)
     end
     
+    # see https://consul.stanford.edu/display/NGDE/Required+and+Recommended+Solr+Fields+for+SearchWorks+documents
+
     context "collection_type" do
       it "should be 'Digital Collection' if MODS has <typeOfResource collection='yes'/>" do
         coll_mods_xml = "<mods #{@ns_decl}><typeOfResource collection='yes'/><note>hi</note></mods>"

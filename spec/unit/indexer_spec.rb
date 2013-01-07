@@ -8,7 +8,7 @@ describe Indexer do
     @indexer = Indexer.new(config_yml_path)
     require 'yaml'
     @yaml = YAML.load_file(config_yml_path)
-    @hclient = @indexer.send(:harvestdor_client)
+    @hdor_client = @indexer.send(:harvestdor_client)
     @fake_druid = 'oo000oo0000'
   end
   
@@ -20,12 +20,12 @@ describe Indexer do
   end
 
   it "should initialize the harvestdor_client from the config" do
-    @hclient.should be_an_instance_of(Harvestdor::Client)
-    @hclient.config.default_set.should == @yaml['default_set']
+    @hdor_client.should be_an_instance_of(Harvestdor::Client)
+    @hdor_client.config.default_set.should == @yaml['default_set']
   end
   
   it "druids method should call druids_via_oai method on harvestdor_client" do
-    @hclient.should_receive(:druids_via_oai)
+    @hdor_client.should_receive(:druids_via_oai)
     @indexer.druids
   end
   
@@ -43,10 +43,10 @@ describe Indexer do
       @ng_id_md_xml = Nokogiri::XML("<identityMetadata><objectLabel>#{@coll_title}</objectLabel></identityMetadata>")
     end
     before(:each) do
-      @hclient.stub(:identity_metadata).with(@fake_druid).and_return(@ng_id_md_xml)
+      @hdor_client.stub(:identity_metadata).with(@fake_druid).and_return(@ng_id_md_xml)
     end
     it "should retrieve the identityMetadata via the harvestdor client" do
-      @hclient.should_receive(:identity_metadata).with(@fake_druid)
+      @hdor_client.should_receive(:identity_metadata).with(@fake_druid)
       @indexer.identity_md_obj_label(@fake_druid)
     end
     it "should get the value of the objectLabel element in the identityMetadata" do
@@ -55,9 +55,34 @@ describe Indexer do
   end
   
   context "sw_solr_doc fields" do
+    
+    before(:all) do
+      @ns_decl = "xmlns='#{Mods::MODS_NS}'"
+      @mods_xml = "<mods #{@ns_decl}><note>hi</note></mods>"
+    end
+    before(:each) do
+      @title = 'qervavdsaasdfa'
+      ng_mods = Nokogiri::XML("<mods #{@ns_decl}><titleInfo><title>#{@title}</title></titleInfo></mods>")
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(ng_mods)
+      cntnt_md_xml = "<contentMetadata type='image' objectId='#{@fake_druid}'></contentMetadata>"
+      ng_pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{cntnt_md_xml}</publicObject>")
+      @hdor_client.stub(:public_xml).with(@fake_druid).and_return(ng_pub_xml)
+      @doc_hash = @indexer.sw_solr_doc(@fake_druid)
+    end
+
+    it "should have fields populated from the MODS" do
+      @doc_hash[:title_245_search] = @title
+    end
+    it "should have fields populated from the public_xml" do
+      @doc_hash = @indexer.sw_solr_doc(@fake_druid)
+      @doc_hash[:format] = 'Image'
+    end
+    it "should populate url_fulltext field with purl page url" do
+      @doc_hash[:url_fulltext].should == "#{@yaml['purl']}/#{@fake_druid}"
+    end
+       
     context "coll_hash (which maps coll druids to coll titles without extra calls to purl server)" do
       before(:all) do
-        @ns_decl = "xmlns='#{Mods::MODS_NS}'"
         @coll_druid = 'ww121ss5000'
         rels_ext_xml = "<rdf:RDF  xmlns:fedora='info:fedora/fedora-system:def/relations-external#' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
           <rdf:Description rdf:about='info:fedora/druid:#{@fake_druid}'>
@@ -67,8 +92,8 @@ describe Indexer do
         @coll_title = "My Collection Has an Interesting Title"
       end
       before(:each) do
-        @hclient.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML("<mods #{@ns_decl}><note>hi</note></mods>"))
-        @hclient.stub(:public_xml).with(@fake_druid).and_return(@pub_xml)
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(@mods_xml))
+        @hdor_client.stub(:public_xml).with(@fake_druid).and_return(@pub_xml)
         @indexer.stub(:identity_md_obj_label).with(@coll_druid).and_return(@coll_title)
       end
       it "should add any missing druids" do
@@ -94,8 +119,8 @@ describe Indexer do
             <fedora:isMemberOfCollection rdf:resource='info:fedora/druid:#{coll_druid2}'/>
           </rdf:Description></rdf:RDF>"
         pub_xml = Nokogiri::XML("<publicObject id='druid:#{item_druid}'>#{rels_ext_xml}</publicObject>")
-        @hclient.stub(:public_xml).with(item_druid).and_return(pub_xml)
-        @hclient.stub(:mods).with(item_druid).and_return(Nokogiri::XML("<mods #{@ns_decl}><note>hi</note></mods>"))
+        @hdor_client.stub(:public_xml).with(item_druid).and_return(pub_xml)
+        @hdor_client.stub(:mods).with(item_druid).and_return(Nokogiri::XML(@mods_xml))
         @indexer.stub(:identity_md_obj_label).with(coll_druid1).and_return('foo')
         @indexer.stub(:identity_md_obj_label).with(coll_druid2).and_return('bar')
         doc_hash = @indexer.sw_solr_doc(item_druid)
@@ -108,8 +133,8 @@ describe Indexer do
           <rdf:Description rdf:about='info:fedora/druid:#{item_druid}'>
           </rdf:Description></rdf:RDF>"
         pub_xml = Nokogiri::XML("<publicObject id='druid:#{item_druid}'>#{rels_ext_xml}</publicObject>")
-        @hclient.stub(:public_xml).with(item_druid).and_return(pub_xml)
-        @hclient.stub(:mods).with(item_druid).and_return(Nokogiri::XML("<mods #{@ns_decl}><note>hi</note></mods>"))
+        @hdor_client.stub(:public_xml).with(item_druid).and_return(pub_xml)
+        @hdor_client.stub(:mods).with(item_druid).and_return(Nokogiri::XML(@mods_xml))
         doc_hash = @indexer.sw_solr_doc(item_druid)
         doc_hash[:collection].should == nil
         doc_hash[:collection_with_title].should == nil
@@ -118,117 +143,9 @@ describe Indexer do
         doc_hash = @indexer.sw_solr_doc(@fake_druid)
         doc_hash[:collection_with_title].should == ["#{@coll_druid}-|-#{@coll_title}"]
       end
-    end
-   
-# FIXME: these should all be tests that solrdocbuilder methods are called
-    
-    # see https://consul.stanford.edu/display/NGDE/Required+and+Recommended+Solr+Fields+for+SearchWorks+documents
-    context "DOR specific" do
-      before(:all) do
-        smr = Stanford::Mods::Record.new
-        smr.from_str '<mods><note>hi</note></mods>'
-  #      @doc_hash = @indexer.sw_solr_doc(@fake_druid)
-      end
+    end # coll_hash
 
-      it "should have a druid field" do
-        pending
-        @doc_hash[:druid].should == @fake_druid
-      end
-      it "should have a url_fulltext field to the purl landing page" do
-        pending
-        @doc_hash[:url_fulltext].should == "#{@yaml['purl']}/#{@fake_druid}"
-      end
-      it "should have the full MODS in the modsxml field" do
-        pending "now elsewhere?"
-        @indexer.send(:harvestdor_client).stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        doc_hash = @indexer.sw_solr_doc(@fake_druid)
-        doc_hash[:modsxml].should be_equivalent_to m
-      end
-      context "collection fields for item objects" do
-        # FIXME:  update per gryphDOR code / searcworks code / new schema
-        it "should populate collection with the id of the parent coll" do
-          pending "to be implemented, using controlled vocab, in harvestdor"
-        end
-        it "should not have a collection_search field, as it is a copy field for collection" do
-          pending
-          @doc_hash[:collection_search].should == nil
-        end
-        # <!--  easy way to indicate collection's parent in UI (may be deprecated in future) -->
-        # <field name="collection_with_title" type="string" indexed="false" stored="true" multiValued="true"/>
-        it "should have parent_coll_ckey if it is a item object?" do
-          pending "to be implemented"
-        end        
-        it "should have collection_type" do
-          pending "to be implemented"
-          # <!--  used to determine when something is a digital collection -->
-          # <field name="collection_type" type="string" indexed="true" stored="true" multiValued="true"/>
-        end
-      end
-      it "should have img_info if there are images associated with the object" do
-        pending "to be implemented"
-        # <field name="img_info" type="string" indexed="false" stored="true" multiValued="true"/>
-      end
-    end
-    context "SearchWorks required fields" do
-      it "should have a single id value of druid" do
-        pending
-        @doc_hash[:id].should == @fake_druid
-      end
-      it "should have display_type field" do
-        # <!-- display_type is a hidden facet for "views" e.g. Images, Maps ...  (might be obsolete) -->
-        # <field name="display_type" type="string" indexed="true" stored="false" multiValued="true" omitNorms="true"/>
-        pending "to be implemented"
-      end
-      it "all_search - not a copy field?" do
-        pending "to be implemented"
-      end
-
-      it "should have a format" do
-        pending "to be implemented, using SearchWorks controlled vocab"
-      end
-    end
-    context "SearchWorks strongly recommended fields" do
-      it "should have an access_facet value of 'Online'" do
-        pending
-        @doc_hash[:access_facet].should == 'Online'
-      end
-      it "should have title fields" do
-        pending "to be implemented"
-        # short title, full title, alternate title, sorting title ...
-
-#        display (will revert to id if no display title is available)
-#            title_display  
-#            title_245a_display
-#            title_full_display
-#        searching (huge impact on generic search results)
-#            title_245a_search
-#            title_245_search
-#        title_sort (if missing, the document will sort last)
-      end
-    end
-    context "SearchWorks recommended fields" do
-      it "should have publication date fields" do
-        pending "to be implemented"
-#        pub_date
-#        pub_date_sort
-#        pub_date_group_facet
-#            we may need a gem or service to compute this - the code from pub_date to pub_date_group is in solrmarc-sw
-      end
-      it "language" do
-        pending "to be implemented"
-#        language of the work
-#        controlled vocab (though a large one): http://searchworks-solr-lb.stanford.edu:8983/solr/select?facet.field=language&rows=0&facet.limit=1000
-      end
-    end
-    context "MODS/GryphonDOR specific fields" do
-      # <field name="access_condition_display" type="string" indexed="false" stored="true" multiValued="true"/>
-      # <field name="era_display" type="string" indexed="false" stored="true" multiValued="true"/>
-      # <field name="geographic_display" type="string" indexed="false" stored="true" multiValued="true"/>
-      # <field name="issue_date_display" type="string" indexed="false" stored="true" multiValued="true"/>
-      # <field name="physical_location_display" type="string" indexed="false" stored="true" multiValued="true"/>
-      
-    end
-  end
+  end # sw_solr_doc
   
   it "should write a Solr doc to the solr index" do
     pending "to be implemented"

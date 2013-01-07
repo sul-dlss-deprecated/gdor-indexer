@@ -43,7 +43,6 @@ class Indexer
   # @param [Stanford::Mods::Record] MODS metadata as a Stanford::Mods::Record object
   # @param [Hash] Hash representing the Solr document
   def sw_solr_doc druid
-# FIXME: this needs work   
     sdb = SolrDocBuilder.new(druid, harvestdor_client, logger)
     doc_hash = sdb.doc_hash
 
