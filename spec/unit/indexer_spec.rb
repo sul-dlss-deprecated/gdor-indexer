@@ -137,9 +137,9 @@ describe Indexer do
   
   context "solr_client" do
     it "should initialize the rsolr client using the options from the config" do
-      @indexer.stub(:config).and_return { Confstruct::Configuration.new :solr => { :url => 'http://localhost:2345', :a => 1 } }
-      RSolr.should_receive(:connect).with(hash_including(:a => 1, :url => 'http://localhost:2345'))
-      @indexer.solr_client
+      indexer = Indexer.new(nil, Confstruct::Configuration.new(:solr => { :url => 'http://localhost:2345', :a => 1 }) )
+      RSolr.should_receive(:connect).with(hash_including(:a => 1, :url => 'http://localhost:2345')).and_return('foo')
+      indexer.solr_client
     end
   end
   
