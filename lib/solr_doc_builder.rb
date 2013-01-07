@@ -107,19 +107,16 @@ class SolrDocBuilder
       :era_facet => era_facet,
 
       :language => @smods_rec.sw_language_facet,
-      
+      :physical =>  @smods_rec.term_values([:physical_description, :extent]),
+      :summary_search => @smods_rec.term_values(:abstract),
+      :toc_search => @smods_rec.term_values(:tableOfContents),
+      :url_suppl => @smods_rec.term_values([:related_item, :location, :url]),
+
+      # is access_condition_display still needed?
+      :access_condition_display => @smods_rec.term_values(:accessCondition),
       # remaining: go through all MODS elements (per MODS spec, not wiki doc)
     }
     
-    # these hash entries only added if there are values  (FIXME: should also be true for above)
-    vals = @smods_rec.term_values(:abstract)
-    doc_hash[:summary_search] = vals if vals
-    vals = @smods_rec.term_values(:accessCondition)
-    doc_hash[:access_condition_display] = vals if vals
-    vals = @smods_rec.term_values([:physical_description, :extent])
-    doc_hash[:physical] = vals if vals
-    vals = @smods_rec.term_values(:tableOfContents)
-    doc_hash[:toc_search] = vals if vals
     doc_hash[:collection_type] = 'Digital Collection' if collection?
     
     # all_search

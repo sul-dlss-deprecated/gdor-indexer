@@ -194,6 +194,45 @@ describe SolrDocBuilder do
       end      
     end # physical field from physicalDescription/extent
 
+    context " /mods/relatedItem/location/url --> url_suppl " do
+      it "should be populated when the MODS has mods/relatedItem/location/url " do
+        m = "<mods #{@ns_decl}><relatedItem><location><url>url.org</url></location></relatedItem></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
+        sdb.doc_hash_from_mods[:url_suppl].should == ['url.org']
+      end
+      it "should have a value for each mods/relatedItem/location/url element" do
+        m = "<mods #{@ns_decl}>
+              <relatedItem>
+                <location><url>one</url></location>
+                <location>
+                  <url>two</url>
+                  <url>three</url>
+                </location>
+              </relatedItem>
+              <relatedItem><location><url>four</url></location></relatedItem>
+            </mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
+        sdb.doc_hash_from_mods[:url_suppl].should == ['one', 'two', 'three', 'four']
+      end
+      it "should not be populated from /mods/location/url element" do
+        m = "<mods #{@ns_decl}><location><url>hi</url></location></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+        sdb.doc_hash_from_mods[:url_suppl].should == nil
+      end
+      it "should not be present if there are only empty relatedItem/location/url elements in the MODS" do
+        m = "<mods #{@ns_decl}>
+              <relatedItem><location><url/></location></relatedItem>
+              <relatedItem><location/></relatedItem>
+              <relatedItem/><note>notit</note></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil) 
+        sdb.doc_hash_from_mods[:url_suppl].should ==  nil
+      end      
+    end
+
     context "<tableOfContents> --> toc_search" do
       it "should be populated when the MODS has a top level <accessCondition> element" do
         m = "<mods #{@ns_decl}><tableOfContents>erg</tableOfContents></mods>"
