@@ -25,6 +25,17 @@ class Indexer
     @logger ||= load_logger(config.log_dir, config.log_name)
   end
   
+  # per this Indexer's config options 
+  #  harvest the druids via OAI
+  #   create a Solr document for each druid suitable for SearchWorks
+  #   write the result to the SearchWorks Solr index
+  def harvest_and_index
+    druids.each { |id|  
+      solr_client.add(sw_solr_doc(id))
+      # update DOR object's workflow datastream??   for harvest?  for indexing?
+    }
+  end
+  
   # return Array of druids contained in the OAI harvest indicated by OAI params in yml configuration file
   # @return [Array<String>] or enumeration over it, if block is given.  (strings are druids, e.g. ab123cd1234)
   def druids

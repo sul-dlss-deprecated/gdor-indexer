@@ -24,34 +24,22 @@ describe Indexer do
     @hdor_client.config.default_set.should == @yaml['default_set']
   end
   
+  context "harvest_and_index" do
+    it "should call druids and then call :add on rsolr connection" do
+      doc_hash = {
+        :id => @fake_druid,
+        :field => 'val'
+      }
+      @indexer.stub(:sw_solr_doc).and_return(doc_hash)
+      @hdor_client.should_receive(:druids_via_oai).and_return([@fake_druid])
+      @indexer.solr_client.should_receive(:add).with(doc_hash)
+      @indexer.harvest_and_index
+    end
+  end
+  
   it "druids method should call druids_via_oai method on harvestdor_client" do
     @hdor_client.should_receive(:druids_via_oai)
     @indexer.druids
-  end
-  
-  context "solr_client" do
-    it "should initialize the rsolr client using the options from the config" do
-      @indexer.stub(:config).and_return { Confstruct::Configuration.new :solr => { :url => 'http://localhost:2345', :a => 1 } }
-      RSolr.should_receive(:connect).with(hash_including(:a => 1, :url => 'http://localhost:2345'))
-      @indexer.solr_client
-    end
-  end
-  
-  context "identity_md_obj_label" do
-    before(:all) do
-      @coll_title = "My Collection Has a Lovely Title"
-      @ng_id_md_xml = Nokogiri::XML("<identityMetadata><objectLabel>#{@coll_title}</objectLabel></identityMetadata>")
-    end
-    before(:each) do
-      @hdor_client.stub(:identity_metadata).with(@fake_druid).and_return(@ng_id_md_xml)
-    end
-    it "should retrieve the identityMetadata via the harvestdor client" do
-      @hdor_client.should_receive(:identity_metadata).with(@fake_druid)
-      @indexer.identity_md_obj_label(@fake_druid)
-    end
-    it "should get the value of the objectLabel element in the identityMetadata" do
-      @indexer.identity_md_obj_label(@fake_druid).should == @coll_title
-    end
   end
   
   context "sw_solr_doc fields" do
@@ -147,9 +135,29 @@ describe Indexer do
 
   end # sw_solr_doc
   
-  it "should write a Solr doc to the solr index" do
-    pending "to be implemented"
-    # doc with:  druid, access_facet, url_fulltext
+  context "solr_client" do
+    it "should initialize the rsolr client using the options from the config" do
+      @indexer.stub(:config).and_return { Confstruct::Configuration.new :solr => { :url => 'http://localhost:2345', :a => 1 } }
+      RSolr.should_receive(:connect).with(hash_including(:a => 1, :url => 'http://localhost:2345'))
+      @indexer.solr_client
+    end
   end
-
+  
+  context "identity_md_obj_label" do
+    before(:all) do
+      @coll_title = "My Collection Has a Lovely Title"
+      @ng_id_md_xml = Nokogiri::XML("<identityMetadata><objectLabel>#{@coll_title}</objectLabel></identityMetadata>")
+    end
+    before(:each) do
+      @hdor_client.stub(:identity_metadata).with(@fake_druid).and_return(@ng_id_md_xml)
+    end
+    it "should retrieve the identityMetadata via the harvestdor client" do
+      @hdor_client.should_receive(:identity_metadata).with(@fake_druid)
+      @indexer.identity_md_obj_label(@fake_druid)
+    end
+    it "should get the value of the objectLabel element in the identityMetadata" do
+      @indexer.identity_md_obj_label(@fake_druid).should == @coll_title
+    end
+  end
+  
 end
