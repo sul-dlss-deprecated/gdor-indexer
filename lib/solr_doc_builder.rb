@@ -82,7 +82,7 @@ class SolrDocBuilder
       :geographic_search => geographic_search,
       :subject_other_search => subject_other_search, 
       :subject_other_subvy_search => subject_other_subvy_search,
-      :subject_all_search => 'foo', # all of the above 
+      :subject_all_search => subject_all_search, 
       # subject facet fields
       # remove trailing punct  [\\\\,;] --> in stanford-mods gem (?)
       :topic_facet => 'foo',  # subject/name, subject/occupation, subject/titleInfo, subject/topic

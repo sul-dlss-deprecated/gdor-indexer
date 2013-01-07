@@ -56,7 +56,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       it "should contain subject <topic> subelement data" do
         @sdb.topic_search.should include(@topic)
       end
-      it "should contain <genre> element data" do
+      it "should contain top level <genre> element data" do
         @sdb.topic_search.should include(@genre)
       end
       it "should not contain other subject element data" do
@@ -282,75 +282,33 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       end
     end # subject_other_subvy_search
 
-
-    context "topic" do
-      before(:all) do
-        m = "<mods #{@ns_decl}>
-        <subject authority='lcsh'>
-          <topic>Real property</topic>
-          <geographic>Mississippi</geographic>
-          <geographic>Tippah County</geographic>
-          <genre>Maps</genre>
-        </subject>
-        <subject authority='lcsh'>
-          <topic>Musicology</topic>
-          <topic>Data processing</topic>
-          <genre>Periodicals</genre>
-        </subject>
-        <subject authority='lcsh'>
-          <topic>Real property--Mississippi--Tippah County--Maps</topic>
-        </subject>
-        <subject authority='lcshac'>
-          <topic>Iron founding</topic>
-        </subject>
-        <subject authority='lctgm'>
-        	<topic>Educational buildings</topic>
-        	<geographic>Washington (D.C.)</geographic>
-        	<temporal>1890-1910</temporal>
-        </subject>
-        <subject>
-          <occupation>Migrant laborers</occupation>
-          <genre>School district case files</genre>
-        </subject>
-        <subject authority='ericd'>
-        	<topic>Career Exploration</topic>
-        </subject>
-        <subject authority='rvm'>
-        	<topic>Eglise catholique</topic>
-        	<topic>Histoire</topic>
-        	<temporal>20e siecle</temporal>
-        </subject>
-        <subject>
-        	<topic>Learning disabilities</topic>
-        </subject>
-        <subject>
-        	<name type='personal' authority='naf'>
-      	  	<namePart>Woolf, Virginia</namePart>
-      	  	<namePart type='date'>1882-1941</namePart>
-        	</name>
-        </subject>
-        <subject authority='lcsh'>
-         	<name>
-         	  <namePart>Garcia Lorca, Federico</namePart>
-          	<namePart type='date'>1898-1936</namePart>
-          </name>
-        </subject>
-        <subject>
-        	<occupation>Anthropologists</occupation>
-        </subject>
-        <subject>
-        	<titleInfo type='uniform' authority='naf'>
-      	  	<title>Missale Carnotense</title>
-        	</titleInfo>
-        </subject>
-        <subject>
-        	<temporal encoding='iso8601'>197505</temporal>
-        </subject>
-        </mods>"
+    context "subject_all_search" do
+      it "should be nil if there are no values in the MODS" do
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_no_subject)
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+        sdb.subject_all_search.should == nil
       end
-    end # topic
+      it "should contain top level <genre> element data" do
+        @sdb.subject_all_search.should include(@genre)
+      end
+      it "should not contain cartographic sub element" do
+        @sdb.subject_all_search.should_not include(@cart_coord)
+      end
+      it "should not include codes from hierarchicalGeographic sub element" do
+        @sdb.subject_all_search.should_not include(@geo_code)
+      end
+      it "should contain all other subject subelement data" do
+        @sdb.subject_all_search.should include(@s_genre)
+        @sdb.subject_all_search.should include(@geo)
+        @sdb.subject_all_search.should include(@hier_geo_country)
+        @sdb.subject_all_search.should include(@s_name)
+        @sdb.subject_all_search.should include(@occupation)
+        @sdb.subject_all_search.should include(@temporal)
+        @sdb.subject_all_search.should include(@s_title)
+        @sdb.subject_all_search.should include(@topic)
+      end
+    end # subject_all_search
     
-  end # context sw subject methods
-  
+  end # context sw subject methods 
   
 end

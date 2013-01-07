@@ -244,6 +244,7 @@ describe SolrDocBuilder do
         sdb.should_receive(:geographic_search)
         sdb.should_receive(:subject_other_search)
         sdb.should_receive(:subject_other_subvy_search)
+        sdb.should_receive(:subject_all_search)
         sdb.mods_to_doc_hash
       end
       it "topic_search" do
@@ -257,6 +258,17 @@ describe SolrDocBuilder do
       end
       it "subject_other_subvy_search" do
         @subject_doc_hash[:subject_other_subvy_search].should == [@temporal, @s_genre]
+      end
+      it "subject_all_search" do
+        @subject_doc_hash[:subject_all_search].should include(@genre)
+        @subject_doc_hash[:subject_all_search].should include(@topic)
+        @subject_doc_hash[:subject_all_search].should include(@geo)
+        @subject_doc_hash[:subject_all_search].should include(@hier_geo_country)
+        @subject_doc_hash[:subject_all_search].should include(@occupation)
+        @subject_doc_hash[:subject_all_search].should include(@s_name)
+        @subject_doc_hash[:subject_all_search].should include(@s_title)
+        @subject_doc_hash[:subject_all_search].should include(@temporal)
+        @subject_doc_hash[:subject_all_search].should include(@s_genre)
       end
     end # subject fields
     

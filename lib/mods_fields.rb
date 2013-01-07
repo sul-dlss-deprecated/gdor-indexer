@@ -35,6 +35,8 @@ class SolrDocBuilder
       }
     end
     
+    # FIXME:  stanford-mods should be returning [], not nil ... 
+    return nil if !result || result.empty?
     result
   end
 
@@ -72,9 +74,18 @@ class SolrDocBuilder
     vals
   end
   
-  # subject search fields
-
-#  :subject_all_search => 'foo', # all of the above 
+  # Values are the contents of:
+  #  all subject subelements except subject/cartographic plus  genre top level element
+  # @return [Array<String>] values for the subject_all_search Solr field for this document or nil if none
+  def subject_all_search
+    vals = topic_search || []
+    vals.concat(geographic_search) if geographic_search
+    vals.concat(subject_other_search) if subject_other_search
+    vals.concat(subject_other_subvy_search) if subject_other_subvy_search
+    return nil if vals.empty?
+    vals
+  end
+  
   # subject facet fields
   # remove trailing punct  [\\\\,;] --> in stanford-mods gem (?)
 #  :topic_facet => 'foo',  # subject/name, subject/occupation, subject/titleInfo, subject/topic
