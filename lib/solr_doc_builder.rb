@@ -17,7 +17,7 @@ class SolrDocBuilder
   attr_reader :logger
 
   # @param [String] druid, e.g. ab123cd4567
-  # @param [Harvestdor::Client] harvestdor client used to get mods and public_xml
+  # @param [Harvestdor::Client] harvestdor client used to get MODS and public_xml
   # @param [Logger] logger for indexing messages
   def initialize(druid, harvestdor_client, logger)
     @druid = druid
@@ -125,7 +125,7 @@ class SolrDocBuilder
   end
   
   
-  # return the mods for the druid as a Stanford::Mods::Record object
+  # return the MODS for the druid as a Stanford::Mods::Record object
   # @return [Stanford::Mods::Record] created from the MODS xml for the druid
   def smods_rec
     if @mods_rec.nil?
