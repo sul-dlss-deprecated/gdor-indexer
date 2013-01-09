@@ -17,8 +17,8 @@ class SolrDocBuilder
   attr_reader :logger
 
   # @param [String] druid, e.g. ab123cd4567
-  # @param [Stanford::Mods::Record] the object associated with this druid
-  # @param [Nokogiri::XML::Document] the public xml from the purl page for this druid, as a Nokogiri document
+  # @param [Harvestdor::Client] harvestdor client used to get mods and public_xml
+  # @param [Logger] logger for indexing messages
   def initialize(druid, harvestdor_client, logger)
     @druid = druid
     @harvestdor_client = harvestdor_client
