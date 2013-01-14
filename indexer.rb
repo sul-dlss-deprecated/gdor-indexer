@@ -1,6 +1,7 @@
 # external gems
 require 'confstruct'
 require 'harvestdor'
+require 'rsolr'
 # stdlib
 require 'logger'
 
@@ -31,8 +32,13 @@ class Indexer
   #   write the result to the SearchWorks Solr index
   def harvest_and_index
     druids.each { |id|  
-      solr_client.add(sw_solr_doc(id))
-      # update DOR object's workflow datastream??   for harvest?  for indexing?
+      logger.debug "Indexing #{id}"
+      begin
+        solr_client.add(sw_solr_doc(id))
+        # update DOR object's workflow datastream??   for harvest?  for indexing?
+      rescue => e
+        logger.error "Failed to index #{id}: #{e.message}"
+      end
     }
   end
   

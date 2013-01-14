@@ -8,6 +8,7 @@ gem 'stanford-mods'
 gem 'nokogiri'
 gem 'rake'
 gem 'rsolr'
+gem 'trollop'
 
 # documentation
 group :doc do

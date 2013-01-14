@@ -1,0 +1,80 @@
+#!/usr/bin/env ruby
+
+$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..'))         # Look in the root directory for .rb files
+$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))  # Look in the lib directory for .rb files
+
+require 'rubygems'
+require "bundler/setup"
+require 'trollop'
+require 'indexer'
+# require 'patches'
+
+config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "collections", "walters.yml")
+@indexer = Indexer.new(config_yml_path)
+# @indexer.logger.level = Logger::DEBUG
+doc = @indexer.sw_solr_doc("zw043hm4252")
+puts doc.inspect
+# @indexer.solr_client.add(doc)
+
+# @indexer.harvest_and_index
+# @indexer.solr_client.commit
+
+
+
+# require 'yaml'
+# @yaml = YAML.load_file(config_yml_path)
+# @hdor_client = @indexer.send(:harvestdor_client)
+# @fake_druid = 'oo000oo0000'
+
+# opts = Trollop::options do
+#   version "indexer v0.2.0 (c) 2012 Stanford University http://searchworks.stanford.edu"
+#   banner <<-EOM
+# The indexer script harvests records from SearchWorks OAI-PMH Provider: 
+# #{SearchWorksOaiHarvester.config.oai_provider.repository_url}
+# and maps them to records into SearchWorks' Solr instance.
+# Usage:
+#   oai-sw-harvest [options] 
+# where [options] are:
+# EOM
+#   opt :set, 
+#     "Harvest results from the given set",
+#     :default => nil,
+#     :short => 's',
+#     :type => String
+#   opt :from, 
+#     "Filter results starting from the given date",
+#     :default => nil,
+#     :short => 'f',
+#     :type => String
+#   opt :until,
+#     "Filter results until the given date",
+#     :default => nil,
+#     :short => 'u',
+#     :type => String
+# end
+#   
+# [:from, :until].each do |d| 
+#   if opts[d]
+#     begin
+#       opts[d] = Time.parse opts[d]
+#     rescue Exception => e
+#       puts "Error, option --#{d.to_s} is not a valid date"
+#       exit(1)
+#     end
+#   end
+# end
+# 
+# # If no set is specified, harvest the sets from the config file
+# 
+# if opts[:set]
+#   SearchWorksOaiHarvester::Harvester.new(SearchWorksOaiHarvester.oai_client, SearchWorksOaiHarvester.solr_client, opts).harvest
+# else
+#   SearchWorksOaiHarvester.logger.info "No set specified. Harvesting sets from config file."
+#   SearchWorksOaiHarvester.config.sets.each do |s|
+#     SearchWorksOaiHarvester.logger.info "Harvesting #{s[0]}"
+#     opts[:set] = s[1]
+#     SearchWorksOaiHarvester::Harvester.new(SearchWorksOaiHarvester.oai_client, SearchWorksOaiHarvester.solr_client, opts).harvest
+#   end
+# end
+# SearchWorksOaiHarvester.logger.info 'Commiting to Solr'
+# SearchWorksOaiHarvester.solr_client.commit
