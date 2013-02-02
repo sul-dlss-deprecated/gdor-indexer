@@ -2,6 +2,7 @@
 
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..'))         # Look in the root directory for .rb files
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))  # Look in the lib directory for .rb files
+$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'config'))  # Look in the config directory for .rb files
 
 require 'rubygems'
 require "bundler/setup"
@@ -9,16 +10,32 @@ require 'trollop'
 require 'indexer'
 # require 'patches'
 
-config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "collections", "walters.yml")
-@indexer = Indexer.new(config_yml_path)
+
 # @indexer.logger.level = Logger::DEBUG
-doc = @indexer.sw_solr_doc("zw043hm4252")
-puts doc.inspect
+# doc = @indexer.sw_solr_doc("gh890mv3053")
+# puts doc.inspect
 # @indexer.solr_client.add(doc)
 
 # @indexer.harvest_and_index
 # @indexer.solr_client.commit
 
+
+# @indexer.config[:sets_to_index].each do |collection|
+#   
+#   @indexer.config[:default_set]="is_member_of_collection_#{collection}" # set the new default collection to index
+# 
+#   puts "Indexing set object #{collection}"
+#   # harvest this particular collection
+#   doc = @indexer.solr_doc(collection)
+#   @indexer.solr_client.add(doc)
+#   @indexer.solr_client.commit
+#   
+#   unless @indexer.config[:sets_only]
+#     @indexer.harvest_and_index(:new_index=>true)
+#     @indexer.solr_client.commit
+#   end
+#   
+# end
 
 
 # require 'yaml'
@@ -26,14 +43,41 @@ puts doc.inspect
 # @hdor_client = @indexer.send(:harvestdor_client)
 # @fake_druid = 'oo000oo0000'
 
+@collections = ["kolb","walters","reid_dennis"]
+
+opts = Trollop::options do
+  version "indexer v0.2.0 (c) 2012 Stanford University http://searchworks.stanford.edu"
+  banner <<-EOM
+  The indexer script harvests records from SearchWorks OAI-PMH Provider
+  and maps them to records into SearchWorks' Solr instance.
+  Usage:
+    ./index [options] 
+  where [options] are:
+  EOM
+  
+  
+  opt :collection, "Index a given collection. Possible values are #{@collections}", :default => "kolb"
+  opt :all, "Index all collections"
+end
+Trollop::die :collection, "must be a known collection" unless @collections.include?opts[:collection]
+
+if opts[:collection]  
+  config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "collections", "#{opts[:collection]}.yml")
+  @indexer = Indexer.new(config_yml_path)
+  puts "Indexing into solr server #{@indexer.config[:solr][:url]}"
+  @indexer.harvest_and_index
+  @indexer.solr_client.commit
+  # puts "Indexing set objects only" if @indexer.config[:sets_only]
+end
+
 # opts = Trollop::options do
 #   version "indexer v0.2.0 (c) 2012 Stanford University http://searchworks.stanford.edu"
 #   banner <<-EOM
 # The indexer script harvests records from SearchWorks OAI-PMH Provider: 
-# #{SearchWorksOaiHarvester.config.oai_provider.repository_url}
+# #{@indexer.config[:oai_repository_url]}
 # and maps them to records into SearchWorks' Solr instance.
 # Usage:
-#   oai-sw-harvest [options] 
+#   ./index [options] 
 # where [options] are:
 # EOM
 #   opt :set, 
@@ -52,7 +96,7 @@ puts doc.inspect
 #     :short => 'u',
 #     :type => String
 # end
-#   
+  
 # [:from, :until].each do |d| 
 #   if opts[d]
 #     begin

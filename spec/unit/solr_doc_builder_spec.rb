@@ -361,6 +361,7 @@ describe SolrDocBuilder do
           @author_doc_hash[:author_1xx_search].should == "Crusty The Clown"
         end
         it "author_7xx_search" do
+          pending "Should this return all authors? or only 7xx authors?"
           @author_doc_hash[:author_7xx_search].should == ["q", "Watchful Eye", "Exciting Prints", "conference"]
         end
         it "author_8xx_search should not be populated from MODS" do
