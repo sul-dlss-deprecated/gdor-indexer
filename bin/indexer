@@ -43,6 +43,13 @@ require 'indexer'
 # @hdor_client = @indexer.send(:harvestdor_client)
 # @fake_druid = 'oo000oo0000'
 
+def time
+  start = Time.now
+  yield
+  elapsed = Time.now - start
+  puts "This set took #{elapsed} seconds to run."
+end
+
 @collections = ["kolb","walters","reid_dennis"]
 
 opts = Trollop::options do
@@ -64,11 +71,17 @@ Trollop::die :collection, "must be a known collection" unless @collections.inclu
 if opts[:collection]  
   config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "collections", "#{opts[:collection]}.yml")
   @indexer = Indexer.new(config_yml_path)
-  puts "Indexing into solr server #{@indexer.config[:solr][:url]}"
-  @indexer.harvest_and_index
-  @indexer.solr_client.commit
+  puts "Indexing #{opts[:collection]} into solr server #{@indexer.config[:solr][:url]}"
+  puts "Logging output to #{@indexer.config[:log_dir]}/#{@indexer.config[:log_name]}"
+  time do
+    @indexer.harvest_and_index
+    @indexer.index_collection_druid
+    @indexer.solr_client.commit
+  end
   # puts "Indexing set objects only" if @indexer.config[:sets_only]
 end
+
+
 
 # opts = Trollop::options do
 #   version "indexer v0.2.0 (c) 2012 Stanford University http://searchworks.stanford.edu"

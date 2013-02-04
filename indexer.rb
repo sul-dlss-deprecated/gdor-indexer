@@ -47,6 +47,32 @@ class Indexer
   def druids
     @druids ||= harvestdor_client.druids_via_oai
   end
+  
+  # Create a solr document for the collection druid suitable for searchworks
+  # write the result to the SearchWorks Solr Index
+  # @param [String] druid 
+  def index_collection_druid
+    logger.debug "Indexing collection object #{collection_druid}"
+    begin
+      solr_client.add(sw_solr_doc(collection_druid)) unless collection_druid.nil?
+    #   # update DOR object's workflow datastream??   for harvest?  for indexing?
+    rescue => e
+      logger.error "Failed to index collection object #{collection_druid}: #{e.message}"
+    end
+  end
+  
+  # return String indicating the druid of a collection object, or nil if there is no collection druid
+  # @return [Array<String>] or enumeration over it, if block is given.  (strings are druids, e.g. ab123cd1234)
+  def collection_druid
+    # @collection_druid ||= 
+    begin
+      if config[:default_set].include? "is_member_of_collection_"
+        return config[:default_set].gsub("is_member_of_collection_",'')
+      else
+        return nil
+      end
+    end
+  end
 
   # coll_hash is in the indexer so each item doesn't need to look up the collection title -- we only look it up once per harvest.
   # @return [Hash<String, String>] collection druids as keys, and the objectLabel from the collection's identityMetadata as the value

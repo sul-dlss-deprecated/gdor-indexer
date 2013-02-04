@@ -24,7 +24,7 @@ describe Indexer do
     @hdor_client.config.default_set.should == @yaml['default_set']
   end
   
-  context "harvest_and_index" do
+  context "harvest_and_index item records" do
     it "should call druids and then call :add on rsolr connection" do
       doc_hash = {
         :id => @fake_druid,
@@ -34,6 +34,16 @@ describe Indexer do
       @hdor_client.should_receive(:druids_via_oai).and_return([@fake_druid])
       @indexer.solr_client.should_receive(:add).with(doc_hash)
       @indexer.harvest_and_index
+    end
+  end
+  
+  context "harvest and index collection record" do
+    it "gets the collection druid" do
+      @indexer.collection_druid.should eql("ww121ss5000")
+    end
+    it "indexes the collection druid" do
+      @indexer.solr_client.should_receive(:add)
+      @indexer.index_collection_druid
     end
   end
   
