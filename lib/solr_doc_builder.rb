@@ -31,7 +31,7 @@ class SolrDocBuilder
   # @return [Hash] Hash representing the Solr document
   def doc_hash
     doc_hash = {
-      :id => @druid, 
+      :id => @druid+"new", 
       :druid => @druid, 
       :modsxml => "#{@smods_rec.to_xml}",
     }
@@ -74,6 +74,7 @@ class SolrDocBuilder
   # Create a Hash representing a Solr doc, with all MODS related fields populated.
   # @return [Hash] Hash representing the Solr document
   def doc_hash_from_mods
+    puts @smods_rec.terms.inspect
     doc_hash = { 
       
       # title fields
@@ -115,6 +116,10 @@ class SolrDocBuilder
       # is access_condition_display still needed?
       :access_condition_display => @smods_rec.term_values(:accessCondition),
       # remaining: go through all MODS elements (per MODS spec, not wiki doc)
+      
+      #issued date
+      
+      :issue_date_display => issued_date
     }
     
     doc_hash[:collection_type] = 'Digital Collection' if collection?

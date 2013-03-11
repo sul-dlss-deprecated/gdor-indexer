@@ -84,6 +84,15 @@ class SolrDocBuilder
     vals.concat(subject_other_subvy_search) if subject_other_subvy_search
     vals.empty? ? nil : vals
   end
+  #get the date from dateIssued, if that isnt populated fall back to dateCreated. This may go to stanford-mods when the functionality is stable.
+  # @return [Array<String>] values for the issue_date_display Solr field for this document or nil if none
+  def issued_date
+    vals = @smods_rec.term_values([:origin_info,:dateIssued])
+    if vals.empty?
+      vals = @smods_rec.term_values([:origin_info,:dateCreated])
+    end
+    vals.empty? ? nil : vals
+  end
   
   # Values are the contents of:
   #   subject/topic
