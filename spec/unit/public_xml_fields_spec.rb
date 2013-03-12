@@ -42,7 +42,11 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
       it "format should be Image for contentMetadata type of image" do
         @sdb.format.should == 'Image'
       end
-      it "should log an error message for an unrecognized contentMetadata type" do
+      it "returns a format of 'Map/Globe' for contentMetadata type map" do
+        @sdb.stub(:dor_content_type).and_return('map')
+        @sdb.format.should == 'Map/Globe'
+      end
+      it "logs an error message for an unrecognized contentMetadata type" do
         @sdb.stub(:dor_content_type).and_return('bogus')
         @sdb.logger.should_receive(:warn).with(/unrecognized DOR content type.*bogus/)
         @sdb.format

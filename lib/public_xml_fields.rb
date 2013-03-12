@@ -11,6 +11,8 @@ class SolrDocBuilder
     #   https://consul.stanford.edu/display/chimera/DOR+content+types%2C+resource+types+and+interpretive+metadata
     if dor_content_type == 'image'
       'Image'
+    elsif dor_content_type == 'map'
+      'Map/Globe'
     else
       logger.warn "Object #{druid} has unrecognized DOR content type: #{dor_content_type}"
     end
