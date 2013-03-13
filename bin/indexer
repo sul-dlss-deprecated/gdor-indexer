@@ -42,6 +42,7 @@ require 'indexer'
 # @yaml = YAML.load_file(config_yml_path)
 # @hdor_client = @indexer.send(:harvestdor_client)
 # @fake_druid = 'oo000oo0000'
+
 module OAI
  class Client
    # Do the actual HTTP get, following any temporary redirects
@@ -106,8 +107,8 @@ Trollop::die :collection, "must be a known collection" unless @collections.inclu
 if opts[:collection]  
   config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "collections", "#{opts[:collection]}.yml")
   @indexer = Indexer.new(config_yml_path)
-  puts "Indexing #{opts[:collection]} into solr server #{@indexer.config[:solr][:url]}"
-  puts "Logging output to #{@indexer.config[:log_dir]}/#{@indexer.config[:log_name]}"
+  puts "Indexing #{opts[:collection]} into solr server #{Indexer.config[:solr][:url]}"
+  puts "Logging output to #{Indexer.config[:log_dir]}/#{Indexer.config[:log_name]}"
   time do
     @indexer.harvest_and_index
     @indexer.index_collection_druid

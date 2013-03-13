@@ -34,21 +34,7 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
   #    content_md.should be_equivalent_to(@cntnt_md_xml)
     end
     
-    it "dor_content_type should be the value of the type attribute on the contentMetadata element" do
-      @sdb.send(:dor_content_type).should == @cntnt_md_type
-    end
-    
-    context "format" do
-      it "format should be Image for contentMetadata type of image" do
-        @sdb.format.should == 'Image'
-      end
-      it "should log an error message for an unrecognized contentMetadata type" do
-        @sdb.stub(:dor_content_type).and_return('bogus')
-        @sdb.logger.should_receive(:warn).with(/unrecognized DOR content type.*bogus/)
-        @sdb.format
-      end
-    end
-    
+        
     context "display_type" do
       it "should be 'collection' if solr_doc_builder.collection?" do
         coll_mods_xml = "<mods #{@ns_decl}><typeOfResource collection='yes'/><note>hi</note></mods>"
