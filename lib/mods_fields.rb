@@ -109,10 +109,10 @@ class SolrDocBuilder
       val << Indexer.config[:add_format]
     end
     if collection_formats and collection_formats.length>0
-      return collection_formats.concat val
+      return collection_formats.concat(val).uniq
     end
     if val.length>0
-      return val
+      return val.uniq
     end
     if not @smods_rec.typeOfResource or @smods_rec.typeOfResource.length == 0
       @logger.warn "#{@druid} has no valid typeOfResource"
