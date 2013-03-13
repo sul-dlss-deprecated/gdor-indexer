@@ -2,7 +2,6 @@
 # Methods for Solr field values determined from the DOR object's purl page public xml 
 class SolrDocBuilder
 
-
   
   #  TODO:  ask Jessie if this Solr field is still used by SearchWorks
   # information on DOR content types:

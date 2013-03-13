@@ -34,7 +34,7 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
   #    content_md.should be_equivalent_to(@cntnt_md_xml)
     end
     
-        
+
     context "display_type" do
       it "should be 'collection' if solr_doc_builder.collection?" do
         coll_mods_xml = "<mods #{@ns_decl}><typeOfResource collection='yes'/><note>hi</note></mods>"
