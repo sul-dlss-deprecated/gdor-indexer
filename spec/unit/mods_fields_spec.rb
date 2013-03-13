@@ -474,5 +474,13 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
       sdb.format.should == ['Image']
     end
+    it "should return nothing if there is no format info" do
+      m = "<mods #{@ns_decl}><originInfo>
+      <dateCreated>1904</dateCreated>
+      </originInfo></mods>"
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+      sdb.format.should == []
+    end
   end#context format
 end

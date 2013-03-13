@@ -114,7 +114,7 @@ class SolrDocBuilder
     if val.length>0
       return val
     end
-    if not @smods_rec.typeOfResource
+    if not @smods_rec.typeOfResource or @smods_rec.typeOfResource.length == 0
       @logger.warn "#{@druid} has no valid typeOfResource"
       []
     end
