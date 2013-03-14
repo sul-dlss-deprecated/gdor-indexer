@@ -41,6 +41,7 @@ class Indexer
       # update DOR object's workflow datastream??   for harvest?  for indexing?
       rescue => e
         logger.error "Failed to index #{id}: #{e.message}"
+        logger.error e.backtrace
       end
   end
   end
@@ -119,7 +120,7 @@ class Indexer
     # add things from Indexer level class (info kept here for caching purposes)
 
     # determine collection druids and their titles and add to solr doc
-    coll_druids = sdb.collection_druids
+    coll_druids = sdb.collection_druids    
     if coll_druids
       doc_hash[:collection] = []
       doc_hash[:collection_with_title] = []

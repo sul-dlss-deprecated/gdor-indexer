@@ -191,6 +191,7 @@ class SolrDocBuilder
   #@return [String] 4 character year or nil
   def pub_date
     val=pub_year
+    return val unless Indexer.config[:max_pub_date] && Indexer.config[:min_pub_date]
     if val and val.to_i < Indexer.config[:max_pub_date] and val.to_i > Indexer.config[:min_pub_date]
       return val
     end

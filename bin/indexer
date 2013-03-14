@@ -87,7 +87,7 @@ def time
   puts "This set took #{elapsed} seconds to run."
 end
 
-@collections = ["kolb","walters","reid_dennis", "mclaughlin"]
+@collections = ["kolb","walters","reid_dennis", "mclaughlin", "jmm", "physics_honors_theses"]
 
 opts = Trollop::options do
   version "indexer v0.2.0 (c) 2012 Stanford University http://searchworks.stanford.edu"
