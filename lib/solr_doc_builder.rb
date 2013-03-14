@@ -114,7 +114,15 @@ class SolrDocBuilder
 
       # is access_condition_display still needed?
       :access_condition_display => @smods_rec.term_values(:accessCondition),
+      
+      #publish date fields
+      :pub_date_sort => pub_date,
+      #:pub_date_group_facet => #must use solrmarc when the time comes
+      :pub_date =>pub_date
+      
+      
       # remaining: go through all MODS elements (per MODS spec, not wiki doc)
+      
     }
     
     doc_hash[:collection_type] = 'Digital Collection' if collection?

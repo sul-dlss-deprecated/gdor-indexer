@@ -2,21 +2,6 @@
 # Methods for Solr field values determined from the DOR object's purl page public xml 
 class SolrDocBuilder
 
-  # select one or more format values from the controlled vocabulary here:
-  #   http://searchworks-solr-lb.stanford.edu:8983/solr/select?facet.field=format&rows=0&facet.sort=index
-  # based on the dor_content_type
-  # @return [String] value in the SearchWorks controlled vocabulary
-  def format
-    # information on DOR content types:
-    #   https://consul.stanford.edu/display/chimera/DOR+content+types%2C+resource+types+and+interpretive+metadata
-    if dor_content_type == 'image'
-      'Image'
-    elsif dor_content_type == 'map'
-      'Map/Globe'
-    else
-      logger.warn "Object #{druid} has unrecognized DOR content type: #{dor_content_type}"
-    end
-  end
   
   #  TODO:  ask Jessie if this Solr field is still used by SearchWorks
   # information on DOR content types:
