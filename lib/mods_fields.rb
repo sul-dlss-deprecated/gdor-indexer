@@ -230,7 +230,14 @@ class SolrDocBuilder
   def era_facet
     subject_temporal.map { |val| val.sub(/[\\,;]$/, '').strip } unless !subject_temporal
   end
-
+  # @return [String] value with the numeric catkey in it, or nil if none exists
+  def catkey
+    catkey=@smods_rec.term_values([:record_info,:recordIdentifier])
+    if catkey and catkey.length>0
+      return catkey.first.gsub('a','') #need to ensure catkey is numeric only
+    end
+    nil
+  end
 
   # protected ----------------------------------------------------------
 

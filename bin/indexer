@@ -8,6 +8,7 @@ require 'rubygems'
 require "bundler/setup"
 require 'trollop'
 require 'indexer'
+require 'record_merger'
 # require 'patches'
 
 
@@ -110,6 +111,9 @@ if opts[:collection]
   puts "Indexing #{opts[:collection]} into solr server #{Indexer.config[:solr][:url]}"
   puts "Logging output to #{Indexer.config[:log_dir]}/#{Indexer.config[:log_name]}"
   time do
+    if @indexer.collection_is_mergable?
+      puts 'A collection merge will happen!'
+    end
     @indexer.harvest_and_index
     @indexer.index_collection_druid
     @indexer.solr_client.commit

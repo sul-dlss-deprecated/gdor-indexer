@@ -4,12 +4,14 @@ source "http://sul-gems.stanford.edu"
 # sul-gems
 gem 'harvestdor'
 gem 'stanford-mods'
-
+gem 'jruby-openssl'
 gem 'nokogiri'
 gem 'rake'
 gem 'rsolr'
 gem 'trollop'
-
+gem 'solrmarc_wrapper'
+gem 'solrj_wrapper'
+gem 'threach'
 # documentation
 group :doc do
 	gem 'rdoc'

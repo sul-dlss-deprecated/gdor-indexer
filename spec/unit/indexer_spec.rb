@@ -64,7 +64,7 @@ describe Indexer do
       @hdor_client.stub(:mods).with(@fake_druid).and_return(ng_mods)
       cntnt_md_xml = "<contentMetadata type='image' objectId='#{@fake_druid}'></contentMetadata>"
       ng_pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{cntnt_md_xml}</publicObject>")
-      @hdor_client.stub(:public_xml).with(@fake_druid).and_return(ng_pub_xml)
+      @hdor_client.stub(:public_xml).and_return(ng_pub_xml)
       @doc_hash = @indexer.sw_solr_doc(@fake_druid)
     end
 
@@ -90,7 +90,8 @@ describe Indexer do
         @coll_title = "My Collection Has an Interesting Title"
       end
       before(:each) do
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(@mods_xml))
+        @hdor_client.stub(:mods).and_return(Nokogiri::XML(@mods_xml))
+        
         @hdor_client.stub(:public_xml).with(@fake_druid).and_return(@pub_xml)
         @indexer.stub(:identity_md_obj_label).with(@coll_druid).and_return(@coll_title)
       end

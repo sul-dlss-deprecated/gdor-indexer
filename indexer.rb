@@ -4,6 +4,7 @@ require 'harvestdor'
 require 'rsolr'
 # stdlib
 require 'logger'
+require 'threach'
 
 # local files
 require 'solr_doc_builder'
@@ -32,7 +33,8 @@ class Indexer
   #   create a Solr document for each druid suitable for SearchWorks
   #   write the result to the SearchWorks Solr index
   def harvest_and_index
-    druids.each { |id|  
+    
+    druids.threach(4) do  |id|  
       logger.debug "Indexing #{id}"
       begin
       solr_client.add(sw_solr_doc(id))
@@ -40,7 +42,7 @@ class Indexer
       rescue => e
         logger.error "Failed to index #{id}: #{e.message}"
       end
-    }
+  end
   end
 
   # return Array of druids contained in the OAI harvest indicated by OAI params in yml configuration file
@@ -48,17 +50,37 @@ class Indexer
   def druids
     @druids ||= harvestdor_client.druids_via_oai
   end
-
+  # @return [boolean] true if the collection has a catkey
+  def collection_is_mergable?
+    sdb=SolrDocBuilder.new(collection_druid, harvestdor_client, logger)
+    if sdb.catkey
+      logger.info "Collection #{collection_druid} is being merged with cat key #{sdb.catkey}"
+    end
+    false
+  end
+  # @return [String]The collection object catkey or nil if none exists
+  def catkey
+    sdb=SolrDocBuilder.new(collection_druid, harvestdor_client, logger)
+    sdb.catkey
+  end
   # Create a solr document for the collection druid suitable for searchworks
   # write the result to the SearchWorks Solr Index
   # @param [String] druid 
   def index_collection_druid
-    logger.debug "Indexing collection object #{collection_druid}"
+    if collection_is_mergable?
+      begin
+        logger.debug "Merging collection object #{collection_druid} into #{catkey}"
+        RecordMerger.merge(collection_druid,catkey)
+      rescue => e
+      end
+    else
     begin
+      logger.debug "Indexing collection object #{collection_druid}"
       solr_client.add(sw_solr_doc(collection_druid)) unless collection_druid.nil?
       # update DOR object's workflow datastream??   for harvest?  for indexing?
     rescue => e
       logger.error "Failed to index collection object #{collection_druid}: #{e.message}"
+    end
     end
   end
 
@@ -118,7 +140,11 @@ class Indexer
             Indexer.format_hash[coll_druid][doc_hash[:format]]=doc_hash[:format]
           end
           end
+          if catkey
+            doc_hash[:collection] << catkey
+          else
         doc_hash[:collection] << coll_druid
+        end
         doc_hash[:collection_with_title] << "#{coll_druid}-|-#{coll_hash[coll_druid]}"
         }
       end
