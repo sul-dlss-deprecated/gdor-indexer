@@ -1,14 +1,17 @@
-= walters-indexer
+= dor-searchworks-indexer
 
-Code to harvest Walters Art Museum metadata from DOR and index it into Solr for the SearchWorks application
+Code to harvest DOR druids via OAI, mods from PURL, and use it to index items into the Searchworks index.
 
 Relationship used for OAI harvest:  "is_member_of_collection_ww121ss5000"
 
+
+== install steps
+
+check out this code from git
+clone /afs/ir/dev/dlss/git/searchworks/solrmarc-sw.git
+run 'ant dist_site'
+set dist_dir to the path of the dist directory that is created, like dist_dir: ./solrmarc-sw/dist
+create a collection config file based on config/collection/reid_dennis.yaml
+  
 == Usage
-
-Check out code from git
-
-Execute:
-    $ bundle install
-
-Run it
+./bin/indexer -c {name of collection config file}
