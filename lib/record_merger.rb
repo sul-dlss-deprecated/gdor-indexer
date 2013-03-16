@@ -15,7 +15,7 @@ class RecordMerger
     @druid=druid
     doc=RecordMerger.fetch_sw_solr_input_doc
     solrj = SolrjWrapper.new('../solrmarc-sw/lib/solrj-lib',Indexer.config.solr.url,1,1)
-    solrj.add_val_to_fld(doc, "url_fulltext", 'new purl!')
+    solrj.add_val_to_fld(doc, "url_fulltext", 'pul.stanford.edu/'+@catkey)
     solrj.add_val_to_fld(doc, "access_facet", "Online")
 
     #at the moment we  only merge collections, this will have to check for item vs collection in the future

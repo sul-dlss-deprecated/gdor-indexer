@@ -68,11 +68,12 @@ class Indexer
   # write the result to the SearchWorks Solr Index
   # @param [String] druid 
   def index_collection_druid
-    if collection_is_mergable?
+    if catkey
       begin
         logger.debug "Merging collection object #{collection_druid} into #{catkey}"
         RecordMerger.merge(collection_druid,catkey)
       rescue => e
+        logger.error "Failed to merge collection object #{collection_druid}: #{e.message}"
       end
     else
     begin
