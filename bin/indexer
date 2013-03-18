@@ -43,6 +43,15 @@ require 'record_merger'
 # @yaml = YAML.load_file(config_yml_path)
 # @hdor_client = @indexer.send(:harvestdor_client)
 # @fake_druid = 'oo000oo0000'
+module Harvestdor
+  def self.mods druid, purl_url = Harvestdor::PURL_DEFAULT
+    begin
+      Nokogiri::XML(open("#{purl_url}/#{druid}.mods"),nil,'UTF-8')
+    rescue OpenURI::HTTPError
+      raise Harvestdor::Errors::MissingMods.new(druid)
+    end
+  end
+end
 
 module OAI
  class Client
