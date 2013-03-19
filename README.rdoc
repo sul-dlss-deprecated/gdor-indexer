@@ -7,6 +7,10 @@ Relationship used for OAI harvest:  "is_member_of_collection_ww121ss5000"
 
 == install steps
 
+You must use jruby in 1.9 compatibility mode to run this app. Version 1.6.8 is known to work. An rvmrc file with the below is known to work :
+export JRUBY_OPTS="--1.9"
+rvm use jruby-1.6.8
+
 check out this code from git
 clone /afs/ir/dev/dlss/git/searchworks/solrmarc-sw.git
 run 'ant dist_site'
