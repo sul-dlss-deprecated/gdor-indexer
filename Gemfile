@@ -5,7 +5,7 @@ source "http://sul-gems.stanford.edu"
 gem 'harvestdor'
 gem 'stanford-mods'
 gem 'jruby-openssl'
-gem 'nokogiri', '~>1.4.0' 
+gem 'nokogiri'
 gem 'rake'
 gem 'rsolr'
 gem 'trollop'
