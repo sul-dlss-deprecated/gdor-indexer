@@ -96,7 +96,7 @@ class SolrDocBuilder
       vals.empty? ? nil : vals
     end
   end
-
+  # @return [Array<String>] values for the pub_date_group_facet
 	def pub_date_groups year
 	  if not year
 	    return nil
@@ -211,10 +211,6 @@ class SolrDocBuilder
       dates.each do |f_date|
         #remove ? and [] 
         f_date=f_date.gsub('?','').gsub('[','').gsub(']','')
-        # if it is a date ruby can parse, yay
-        if is_date?(f_date)
-          return Date.parse(f_date).year.to_s
-        end
         #if it is a 4 digit year, yay
         if is_number?(f_date) and f_date.length ==4
           return f_date
