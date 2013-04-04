@@ -28,6 +28,23 @@ class Indexer
     @logger ||= load_logger(Indexer.config.log_dir, Indexer.config.log_name)
   end
 
+  def add(doc)
+    tries=0
+    begin
+      tries+=1
+      solr_client.add(doc)
+      #return if successful
+      return
+    rescue
+      if tries<3
+      logger.warn "#{id}: #{e.message}, retrying"
+      else
+        logger.error "Failed saving #{id}: #{e.message}"
+        logger.error e.backtrace
+        return
+      end
+    end
+  end
   # per this Indexer's config options 
   #  harvest the druids via OAI
   #   create a Solr document for each druid suitable for SearchWorks
@@ -37,7 +54,8 @@ class Indexer
     druids.threach(4) do  |id|  
       logger.debug "Indexing #{id}"
       begin
-      solr_client.add(sw_solr_doc(id))
+      #add to solr, retry if network errors occur  
+      add(sw_solr_doc(id))
       # update DOR object's workflow datastream??   for harvest?  for indexing?
       rescue => e
         logger.error "Failed to index #{id}: #{e.message}"
