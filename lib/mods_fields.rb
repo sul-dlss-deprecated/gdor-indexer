@@ -101,6 +101,7 @@ class SolrDocBuilder
 	  if not year
 	    return nil
     end
+    year=year.to_i
     current_year=Time.new.year.to_i
     result = []
     if year >= current_year - 1
