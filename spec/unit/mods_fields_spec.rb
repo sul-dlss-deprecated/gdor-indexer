@@ -483,4 +483,30 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       sdb.format.should == []
     end
   end#context format
+  context "pub_date_groups" do
+    it 'should generate the groups' do
+      m = "<mods #{@ns_decl}><originInfo>
+      <dateCreated>1904</dateCreated>
+      </originInfo></mods>"
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+      sdb.pub_date_groups(1904).should == ['More than 50 years ago']
+    end
+    it 'should work for a modern date too' do
+      m = "<mods #{@ns_decl}><originInfo>
+      <dateCreated>1904</dateCreated>
+      </originInfo></mods>"
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+      sdb.pub_date_groups(2013).should == ["This year", "Last 3 years", "Last 10 years", "Last 50 years"]
+    end
+    it 'should work ok given a nil date' do
+      m = "<mods #{@ns_decl}><originInfo>
+      <dateCreated>1904</dateCreated>
+      </originInfo></mods>"
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+      sdb.pub_date_groups(nil).should == nil
+    end
+  end#context pub date groups
 end

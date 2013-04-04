@@ -14,6 +14,29 @@ class SolrDocBuilder
     end
   end
 
+   def main_author_w_date_test
+      result = nil
+      first_wo_role = nil
+      @smods_rec.plain_name.each { |n|
+        puts n.to_s
+        if n.role.size == 0
+          first_wo_role ||= n
+        end
+        n.role.each { |r|
+          if r.authority.include?('marcrelator') && 
+                (r.value.include?('Creator') || r.value.include?('Author'))
+            result ||= n.display_value_w_date
+          end          
+        }
+      }
+      if !result && first_wo_role
+        result = first_wo_role.display_value_w_date
+      end
+      puts result
+      result
+    end
+
+
   # Values are the contents of:
   #   subject/geographic
   #   subject/hierarchicalGeographic
@@ -71,6 +94,28 @@ class SolrDocBuilder
       }
 
       vals.empty? ? nil : vals
+    end
+  end
+
+	def pub_date_groups year
+	  if not year
+	    return nil
+    end
+    current_year=Time.new.year.to_i
+    result = []
+    if year >= current_year - 1
+      result << "This year"
+    end
+    if year >= current_year - 3
+      result << "Last 3 years"
+    end
+    if year >= current_year - 10
+      result << "Last 10 years"
+    end
+    if year >= current_year - 50
+      result << "Last 50 years"
+    else
+      result << "More than 50 years ago"
     end
   end
 
@@ -184,7 +229,7 @@ class SolrDocBuilder
         end
       end
     end
-    @logger.info("#{@druid} no valid pub date found in "+dates.to_s)
+    #@logger.info("#{@druid} no valid pub date found in "+dates.to_s)
     return nil
   end
   #The year the object was published, , filtered based on max_pub_date and min_pub_date from the config file
