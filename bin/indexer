@@ -127,7 +127,11 @@ def time
   puts "This set took #{elapsed} seconds to run."
 end
 
-@collections = ["kolb","walters","reid_dennis", "mclaughlin", "jmm", "physics_honors_theses"]
+# Define the collections that this script knows how to harvest
+# @return Array
+def collections
+  return ["kolb","walters","reid_dennis", "mclaughlin", "jmm", "physics_honors_theses"]
+end
 
 opts = Trollop::options do
   version "indexer v0.2.0 (c) 2012 Stanford University http://searchworks.stanford.edu"
@@ -140,10 +144,10 @@ opts = Trollop::options do
   EOM
   
   
-  opt :collection, "Index a given collection. Possible values are #{@collections}", :default => "kolb"
+  opt :collection, "Index a given collection. Possible values are #{collections}", :default => "kolb"
   opt :all, "Index all collections"
 end
-Trollop::die :collection, "must be a known collection" unless @collections.include?opts[:collection]
+Trollop::die :collection, "must be a known collection" unless collections.include?opts[:collection]
 
 if opts[:collection]  
   config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "collections", "#{opts[:collection]}.yml")
