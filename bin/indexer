@@ -130,7 +130,7 @@ end
 # Define the collections that this script knows how to harvest
 # @return Array
 def collections
-  return ["kolb","walters","reid_dennis", "mclaughlin", "jmm", "physics_honors_theses"]
+  return ["kolb","kitai","walters","reid_dennis", "mclaughlin", "jmm", "physics_honors_theses"]
 end
 
 opts = Trollop::options do
