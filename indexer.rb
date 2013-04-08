@@ -14,6 +14,8 @@ class Indexer
 
 
   def initialize yml_path, options = {}
+    @retries=0
+    @errors=0
     @yml_path = yml_path
     Indexer.config.configure(YAML.load_file(yml_path)) if yml_path    
     Indexer.config.configure options 
@@ -27,18 +29,26 @@ class Indexer
   def logger
     @logger ||= load_logger(Indexer.config.log_dir, Indexer.config.log_name)
   end
-
-  def add(doc)
+  def retries
+    @retries
+  end
+  def errors
+    @errors
+  end
+  #add the document to solr, retry if an error occurs
+  def add(doc, id)
     tries=0
     begin
       tries+=1
       solr_client.add(doc)
       #return if successful
       return
-    rescue
+    rescue => e
       if tries<3
-      logger.warn "#{id}: #{e.message}, retrying"
+        @retries+=1
+        logger.warn "#{id}: #{e.message}, retrying"
       else
+        @errors+=1
         logger.error "Failed saving #{id}: #{e.message}"
         logger.error e.backtrace
         return
@@ -50,14 +60,14 @@ class Indexer
   #   create a Solr document for each druid suitable for SearchWorks
   #   write the result to the SearchWorks Solr index
   def harvest_and_index
-    
     druids.threach(4) do  |id|  
       logger.debug "Indexing #{id}"
       begin
       #add to solr, retry if network errors occur  
-      add(sw_solr_doc(id))
+      add(sw_solr_doc(id), id)
       # update DOR object's workflow datastream??   for harvest?  for indexing?
       rescue => e
+        @errors+=1
         logger.error "Failed to index #{id}: #{e.message}"
         logger.error e.backtrace
       end
