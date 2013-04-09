@@ -124,7 +124,8 @@ end
     "Index a given collection. Possible values are #{collections}",
     :default => nil,
     :short => 'c',
-    :type => String
+    :type => String,
+    :multi => true
   opt :nocommit,
     "Index the collection but don't commit",
     :default => nil,
@@ -132,12 +133,22 @@ end
   opt :all, "Index all collections"
 end
 
-Trollop::die :collection, "must be a known collection. Possible values are: #{collections.inspect} You entered #{@opts[:collection]}" unless collections.include?@opts[:collection]
+puts @opts.inspect
+puts @opts[:collection].class
+# Trollop::die :collection, "must be a known collection. Possible values are: #{collections.inspect} You entered #{@opts[:collection]}" unless collections.include?@opts[:collection]
 
-if @opts[:collection]  
-  config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "collections", "#{@opts[:collection]}.yml")
+# Get all of the collections into an Array
+@collections = []
+if @opts[:collection].instance_of?Array 
+  @collections = @opts[:collection] 
+else 
+  @collections << @opts[:collection]
+end
+
+@collections.each do |c|
+  config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "collections", "#{c}.yml")
   @indexer = Indexer.new(config_yml_path)
-  puts "Indexing #{@opts[:collection]} into solr server #{Indexer.config[:solr][:url]}"
+  puts "Indexing #{c} into solr server #{Indexer.config[:solr][:url]}"
   puts "Logging output to #{Indexer.config[:log_dir]}/#{Indexer.config[:log_name]}"
   time do
     if @indexer.collection_is_mergable?
