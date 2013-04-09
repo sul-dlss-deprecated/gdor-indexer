@@ -125,6 +125,10 @@ end
     :default => nil,
     :short => 'c',
     :type => String
+  opt :nocommit,
+    "Index the collection but don't commit",
+    :default => nil,
+    :short => 'n'
   opt :all, "Index all collections"
 end
 
@@ -141,8 +145,16 @@ if @opts[:collection]
     end
     @indexer.harvest_and_index
     @indexer.index_collection_druid
-    puts "Ran indexing with #{@indexer.retries} retries and #{@indexer.errors} errors. Beginning solr commit."
-    @indexer.solr_client.commit
+    puts "Ran indexing with #{@indexer.retries} retries and #{@indexer.errors} errors."
+    
+    ## Commit our indexing job unless the :nocommit flag was passed
+    unless @opts[:nocommit]
+      puts "Starting commit..."
+      @indexer.solr_client.commit
+    else
+      puts "Skipping commit because :nocommit flag was passed"
+    end
+    
   end
   # puts "Indexing set objects only" if @indexer.config[:sets_only]
 end
