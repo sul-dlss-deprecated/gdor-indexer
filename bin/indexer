@@ -107,7 +107,7 @@ end
 # Define the collections that this script knows how to harvest
 # @return Array
 def collections
-  return ["folding_at_home","kolb","kitai","walters","reid_dennis", "mclaughlin", "jmm", "physics_honors_theses"]
+  return ["folding_at_home","kolb","kitai","walters","reid_dennis", "mclaughlin", "jmm", "physics_honors_theses", "stanford_research_data", "sul_staff"]
 end
 
 @opts = Trollop::options do
@@ -133,8 +133,6 @@ end
   opt :all, "Index all collections"
 end
 
-puts @opts.inspect
-puts @opts[:collection].class
 # Trollop::die :collection, "must be a known collection. Possible values are: #{collections.inspect} You entered #{@opts[:collection]}" unless collections.include?@opts[:collection]
 
 # Get all of the collections into an Array
