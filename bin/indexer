@@ -106,9 +106,11 @@ end
 
 # Define the collections that this script knows how to harvest
 # @return Array
-def collections
-  return ["folding_at_home","kolb","kitai","walters","reid_dennis", "mclaughlin", "jmm", "physics_honors_theses", "stanford_research_data", "sul_staff"]
-end
+ def collections
+	config_dir = File.join(File.dirname(__FILE__), '..', 'config', 'collections')
+	files = Dir.glob("#{config_dir}/*.yml")
+	files.map! {|x| File.basename(x, ".yml") }
+ end
 
 @opts = Trollop::options do
   version "indexer v0.2.0 (c) 2012 Stanford University http://searchworks.stanford.edu"
