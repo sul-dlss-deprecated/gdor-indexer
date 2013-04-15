@@ -10,11 +10,11 @@ describe SolrDocBuilder do
     @ng_mods_xml = Nokogiri::XML(@mods_xml)
     @strio = StringIO.new
   end
-  
+
   # NOTE:  
   # "Doubles, stubs, and message expectations are all cleaned out after each example."
   # per https://www.relishapp.com/rspec/rspec-mocks/docs/scope
-  
+
   context "doc_hash" do
     before(:all) do
       @ng_mods_xml = Nokogiri::XML("<mods #{@ns_decl}><note>hi</note></mods>")
@@ -54,21 +54,21 @@ describe SolrDocBuilder do
     context "img_info" do
       it "should have img_info as an Array of file ids from content metadata" do
         ng_xml = Nokogiri::XML("<contentMetadata type='image'>
-              <resource type='image'><file id='foo'/></resource>
-              <resource type='image'><file id='bar'/></resource></contentMetadata>")
+        <resource type='image'><file id='foo'/></resource>
+        <resource type='image'><file id='bar'/></resource></contentMetadata>")
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
         sdb.stub(:content_md).and_return(ng_xml.root)
         sdb.doc_hash[:img_info].should == ['foo', 'bar']
       end
     end
   end
-  
+
   context "doc_hash_from_mods" do
     before(:each) do
       @hdor_client = double()
       @hdor_client.stub(:public_xml).with(@fake_druid).and_return(nil)
     end
-    
+
     # see https://consul.stanford.edu/display/NGDE/Required+and+Recommended+Solr+Fields+for+SearchWorks+documents
 
     context "collection_type" do
@@ -86,7 +86,7 @@ describe SolrDocBuilder do
         sdb.doc_hash_from_mods[:collection_type].should == nil
       end
     end
-    
+
     context "<abstract> --> summary_search" do
       it "should be populated when the MODS has a top level <abstract> element" do
         m = "<mods #{@ns_decl}><abstract>blah blah</abstract></mods>"
@@ -96,9 +96,9 @@ describe SolrDocBuilder do
       end
       it "should have a value for each abstract element" do
         m = "<mods #{@ns_decl}>
-              <abstract>one</abstract>
-              <abstract>two</abstract>
-            </mods>"
+        <abstract>one</abstract>
+        <abstract>two</abstract>
+        </mods>"
         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
         sdb.doc_hash_from_mods[:summary_search].should == ['one', 'two']
@@ -126,17 +126,17 @@ describe SolrDocBuilder do
     context "access_condition_display" do
       it "should be populated when the MODS has a top level <accessCondition> element" do
         m = "<mods #{@ns_decl}>
-              <accessCondition type='useAndReproduction'>All rights reserved.</accessCondition>
-            </mods>"
+        <accessCondition type='useAndReproduction'>All rights reserved.</accessCondition>
+        </mods>"
         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
         sdb.doc_hash_from_mods[:access_condition_display].should == ['All rights reserved.']
       end
       it "should have a value for each accessCondition element" do
         m = "<mods #{@ns_decl}>
-              <accessCondition>one</accessCondition>
-              <accessCondition>two</accessCondition>
-            </mods>"
+        <accessCondition>one</accessCondition>
+        <accessCondition>two</accessCondition>
+        </mods>"
         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
         sdb.doc_hash_from_mods[:access_condition_display].should == ['one', 'two']
@@ -154,7 +154,7 @@ describe SolrDocBuilder do
         sdb.doc_hash_from_mods[:access_condition_display].should ==  nil
       end      
     end
-    
+
     it "language: should call sw_language_facet in stanford-mods gem to populate language field" do
       @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
@@ -162,7 +162,7 @@ describe SolrDocBuilder do
       smr.should_receive(:sw_language_facet)
       sdb.doc_hash_from_mods
     end
-    
+
     context "<physicalDescription><extent> --> physical" do
       it "should be populated when the MODS has mods/physicalDescription/extent element" do
         m = "<mods #{@ns_decl}><physicalDescription><extent>blah blah</extent></physicalDescription></mods>"
@@ -172,12 +172,12 @@ describe SolrDocBuilder do
       end
       it "should have a value for each extent element" do
         m = "<mods #{@ns_decl}>
-              <physicalDescription>
-                <extent>one</extent>
-                <extent>two</extent>
-              </physicalDescription>
-              <physicalDescription><extent>three</extent></physicalDescription>
-            </mods>"
+        <physicalDescription>
+        <extent>one</extent>
+        <extent>two</extent>
+        </physicalDescription>
+        <physicalDescription><extent>three</extent></physicalDescription>
+        </mods>"
         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
         sdb.doc_hash_from_mods[:physical].should == ['one', 'two', 'three']
@@ -205,15 +205,15 @@ describe SolrDocBuilder do
       end
       it "should have a value for each mods/relatedItem/location/url element" do
         m = "<mods #{@ns_decl}>
-              <relatedItem>
-                <location><url>one</url></location>
-                <location>
-                  <url>two</url>
-                  <url>three</url>
-                </location>
-              </relatedItem>
-              <relatedItem><location><url>four</url></location></relatedItem>
-            </mods>"
+        <relatedItem>
+        <location><url>one</url></location>
+        <location>
+        <url>two</url>
+        <url>three</url>
+        </location>
+        </relatedItem>
+        <relatedItem><location><url>four</url></location></relatedItem>
+        </mods>"
         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
         sdb.doc_hash_from_mods[:url_suppl].should == ['one', 'two', 'three', 'four']
@@ -226,9 +226,9 @@ describe SolrDocBuilder do
       end
       it "should not be present if there are only empty relatedItem/location/url elements in the MODS" do
         m = "<mods #{@ns_decl}>
-              <relatedItem><location><url/></location></relatedItem>
-              <relatedItem><location/></relatedItem>
-              <relatedItem/><note>notit</note></mods>"
+        <relatedItem><location><url/></location></relatedItem>
+        <relatedItem><location/></relatedItem>
+        <relatedItem/><note>notit</note></mods>"
         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
         sdb.doc_hash_from_mods[:url_suppl].should ==  nil
@@ -244,9 +244,9 @@ describe SolrDocBuilder do
       end
       it "should have a value for each tableOfContents element" do
         m = "<mods #{@ns_decl}>
-              <tableOfContents>one</tableOfContents>
-              <tableOfContents>two</tableOfContents>
-            </mods>"
+        <tableOfContents>one</tableOfContents>
+        <tableOfContents>two</tableOfContents>
+        </mods>"
         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
         sdb.doc_hash_from_mods[:toc_search].should == ['one', 'two']
@@ -264,14 +264,14 @@ describe SolrDocBuilder do
         sdb.doc_hash_from_mods[:toc_search].should ==  nil
       end      
     end
-    
+
     context "title fields" do
       before(:all) do
         title_mods = "<mods #{@ns_decl}>
-          <titleInfo><title>Jerk</title><nonSort>The</nonSort><subTitle>is whom?</subTitle></titleInfo>
-          <titleInfo><title>Joke</title></titleInfo>
-          <titleInfo type='alternative'><title>Alternative</title></titleInfo>
-          </mods>"
+        <titleInfo><title>Jerk</title><nonSort>The</nonSort><subTitle>is whom?</subTitle></titleInfo>
+        <titleInfo><title>Joke</title></titleInfo>
+        <titleInfo type='alternative'><title>Alternative</title></titleInfo>
+        </mods>"
         @ng_title_mods = Nokogiri::XML(title_mods)
       end
       before(:each) do
@@ -314,6 +314,18 @@ describe SolrDocBuilder do
         it "title_full_display" do
           @title_doc_hash[:title_full_display].should == "The Jerk is whom?"
         end
+        it 'should remove trailing commas in full titles' do
+          title_mods = "<mods #{@ns_decl}>
+          <titleInfo><title>Jerk</title><nonSort>The</nonSort><subTitle>is whom,</subTitle></titleInfo>
+          <titleInfo><title>Joke</title></titleInfo>
+          <titleInfo type='alternative'><title>Alternative</title></titleInfo>
+          </mods>"
+          @ng_title_mods = Nokogiri::XML(title_mods)
+          @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_title_mods)
+          @title_doc_hash = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash_from_mods
+          @title_doc_hash
+          @title_doc_hash[:title_full_display].should == "The Jerk is whom"
+        end
         it "title_variant_display should not be populated - it is a copy field" do
           @title_doc_hash[:title_variant_display].should == nil
         end
@@ -326,20 +338,20 @@ describe SolrDocBuilder do
     context "author fields" do
       before(:all) do
         name_mods = "<mods #{@ns_decl}>
-                        <name type='personal'>
-                          <namePart type='given'>John</namePart>
-                          <namePart type='family'>Huston</namePart>
-                          <role><roleTerm type='code' authority='marcrelator'>drt</roleTerm></role>
-                          <displayForm>q</displayForm>
-                        </name>
-                        <name type='personal'><namePart>Crusty The Clown</namePart></name>
-                        <name type='corporate'><namePart>Watchful Eye</namePart></name>
-                        <name type='corporate'>
-                          <namePart>Exciting Prints</namePart>
-                          <role><roleTerm type='text'>lithographer</roleTerm></role>
-                        </name>
-                        <name type='conference'><namePart>conference</namePart></name>
-                      </mods>"
+        <name type='personal'>
+        <namePart type='given'>John</namePart>
+        <namePart type='family'>Huston</namePart>
+        <role><roleTerm type='code' authority='marcrelator'>drt</roleTerm></role>
+        <displayForm>q</displayForm>
+        </name>
+        <name type='personal'><namePart>Crusty The Clown</namePart></name>
+        <name type='corporate'><namePart>Watchful Eye</namePart></name>
+        <name type='corporate'>
+        <namePart>Exciting Prints</namePart>
+        <role><roleTerm type='text'>lithographer</roleTerm></role>
+        </name>
+        <name type='conference'><namePart>conference</namePart></name>
+        </mods>"
         @ng_name_mods = Nokogiri::XML(name_mods)
       end
       before(:each) do
@@ -411,17 +423,17 @@ describe SolrDocBuilder do
         @s_title = 'title in subject'
         @topic = 'topic'
         m = "<mods #{@ns_decl}>
-          <genre>#{@genre}</genre>
-          <subject><cartographics><coordinates>#{@cart_coord}</coordinates></cartographics></subject>
-          <subject><genre>#{@s_genre}</genre></subject>
-          <subject><geographic>#{@geo}</geographic></subject>
-          <subject><geographicCode authority='iso3166'>#{@geo_code}</geographicCode></subject>
-          <subject><hierarchicalGeographic><country>#{@hier_geo_country}</country></hierarchicalGeographic></subject>
-          <subject><name><namePart>#{@s_name}</namePart></name></subject>
-          <subject><occupation>#{@occupation}</occupation></subject>
-          <subject><temporal>#{@temporal}</temporal></subject>
-          <subject><titleInfo><title>#{@s_title}</title></titleInfo></subject>
-          <subject><topic>#{@topic}</topic></subject>      
+        <genre>#{@genre}</genre>
+        <subject><cartographics><coordinates>#{@cart_coord}</coordinates></cartographics></subject>
+        <subject><genre>#{@s_genre}</genre></subject>
+        <subject><geographic>#{@geo}</geographic></subject>
+        <subject><geographicCode authority='iso3166'>#{@geo_code}</geographicCode></subject>
+        <subject><hierarchicalGeographic><country>#{@hier_geo_country}</country></hierarchicalGeographic></subject>
+        <subject><name><namePart>#{@s_name}</namePart></name></subject>
+        <subject><occupation>#{@occupation}</occupation></subject>
+        <subject><temporal>#{@temporal}</temporal></subject>
+        <subject><titleInfo><title>#{@s_title}</title></titleInfo></subject>
+        <subject><topic>#{@topic}</topic></subject>      
         </mods>"
         @ng_subject_mods = Nokogiri::XML(m)
       end
@@ -479,9 +491,9 @@ describe SolrDocBuilder do
         @subject_doc_hash[:era_facet].should include(@temporal)
       end
     end # subject fields
-    
+
   end # doc_hash_from_mods
-  
+
   context "collection?" do
     before(:each) do
       @hdor_client = double()
@@ -512,10 +524,10 @@ describe SolrDocBuilder do
     end
     it "should return true if MODS has multiple top level <typeOfResource> elements and at least one is a collection" do
       m = "<mods #{@ns_decl}>
-            <typeOfResource>cartographic</typeOfResource>
-            <typeOfResource collection='yes'/>
-            <typeOfResource>still image</typeOfResource>
-          </mods>"
+      <typeOfResource>cartographic</typeOfResource>
+      <typeOfResource collection='yes'/>
+      <typeOfResource>still image</typeOfResource>
+      </mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
       sdb.should be_a_collection
@@ -546,10 +558,10 @@ describe SolrDocBuilder do
     end
     it "should return true if MODS has multiple top level <typeOfResource> elements and at least one is still image" do
       m = "<mods #{@ns_decl}>
-            <typeOfResource>cartographic</typeOfResource>
-            <typeOfResource collection='yes'/>
-            <typeOfResource>still image</typeOfResource>
-          </mods>"
+      <typeOfResource>cartographic</typeOfResource>
+      <typeOfResource collection='yes'/>
+      <typeOfResource>still image</typeOfResource>
+      </mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
       sdb.should be_an_image
@@ -590,7 +602,7 @@ describe SolrDocBuilder do
         expect { SolrDocBuilder.new(@fake_druid, @real_hdor_client, nil) }.to raise_error(Harvestdor::Errors::MissingPurlPage)
       end
     end
-    
+
     context "getting a collection's goodies" do
       it "does something" do
         pending "to be implemented"

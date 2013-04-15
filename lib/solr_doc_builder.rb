@@ -82,7 +82,7 @@ class SolrDocBuilder
       :title_sort => @smods_rec.sw_sort_title,
       :title_245a_display => @smods_rec.sw_short_title,
       :title_display => @smods_rec.sw_full_title,
-      :title_full_display => @smods_rec.sw_full_title,
+      :title_full_display => sw_full_title,
       
       # author fields
       :author_1xx_search => @smods_rec.sw_main_author,

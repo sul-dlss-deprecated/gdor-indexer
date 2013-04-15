@@ -35,6 +35,14 @@ class SolrDocBuilder
     puts result
     result
   end
+  #remove trailing commas
+  def sw_full_title
+      toret = @smods_rec.sw_full_title
+      if toret
+        toret = toret.gsub(/,$/, '')
+      end
+      toret
+    end
 
 
   # Values are the contents of:
