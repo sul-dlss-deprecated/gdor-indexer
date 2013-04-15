@@ -11,38 +11,9 @@ require 'indexer'
 require 'record_merger'
 # require 'patches'
 
+###############################################################
+# Monkey patch for Nokogiri
 
-# @indexer.logger.level = Logger::DEBUG
-# doc = @indexer.sw_solr_doc("gh890mv3053")
-# puts doc.inspect
-# @indexer.solr_client.add(doc)
-
-# @indexer.harvest_and_index
-# @indexer.solr_client.commit
-
-
-# @indexer.config[:sets_to_index].each do |collection|
-#   
-#   @indexer.config[:default_set]="is_member_of_collection_#{collection}" # set the new default collection to index
-# 
-#   puts "Indexing set object #{collection}"
-#   # harvest this particular collection
-#   doc = @indexer.solr_doc(collection)
-#   @indexer.solr_client.add(doc)
-#   @indexer.solr_client.commit
-#   
-#   unless @indexer.config[:sets_only]
-#     @indexer.harvest_and_index(:new_index=>true)
-#     @indexer.solr_client.commit
-#   end
-#   
-# end
-
-
-# require 'yaml'
-# @yaml = YAML.load_file(config_yml_path)
-# @hdor_client = @indexer.send(:harvestdor_client)
-# @fake_druid = 'oo000oo0000'
 module Nokogiri
   module XML
     class Node
@@ -84,6 +55,8 @@ module Nokogiri
   end
 end
   
+###############################################################
+# Monkey patch for OAI so we don't timeout
 module OAI
  class Client
    # Do the actual HTTP get, following any temporary redirects
@@ -120,6 +93,10 @@ module OAI
    end
  end
 end
+
+
+###############################################################
+# Local convenience methods
 def time
   start = Time.now
   yield
@@ -127,9 +104,15 @@ def time
   puts "This set took #{elapsed} seconds to run."
 end
 
-@collections = ["kolb","walters","reid_dennis", "mclaughlin", "jmm", "physics_honors_theses"]
+# Define the collections that this script knows how to harvest
+# @return Array
+ def collections
+	config_dir = File.join(File.dirname(__FILE__), '..', 'config', 'collections')
+	files = Dir.glob("#{config_dir}/*.yml")
+	files.map! {|x| File.basename(x, ".yml") }
+ end
 
-opts = Trollop::options do
+@opts = Trollop::options do
   version "indexer v0.2.0 (c) 2012 Stanford University http://searchworks.stanford.edu"
   banner <<-EOM
   The indexer script harvests records from SearchWorks OAI-PMH Provider
@@ -138,17 +121,34 @@ opts = Trollop::options do
     ./index [options] 
   where [options] are:
   EOM
-  
-  
-  opt :collection, "Index a given collection. Possible values are #{@collections}", :default => "kolb"
+    
+  opt :collection, 
+    "Index a given collection. Possible values are #{collections}",
+    :default => nil,
+    :short => 'c',
+    :type => String,
+    :multi => true
+  opt :nocommit,
+    "Index the collection but don't commit",
+    :default => nil,
+    :short => 'n'
   opt :all, "Index all collections"
 end
-Trollop::die :collection, "must be a known collection" unless @collections.include?opts[:collection]
 
-if opts[:collection]  
-  config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "collections", "#{opts[:collection]}.yml")
+# Trollop::die :collection, "must be a known collection. Possible values are: #{collections.inspect} You entered #{@opts[:collection]}" unless collections.include?@opts[:collection]
+
+# Get all of the collections into an Array
+@collections = []
+if @opts[:collection].instance_of?Array 
+  @collections = @opts[:collection] 
+else 
+  @collections << @opts[:collection]
+end
+
+@collections.each do |c|
+  config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "collections", "#{c}.yml")
   @indexer = Indexer.new(config_yml_path)
-  puts "Indexing #{opts[:collection]} into solr server #{Indexer.config[:solr][:url]}"
+  puts "Indexing #{c} into solr server #{Indexer.config[:solr][:url]}"
   puts "Logging output to #{Indexer.config[:log_dir]}/#{Indexer.config[:log_name]}"
   time do
     if @indexer.collection_is_mergable?
@@ -156,8 +156,16 @@ if opts[:collection]
     end
     @indexer.harvest_and_index
     @indexer.index_collection_druid
-    puts "Ran indexing with #{@indexer.retries} retries and #{@indexer.errors} errors. Beginning solr commit."
-    @indexer.solr_client.commit
+    puts "Ran indexing with #{@indexer.retries} retries and #{@indexer.errors} errors."
+    
+    ## Commit our indexing job unless the :nocommit flag was passed
+    unless @opts[:nocommit]
+      puts "Starting commit..."
+      @indexer.solr_client.commit
+    else
+      puts "Skipping commit because :nocommit flag was passed"
+    end
+    
   end
   # puts "Indexing set objects only" if @indexer.config[:sets_only]
 end
