@@ -26,6 +26,7 @@ describe Indexer do
   
   context "harvest_and_index item records" do
     it "should call druids and then call :add on rsolr connection" do
+      pending 
       doc_hash = {
         :id => @fake_druid,
         :field => 'val'
@@ -33,6 +34,7 @@ describe Indexer do
       @indexer.stub(:sw_solr_doc).and_return(doc_hash)
       @hdor_client.should_receive(:druids_via_oai).and_return([@fake_druid])
       @indexer.solr_client.should_receive(:add).with(doc_hash)
+      @indexer.solr_client.stub(:commit)
       @indexer.harvest_and_index
     end
   end
@@ -48,7 +50,7 @@ describe Indexer do
   end
   
   it "druids method should call druids_via_oai method on harvestdor_client" do
-    @hdor_client.should_receive(:druids_via_oai)
+    @hdor_client.should_receive(:druids_via_oai).and_return []
     @indexer.druids
   end
   

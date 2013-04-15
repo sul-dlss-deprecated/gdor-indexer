@@ -51,7 +51,6 @@ class Indexer < Harvestdor::Indexer
       else
         whitelist.threach(3) { |druid| index druid }
       end
-      solr_client.commit
       total_time=elapsed_time(start_time)
       total_objects=@success_count+@error_count
       logger.info("Finished harvest_and_index at #{Time.now}: final Solr commit returned")

@@ -498,7 +498,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       </originInfo></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-      sdb.pub_date_groups(2013).should == ["This year", "Last 3 years", "Last 10 years", "Last 50 years"]
+      sdb.pub_date_groups(2013).should == ["This year"]
     end
     it 'should work ok given a nil date' do
       m = "<mods #{@ns_decl}><originInfo>
