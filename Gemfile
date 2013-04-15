@@ -2,6 +2,7 @@ source :rubygems
 source "http://sul-gems.stanford.edu"
 
 # sul-gems
+gem 'harvestdor-indexer'
 gem 'harvestdor'
 gem 'stanford-mods'
 gem 'jruby-openssl'

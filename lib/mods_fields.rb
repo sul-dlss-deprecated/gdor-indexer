@@ -14,27 +14,27 @@ class SolrDocBuilder
     end
   end
 
-   def main_author_w_date_test
-      result = nil
-      first_wo_role = nil
-      @smods_rec.plain_name.each { |n|
-        puts n.to_s
-        if n.role.size == 0
-          first_wo_role ||= n
-        end
-        n.role.each { |r|
-          if r.authority.include?('marcrelator') && 
-                (r.value.include?('Creator') || r.value.include?('Author'))
-            result ||= n.display_value_w_date
-          end          
-        }
-      }
-      if !result && first_wo_role
-        result = first_wo_role.display_value_w_date
+  def main_author_w_date_test
+    result = nil
+    first_wo_role = nil
+    @smods_rec.plain_name.each { |n|
+      puts n.to_s
+      if n.role.size == 0
+        first_wo_role ||= n
       end
-      puts result
-      result
+      n.role.each { |r|
+        if r.authority.include?('marcrelator') && 
+          (r.value.include?('Creator') || r.value.include?('Author'))
+          result ||= n.display_value_w_date
+        end          
+      }
+    }
+    if !result && first_wo_role
+      result = first_wo_role.display_value_w_date
     end
+    puts result
+    result
+  end
 
 
   # Values are the contents of:
@@ -97,26 +97,29 @@ class SolrDocBuilder
     end
   end
   # @return [Array<String>] values for the pub_date_group_facet
-	def pub_date_groups year
-	  if not year
-	    return nil
+  def pub_date_groups year
+    if not year
+      return nil
     end
     year=year.to_i
     current_year=Time.new.year.to_i
     result = []
     if year >= current_year - 1
       result << "This year"
-    end
-    if year >= current_year - 3
-      result << "Last 3 years"
-    end
-    if year >= current_year - 10
-      result << "Last 10 years"
-    end
-    if year >= current_year - 50
-      result << "Last 50 years"
     else
-      result << "More than 50 years ago"
+      if year >= current_year - 3
+        result << "Last 3 years"
+      else
+        if year >= current_year - 10
+          result << "Last 10 years"
+        else
+          if year >= current_year - 50
+            result << "Last 50 years"
+          else
+            result << "More than 50 years ago"
+          end
+        end
+      end
     end
   end
 
@@ -206,6 +209,13 @@ class SolrDocBuilder
   # Get the publish year from mods
   #@return [String] 4 character year or nil if no valid date was found
   def pub_year
+    #use the cached year if there is one
+    if @pub_year
+      if @pub_year == ''
+        return nil
+      end
+      return @pub_year
+    end
     dates=pub_dates
     if dates
       dates.each do |f_date|
@@ -213,20 +223,21 @@ class SolrDocBuilder
         f_date=f_date.gsub('?','').gsub('[','').gsub(']','')
         #if it is a 4 digit year, yay
         if is_number?(f_date) and f_date.length ==4
+          @pub_year=f_date
           return f_date
         end
-
         if not is_number? f_date
           # just regex for 4 numbers
           matches=f_date.scan(/\d{4}/)
-          if matches.length>0 
-            #@logger.info("#{@druid} Found pub date "+matches.first+" the hard way from "+dates.to_s)
+          if matches.length>0
+            @pub_year=matches.first 
             return matches.first
           end
         end
       end
     end
-    #@logger.info("#{@druid} no valid pub date found in "+dates.to_s)
+    @pub_year=''
+    @logger.info("#{@druid} no valid pub date found in '#{dates.to_s}'")
     return nil
   end
   #The year the object was published, , filtered based on max_pub_date and min_pub_date from the config file

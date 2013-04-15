@@ -8,14 +8,17 @@ require 'threach'
 
 # local files
 require 'solr_doc_builder'
-
+require 'harvestdor-indexer'
 # Base class to harvest from DOR via harvestdor gem
-class Indexer
+class Indexer < Harvestdor::Indexer
 
 
   def initialize yml_path, options = {}
+    @success_count=0
+    @error_count=0
+    @total_time_to_solr=0
+    @total_time_to_parse=0
     @retries=0
-    @errors=0
     @yml_path = yml_path
     Indexer.config.configure(YAML.load_file(yml_path)) if yml_path    
     Indexer.config.configure options 
@@ -35,50 +38,37 @@ class Indexer
   def errors
     @errors
   end
-  #add the document to solr, retry if an error occurs
-  def add(doc, id)
-    tries=0
-    begin
-      tries+=1
-      solr_client.add(doc)
-      #return if successful
-      return
-    rescue => e
-      if tries<3
-        @retries+=1
-        logger.warn "#{id}: #{e.message}, retrying"
-      else
-        @errors+=1
-        logger.error "Failed saving #{id}: #{e.message}"
-        logger.error e.backtrace
-        return
-      end
-    end
-  end
+  
   # per this Indexer's config options 
   #  harvest the druids via OAI
   #   create a Solr document for each druid suitable for SearchWorks
   #   write the result to the SearchWorks Solr index
-  def harvest_and_index
-    druids.threach(4) do  |id|  
-      logger.debug "Indexing #{id}"
-      begin
-      #add to solr, retry if network errors occur  
-      add(sw_solr_doc(id), id)
-      # update DOR object's workflow datastream??   for harvest?  for indexing?
-      rescue => e
-        @errors+=1
-        logger.error "Failed to index #{id}: #{e.message}"
-        logger.error e.backtrace
+    def harvest_and_index
+      start_time=Time.now
+      logger.info("Started harvest_and_index at #{start_time}")
+      if whitelist.empty?
+        druids.threach(3) { |druid| index druid }
+      else
+        whitelist.threach(3) { |druid| index druid }
       end
-  end
-  end
+      solr_client.commit
+      total_time=elapsed_time(start_time)
+      total_objects=@success_count+@error_count
+      logger.info("Finished harvest_and_index at #{Time.now}: final Solr commit returned")
+      logger.info("Total elapsed time for harvest and index: #{(total_time/60.0)} minutes")
+      logger.info("Avg solr commit time per object (successful): #{@total_time_to_solr/@success_count} seconds") unless (@total_time_to_solr == 0 || @success_count == 0)
+      logger.info("Avg solr commit time per object (all): #{@total_time_to_solr/total_objects} seconds") unless (@total_time_to_solr == 0 || @error_count == 0 || total_objects == 0)
+      logger.info("Avg parse time per object (successful): #{@total_time_to_parse/@success_count} seconds") unless (@total_time_to_parse == 0 || @success_count == 0)
+      logger.info("Avg parse time per object (all): #{@total_time_to_parse/total_objects} seconds") unless (@total_time_to_parse == 0 || @error_count == 0 || total_objects == 0)
+      logger.info("Avg complete index time per object (successful): #{total_time/@success_count} seconds") unless (@success_count == 0)
+      logger.info("Avg complete index time per object (all): #{total_time/total_objects} seconds") unless (@error_count == 0 || total_object == 0)
+      logger.info("Successful count: #{@success_count}")
+      logger.info("Error count: #{@error_count}")
+      logger.info("Retry count: #{@retries}")
+      logger.info("Total records processed: #{total_objects}")
+    end
 
-  # return Array of druids contained in the OAI harvest indicated by OAI params in yml configuration file
-  # @return [Array<String>] or enumeration over it, if block is given.  (strings are druids, e.g. ab123cd1234)
-  def druids
-    @druids ||= harvestdor_client.druids_via_oai
-  end
+
   # @return [boolean] true if the collection has a catkey
   def collection_is_mergable?
     sdb=SolrDocBuilder.new(collection_druid, harvestdor_client, logger)
@@ -137,6 +127,23 @@ class Indexer
     @@format_hash ||= {}
   end
 
+  # create Solr doc for the druid and add it to Solr, unless it is on the blacklist.  
+  #  NOTE: don't forget to send commit to Solr, either once at end (already in harvest_and_index), or for each add, or ...
+  def index druid
+    if blacklist.include?(druid)
+      logger.info("Druid #{druid} is on the blacklist and will have no Solr doc created")
+    else
+      begin
+      logger.info "indexing #{druid}"
+        solr_add(sw_solr_doc(druid),druid)
+        @success_count+=1
+      rescue => e
+        @error_count+=1
+        logger.error "Failed to index #{druid}: #{e.message}"
+      end
+    end
+  end
+
   # Create a Solr doc, as a Hash, to be added to the SearchWorks Solr index.  
   # Solr doc contents are based on the mods, contentMetadata, etc. for the druid
   # @param [String] druid, e.g. ab123cd4567
@@ -145,9 +152,6 @@ class Indexer
   def sw_solr_doc druid
     sdb = SolrDocBuilder.new(druid, harvestdor_client, logger)
     doc_hash = sdb.doc_hash
-
-    # add things from Indexer level class (info kept here for caching purposes)
-
     # determine collection druids and their titles and add to solr doc
     coll_druids = sdb.collection_druids    
     if coll_druids
@@ -178,7 +182,6 @@ class Indexer
         doc_hash[:collection_with_title] << "#{coll_druid}-|-#{coll_hash[coll_druid]}"
         }
       end
-
       doc_hash[:url_fulltext] = "#{Indexer.config.purl}/#{druid}"
       doc_hash
     end
@@ -195,19 +198,4 @@ class Indexer
       # TODO: create nom-xml terminology for identityMetadata in harvestdor?
       ng_imd.xpath('identityMetadata/objectLabel').text
     end
-
-    protected #---------------------------------------------------------------------
-
-    def harvestdor_client
-      @harvestdor_client ||= Harvestdor::Client.new({:config_yml_path => @yml_path})
-    end
-
-    # Global, memoized, lazy initialized instance of a logger
-    # @param String directory for to get log file
-    # @param String name of log file
-    def load_logger(log_dir, log_name)
-      Dir.mkdir(log_dir) unless File.directory?(log_dir) 
-      @logger ||= Logger.new(File.join(log_dir, log_name), 'daily')
-    end
-
   end
