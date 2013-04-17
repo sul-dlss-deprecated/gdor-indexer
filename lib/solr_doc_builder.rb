@@ -111,9 +111,6 @@ class SolrDocBuilder
       :toc_search => @smods_rec.term_values(:tableOfContents),
       :url_suppl => @smods_rec.term_values([:related_item, :location, :url]),
 
-      # is access_condition_display still needed?
-      :access_condition_display => @smods_rec.term_values(:accessCondition),
-      
       #publish date fields
       :pub_date_sort => pub_date,
       :pub_date_group_facet => pub_date_groups(pub_date), #must use solrmarc when the time comes
