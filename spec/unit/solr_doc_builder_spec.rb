@@ -123,38 +123,6 @@ describe SolrDocBuilder do
       end
     end # summary_search / <abstract>
 
-    context "access_condition_display" do
-      it "should be populated when the MODS has a top level <accessCondition> element" do
-        m = "<mods #{@ns_decl}>
-        <accessCondition type='useAndReproduction'>All rights reserved.</accessCondition>
-        </mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-        sdb.doc_hash_from_mods[:access_condition_display].should == ['All rights reserved.']
-      end
-      it "should have a value for each accessCondition element" do
-        m = "<mods #{@ns_decl}>
-        <accessCondition>one</accessCondition>
-        <accessCondition>two</accessCondition>
-        </mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-        sdb.doc_hash_from_mods[:access_condition_display].should == ['one', 'two']
-      end
-      it "should not be present when there is no top level <accessCondition> element" do
-        m = "<mods #{@ns_decl}><relatedItem><accessCondition>foo</accessCondition></relatedItem></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        sdb.doc_hash_from_mods[:access_condition_display].should == nil
-      end
-      it "should not be present if there are only empty accessCondition elements in the MODS" do
-        m = "<mods #{@ns_decl}><accessCondition/><note>notit</note></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-        sdb.doc_hash_from_mods[:access_condition_display].should ==  nil
-      end      
-    end
-
     it "language: should call sw_language_facet in stanford-mods gem to populate language field" do
       @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
@@ -236,12 +204,6 @@ describe SolrDocBuilder do
     end
 
     context "<tableOfContents> --> toc_search" do
-      it "should be populated when the MODS has a top level <accessCondition> element" do
-        m = "<mods #{@ns_decl}><tableOfContents>erg</tableOfContents></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-        sdb.doc_hash_from_mods[:toc_search].should == ['erg']
-      end
       it "should have a value for each tableOfContents element" do
         m = "<mods #{@ns_decl}>
         <tableOfContents>one</tableOfContents>
