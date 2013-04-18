@@ -449,6 +449,34 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
       sdb.pub_date.should == nil
     end
+    it 'should choose a date ending with CE if there are multiple dates' do
+     m = "<mods #{@ns_decl}><originInfo><dateIssued>7192 AM (li-Adam) / 1684 CE</dateIssued><issuance>monographic</issuance></originInfo>"
+     @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+     sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+     sdb.pub_date.should == '1684'
+    end
+    it 'should handle hyphenated range dates' do
+      m = "<mods #{@ns_decl}><originInfo><dateIssued>1282 AH / 1865-6 CE</dateIssued><issuance>monographic</issuance></originInfo>"
+       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+       sdb.pub_date.should == '1865'
+    end
+    it 'should handle century based dates' do
+      m = "<mods #{@ns_decl}><originInfo><dateIssued>13th century AH / 19th CE</dateIssued><issuance>monographic</issuance></originInfo>"
+       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+       sdb.pub_date_facet.should == '19th century'
+       sdb.pub_date.should == '18--'
+    end
+    it 'should handle multiple CE dates' do
+      m = "<mods #{@ns_decl}><originInfo><dateIssued>6 Dhu al-Hijjah 923 AH / 1517 CE -- 7 Rabi I 924 AH / 1518 CE</dateIssued><issuance>monographic</issuance></originInfo>"
+       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+       sdb.pub_date.should == '1517'
+       sdb.pub_date_facet.should == '1517'
+    end
+    
+    
   end #context pub_dates
 
   context "format" do

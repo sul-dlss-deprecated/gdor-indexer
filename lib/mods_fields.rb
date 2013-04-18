@@ -18,7 +18,6 @@ class SolrDocBuilder
     result = nil
     first_wo_role = nil
     @smods_rec.plain_name.each { |n|
-      puts n.to_s
       if n.role.size == 0
         first_wo_role ||= n
       end
@@ -32,17 +31,16 @@ class SolrDocBuilder
     if !result && first_wo_role
       result = first_wo_role.display_value_w_date
     end
-    puts result
     result
   end
   #remove trailing commas
   def sw_full_title
-      toret = @smods_rec.sw_full_title
-      if toret
-        toret = toret.gsub(/,$/, '')
-      end
-      toret
+    toret = @smods_rec.sw_full_title
+    if toret
+      toret = toret.gsub(/,$/, '')
     end
+    toret
+  end
 
 
   # Values are the contents of:
@@ -229,17 +227,43 @@ class SolrDocBuilder
       dates.each do |f_date|
         #remove ? and [] 
         f_date=f_date.gsub('?','').gsub('[','').gsub(']','')
-        #if it is a 4 digit year, yay
-        if is_number?(f_date) and f_date.length ==4
-          @pub_year=f_date
-          return f_date
-        end
-        if not is_number? f_date
-          # just regex for 4 numbers
-          matches=f_date.scan(/\d{4}/)
+        # just regex for 4 numbers
+        matches=f_date.scan(/\d{4}/)
+        #if there is only 1 candidate, use it
+        if matches.length == 1
+          @pub_year=matches.first 
+          return matches.first
+        else
+          #if there are multiples, check for ones with CE after them
+          matches.each do |match|
+            #look for things like '1865-6 CE'
+            pos = f_date.index(Regexp.new(match+'...CE'))
+            pos = pos ? pos.to_i : 0
+            if f_date.include?(match+' CE') or pos > 0
+              @pub_year=match
+              return match
+            end 
+          end
           if matches.length>0
             @pub_year=matches.first 
             return matches.first
+          end
+          #look for a century listing like '13th century'
+          matches=f_date.scan(/\d{2}th/)
+          if matches.length == 1
+            @pub_year=((matches.first[0,2].to_i)-1).to_s+'--'
+            return @pub_year
+          end
+          #if there are multiples, check for ones with CE after them
+          if matches.length > 0
+            matches.each do |match|
+              pos = f_date.index(Regexp.new(match+'...CE'))
+              pos = pos ? pos.to_i : 0
+              if f_date.include?(match+' CE') or pos > 0
+                @pub_year=((match[0,2].to_i) - 1).to_s+'--'
+                return @pub_year
+              end 
+            end
           end
         end
       end
@@ -252,7 +276,9 @@ class SolrDocBuilder
   #@return [String] 4 character year or nil
   def pub_date
     val=pub_year
+    #@logger.info("#{druid} using date #{val} from #{pub_dates.inspect}")
     return val unless Indexer.config[:max_pub_date] && Indexer.config[:min_pub_date]
+    return val if val.include? '-'
     if val and val.to_i < Indexer.config[:max_pub_date] and val.to_i > Indexer.config[:min_pub_date]
       return val
     end
@@ -260,6 +286,22 @@ class SolrDocBuilder
       @logger.info("#{@druid} skipping date out of range "+val)
     end
     nil
+  end
+  #Values for the pub date facet. This is less strict than the 4 year date requirements for pub_date
+  #@return <Array[String]> with values for the pub date facet
+  def pub_date_facet
+    if pub_date
+      if pub_date.include? '--'
+        cent=pub_date[0,2].to_i
+        cent+=1
+        cent=cent.to_s+'th century'
+        cent
+      else
+        pub_date
+      end
+    else
+      nil
+    end
   end
 
   # Values are the contents of:

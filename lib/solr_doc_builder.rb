@@ -74,7 +74,7 @@ class SolrDocBuilder
   # Create a Hash representing a Solr doc, with all MODS related fields populated.
   # @return [Hash] Hash representing the Solr document
   def doc_hash_from_mods
-    doc_hash = { 
+      doc_hash = { 
       # title fields
       :title_245a_search => @smods_rec.sw_short_title,
       :title_245_search => @smods_rec.sw_full_title,
@@ -113,19 +113,13 @@ class SolrDocBuilder
 
       #publish date fields
       :pub_date_sort => pub_date,
-      :pub_date_group_facet => pub_date_groups(pub_date), #must use solrmarc when the time comes
-      :pub_date =>pub_date,
-      # all_search - this needs to do something
+      :pub_date_group_facet => pub_date_groups(pub_date), 
+      :pub_date =>pub_date_facet,
+      :pub_date_display => pub_dates,
       :all_search => @smods_rec.text
       
-      # remaining: go through all MODS elements (per MODS spec, not wiki doc)
-      
     }
-    
     doc_hash[:collection_type] = 'Digital Collection' if collection?
-    
-    
-    
     doc_hash
   end
   
