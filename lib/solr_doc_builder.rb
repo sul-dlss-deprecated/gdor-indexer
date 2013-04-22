@@ -112,10 +112,11 @@ class SolrDocBuilder
       :url_suppl => @smods_rec.term_values([:related_item, :location, :url]),
 
       #publish date fields
+      :pub_search => place,
       :pub_date_sort => pub_date,
       :pub_date_group_facet => pub_date_groups(pub_date), 
       :pub_date =>pub_date_facet,
-      :pub_date_display => pub_dates,
+      :pub_date_display => pub_dates.join(','),
       :all_search => @smods_rec.text
       
     }

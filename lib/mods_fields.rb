@@ -13,7 +13,10 @@ class SolrDocBuilder
       vals.empty? ? nil : vals
     end
   end
-
+  def place
+    vals = @smods_rec.term_values([:origin_info,:place,:placeTerm])
+    vals
+  end
   def main_author_w_date_test
     result = nil
     first_wo_role = nil
