@@ -60,7 +60,7 @@ class Indexer < Harvestdor::Indexer
       logger.info("Avg parse time per object (successful): #{@total_time_to_parse/@success_count} seconds") unless (@total_time_to_parse == 0 || @success_count == 0)
       logger.info("Avg parse time per object (all): #{@total_time_to_parse/total_objects} seconds") unless (@total_time_to_parse == 0 || @error_count == 0 || total_objects == 0)
       logger.info("Avg complete index time per object (successful): #{total_time/@success_count} seconds") unless (@success_count == 0)
-      logger.info("Avg complete index time per object (all): #{total_time/total_objects} seconds") unless (@error_count == 0 || total_object == 0)
+      logger.info("Avg complete index time per object (all): #{total_time/total_objects} seconds") unless (@error_count == 0 || total_objects == 0)
       logger.info("Successful count: #{@success_count}")
       logger.info("Error count: #{@error_count}")
       logger.info("Retry count: #{@retries}")
@@ -78,8 +78,8 @@ class Indexer < Harvestdor::Indexer
   end
   # @return [String]The collection object catkey or nil if none exists
   def catkey
-    sdb=SolrDocBuilder.new(collection_druid, harvestdor_client, logger)
-    sdb.catkey
+    @collection_sdb ||= SolrDocBuilder.new(collection_druid, harvestdor_client, logger)
+    @collection_sdb.catkey
   end
   # Create a solr document for the collection druid suitable for searchworks
   # write the result to the SearchWorks Solr Index
