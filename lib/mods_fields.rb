@@ -278,7 +278,33 @@ class SolrDocBuilder
           end
         end
       end
-    end
+      #if all of that failed, look for a 3 digit year
+      dates.each do |f_date|
+        matches=f_date.scan(/\d{3}/)
+        if matches.length > 0
+          return matches.first
+        end
+      #if that didnt work, look for single digit centuries
+      matches=f_date.scan(/\d{1}th/)
+      if matches.length == 1
+        @pub_year=((matches.first[0,2].to_i)-1).to_s+'--'
+        return @pub_year
+      end
+      #if there are multiples, check for ones with CE after them
+      if matches.length > 0
+        matches.each do |match|
+          pos = f_date.index(Regexp.new(match+'...CE'))
+          pos = pos ? pos.to_i : f_date.index(Regexp.new(match+' century CE'))
+          pos = pos ? pos.to_i : 0
+          if f_date.include?(match+' CE') or pos > 0
+            @pub_year=((match[0,1].to_i) - 1).to_s+'--'
+            return @pub_year
+          end 
+        end
+      end
+        
+      end
+    end    
     @pub_year=''
     @logger.info("#{@druid} no valid pub date found in '#{dates.to_s}'")
     return nil
