@@ -268,6 +268,7 @@ class SolrDocBuilder
           if matches.length > 0
             matches.each do |match|
               pos = f_date.index(Regexp.new(match+'...CE'))
+              pos = pos ? pos.to_i : f_date.index(Regexp.new(match+' century CE'))
               pos = pos ? pos.to_i : 0
               if f_date.include?(match+' CE') or pos > 0
                 @pub_year=((match[0,2].to_i) - 1).to_s+'--'
@@ -286,11 +287,12 @@ class SolrDocBuilder
   #@return [String] 4 character year or nil
   def pub_date
     val=pub_year
-    #@logger.info("#{druid} using date #{val} from #{pub_dates.inspect}")
+    if val
     return val unless Indexer.config[:max_pub_date] && Indexer.config[:min_pub_date]
     return val if val.include? '-'
     if val and val.to_i < Indexer.config[:max_pub_date] and val.to_i > Indexer.config[:min_pub_date]
       return val
+    end
     end
     if val 
       @logger.info("#{@druid} skipping date out of range "+val)

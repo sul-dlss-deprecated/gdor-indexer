@@ -475,6 +475,13 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
        sdb.pub_date.should == '1517'
        sdb.pub_date_facet.should == '1517'
     end
+    it 'should handle this case from walters' do
+      m = "<mods #{@ns_decl}><originInfo><dateIssued>Late 14th or early 15th century CE</dateIssued><issuance>monographic</issuance></originInfo>"
+       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+       sdb.pub_date.should == '14--'
+       sdb.pub_date_facet.should == '15th century'
+    end
     
     
   end #context pub_dates
