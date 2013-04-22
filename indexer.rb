@@ -78,8 +78,7 @@ class Indexer < Harvestdor::Indexer
   end
   # @return [String]The collection object catkey or nil if none exists
   def catkey
-    @collection_sdb ||= SolrDocBuilder.new(collection_druid, harvestdor_client, logger)
-    @collection_sdb.catkey
+    @catkey ||= SolrDocBuilder.new(collection_druid, harvestdor_client, logger).catkey
   end
   # Create a solr document for the collection druid suitable for searchworks
   # write the result to the SearchWorks Solr Index
