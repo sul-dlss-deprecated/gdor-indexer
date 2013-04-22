@@ -198,6 +198,13 @@ class SolrDocBuilder
     vals.concat(subject_other_subvy_search) if subject_other_subvy_search
     vals.empty? ? nil : vals
   end
+  def pub_date_display
+    if pub_dates
+      pub_dates.first
+    else
+      nil
+    end
+  end
   #get the dates from dateIssued, and dateCreated merged into 1 array.
   # @return [Array<String>] values for the issue_date_display Solr field for this document or nil if none
   def pub_dates

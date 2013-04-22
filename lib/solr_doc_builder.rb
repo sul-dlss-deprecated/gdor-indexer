@@ -116,7 +116,7 @@ class SolrDocBuilder
       :pub_date_sort => pub_date,
       :pub_date_group_facet => pub_date_groups(pub_date), 
       :pub_date =>pub_date_facet,
-      :pub_date_display => pub_dates.join(','),
+      :pub_date_display => pub_date_display,
       :all_search => @smods_rec.text
       
     }

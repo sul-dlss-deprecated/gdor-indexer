@@ -461,7 +461,7 @@ describe SolrDocBuilder do
          sdb[:pub_date].should == '19th century'
          sdb[:pub_date_sort].should == '18--'
          sdb[:pub_date_group_facet].should == ["More than 50 years ago"]
-         sdb[:pub_date_display].should == ['13th century AH / 19th CE']
+         sdb[:pub_date_display].should == '13th century AH / 19th CE'
          
       end
     
