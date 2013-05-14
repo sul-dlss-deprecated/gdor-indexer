@@ -466,6 +466,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
        sdb.pub_date_facet.should == '19th century'
+       sdb.pub_date_sort.should =='1800'
        sdb.pub_date.should == '18--'
     end
     it 'should handle multiple CE dates' do
@@ -473,6 +474,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
        sdb.pub_date.should == '1517'
+       sdb.pub_date_sort.should =='1517'
        sdb.pub_date_facet.should == '1517'
     end
     it 'should handle this case from walters' do
@@ -480,6 +482,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
        sdb.pub_date.should == '14--'
+       sdb.pub_date_sort.should =='1400'
        sdb.pub_date_facet.should == '15th century'
     end
     it 'should work on 3 digit dates' do
@@ -487,6 +490,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
        sdb.pub_date.should == '966'
+       sdb.pub_date_sort.should =='0966'
        sdb.pub_date_facet.should == '966'
     end
     it 'should work on 3 digit dates' do
@@ -494,6 +498,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
        sdb.pub_date.should == '8--'
+       sdb.pub_date_sort.should =='0800'
        sdb.pub_date_facet.should == '9th century'
     end
     
@@ -502,6 +507,31 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
     
     
   end #context pub_dates
+  context 'pub_date_sort' do
+    before :each do
+      m = "<mods #{@ns_decl}><originInfo>
+      <dateCreated>Aug. 3rd, 1886</dateCreated>
+      </originInfo></mods>"
+       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+       @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+    end
+    it 'should work on normal dates' do
+      @sdb.stub(:pub_date).and_return('1945')
+      @sdb.pub_date_sort.should == '1945'
+    end
+    it 'should work on 3 digit dates' do
+      @sdb.stub(:pub_date).and_return('945')
+      @sdb.pub_date_sort.should == '0945'
+    end
+    it 'should work on century dates' do
+      @sdb.stub(:pub_date).and_return('16--')
+      @sdb.pub_date_sort.should == '1600'
+    end
+    it 'should work on 3 digit century dates' do
+      @sdb.stub(:pub_date).and_return('9--')
+      @sdb.pub_date_sort.should == '0900'
+    end
+  end
 
   context "format" do
     it "should choose the format" do

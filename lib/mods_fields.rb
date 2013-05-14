@@ -284,24 +284,24 @@ class SolrDocBuilder
         if matches.length > 0
           return matches.first
         end
-      #if that didnt work, look for single digit centuries
-      matches=f_date.scan(/\d{1}th/)
-      if matches.length == 1
-        @pub_year=((matches.first[0,2].to_i)-1).to_s+'--'
-        return @pub_year
-      end
-      #if there are multiples, check for ones with CE after them
-      if matches.length > 0
-        matches.each do |match|
-          pos = f_date.index(Regexp.new(match+'...CE'))
-          pos = pos ? pos.to_i : f_date.index(Regexp.new(match+' century CE'))
-          pos = pos ? pos.to_i : 0
-          if f_date.include?(match+' CE') or pos > 0
-            @pub_year=((match[0,1].to_i) - 1).to_s+'--'
-            return @pub_year
-          end 
+        #if that didnt work, look for single digit centuries
+        matches=f_date.scan(/\d{1}th/)
+        if matches.length == 1
+          @pub_year=((matches.first[0,2].to_i)-1).to_s+'--'
+          return @pub_year
         end
-      end
+        #if there are multiples, check for ones with CE after them
+        if matches.length > 0
+          matches.each do |match|
+            pos = f_date.index(Regexp.new(match+'...CE'))
+            pos = pos ? pos.to_i : f_date.index(Regexp.new(match+' century CE'))
+            pos = pos ? pos.to_i : 0
+            if f_date.include?(match+' CE') or pos > 0
+              @pub_year=((match[0,1].to_i) - 1).to_s+'--'
+              return @pub_year
+            end 
+          end
+        end
         
       end
     end    
@@ -309,16 +309,29 @@ class SolrDocBuilder
     @logger.info("#{@druid} no valid pub date found in '#{dates.to_s}'")
     return nil
   end
+  #creates a date suitable for sorting. Guarnteed to be 4 digits or nil
+  def pub_date_sort
+    pd=nil
+    if pub_date
+      pd=pub_date
+      if pd.length == 3
+        pd='0'+pd
+      end
+      pd=pd.gsub('--','00')
+    end
+    raise "pub_date_sort was about to return a non 4 digit value #{pd}!" if pd and pd.length !=4 
+    pd
+  end
   #The year the object was published, , filtered based on max_pub_date and min_pub_date from the config file
   #@return [String] 4 character year or nil
   def pub_date
     val=pub_year
     if val
-    return val unless Indexer.config[:max_pub_date] && Indexer.config[:min_pub_date]
-    return val if val.include? '-'
-    if val and val.to_i < Indexer.config[:max_pub_date] and val.to_i > Indexer.config[:min_pub_date]
-      return val
-    end
+      return val unless Indexer.config[:max_pub_date] && Indexer.config[:min_pub_date]
+      return val if val.include? '-'
+      if val and val.to_i < Indexer.config[:max_pub_date] and val.to_i > Indexer.config[:min_pub_date]
+        return val
+      end
     end
     if val 
       @logger.info("#{@druid} skipping date out of range "+val)

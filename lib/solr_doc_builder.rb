@@ -113,7 +113,7 @@ class SolrDocBuilder
 
       #publish date fields
       :pub_search => place,
-      :pub_date_sort => pub_date,
+      :pub_date_sort => pub_date_sort,
       :pub_date_group_facet => pub_date_groups(pub_date), 
       :pub_date =>pub_date_facet,
       :pub_date_display => pub_date_display,

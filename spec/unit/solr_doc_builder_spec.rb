@@ -459,12 +459,10 @@ describe SolrDocBuilder do
          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT)).doc_hash_from_mods
          sdb[:pub_date].should == '19th century'
-         sdb[:pub_date_sort].should == '18--'
+         sdb[:pub_date_sort].should == '1800'
          sdb[:pub_date_group_facet].should == ["More than 50 years ago"]
          sdb[:pub_date_display].should == '13th century AH / 19th CE'
-         
       end
-    
     end
   end # doc_hash_from_mods
 
