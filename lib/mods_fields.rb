@@ -222,6 +222,7 @@ class SolrDocBuilder
   def is_date?(object)
     true if Date.parse(object) rescue false
   end
+  
   # Get the publish year from mods
   #@return [String] 4 character year or nil if no valid date was found
   def pub_year
@@ -234,77 +235,22 @@ class SolrDocBuilder
     end
     dates=pub_dates
     if dates
+      year=[]
+      pruned_dates=[]
       dates.each do |f_date|
         #remove ? and [] 
-        f_date=f_date.gsub('?','').gsub('[','').gsub(']','')
-        # just regex for 4 numbers
-        matches=f_date.scan(/\d{4}/)
-        #if there is only 1 candidate, use it
-        if matches.length == 1
-          @pub_year=matches.first 
-          return matches.first
-        else
-          #if there are multiples, check for ones with CE after them
-          matches.each do |match|
-            #look for things like '1865-6 CE'
-            pos = f_date.index(Regexp.new(match+'...CE'))
-            pos = pos ? pos.to_i : 0
-            if f_date.include?(match+' CE') or pos > 0
-              @pub_year=match
-              return match
-            end 
-          end
-          if matches.length>0
-            @pub_year=matches.first 
-            return matches.first
-          end
-          #look for a century listing like '13th century'
-          matches=f_date.scan(/\d{2}th/)
-          if matches.length == 1
-            @pub_year=((matches.first[0,2].to_i)-1).to_s+'--'
-            return @pub_year
-          end
-          #if there are multiples, check for ones with CE after them
-          if matches.length > 0
-            matches.each do |match|
-              pos = f_date.index(Regexp.new(match+'...CE'))
-              pos = pos ? pos.to_i : f_date.index(Regexp.new(match+' century CE'))
-              pos = pos ? pos.to_i : 0
-              if f_date.include?(match+' CE') or pos > 0
-                @pub_year=((match[0,2].to_i) - 1).to_s+'--'
-                return @pub_year
-              end 
-            end
-          end
-        end
+        pruned_dates << f_date.gsub('?','').gsub('[','').gsub(']','')
       end
-      #if all of that failed, look for a 3 digit year
-      dates.each do |f_date|
-        matches=f_date.scan(/\d{3}/)
-        if matches.length > 0
-          return matches.first
-        end
-        #if that didnt work, look for single digit centuries
-        matches=f_date.scan(/\d{1}th/)
-        if matches.length == 1
-          @pub_year=((matches.first[0,2].to_i)-1).to_s+'--'
-          return @pub_year
-        end
-        #if there are multiples, check for ones with CE after them
-        if matches.length > 0
-          matches.each do |match|
-            pos = f_date.index(Regexp.new(match+'...CE'))
-            pos = pos ? pos.to_i : f_date.index(Regexp.new(match+' century CE'))
-            pos = pos ? pos.to_i : 0
-            if f_date.include?(match+' CE') or pos > 0
-              @pub_year=((match[0,1].to_i) - 1).to_s+'--'
-              return @pub_year
-            end 
-          end
-        end
-        
-      end
-    end    
+      #try to find a date starting with the most normal date formats and progressing to more wonky ones
+      @pub_year=get_plain_four_digit_year pruned_dates
+      return @pub_year if @pub_year
+      @pub_year=get_double_digit_century pruned_dates
+      return @pub_year if @pub_year
+      @pub_year=get_three_digit_year pruned_dates
+      return @pub_year if @pub_year
+      @pub_year=get_single_digit_century pruned_dates
+      return @pub_year if @pub_year
+    end
     @pub_year=''
     @logger.info("#{@druid} no valid pub date found in '#{dates.to_s}'")
     return nil
@@ -419,5 +365,87 @@ class SolrDocBuilder
   # convenience method for subject/topic values (to avoid parsing the mods for the same thing multiple times)
   def subject_topics
     @subject_topics ||= @smods_rec.term_values([:subject, :topic])
+  end
+  
+  #get a 4 digit year like 1865 from the date array
+  def get_plain_four_digit_year dates
+    dates.each do |f_date|
+      matches=f_date.scan(/\d{4}/)
+      if matches.length == 1
+        @pub_year=matches.first 
+        return matches.first
+      else
+        #if there are multiples, check for ones with CE after them
+        matches.each do |match|
+          #look for things like '1865-6 CE'
+          pos = f_date.index(Regexp.new(match+'...CE'))
+          pos = pos ? pos.to_i : 0
+          if f_date.include?(match+' CE') or pos > 0
+            @pub_year=match
+            return match
+          end 
+        end
+      end
+    end
+    return nil
+  end
+  
+  #get a double digit century like '12th century' from the date array
+  def get_double_digit_century dates
+    dates.each do |f_date|
+      matches=f_date.scan(/\d{2}th/)
+      if matches.length == 1
+        @pub_year=((matches.first[0,2].to_i)-1).to_s+'--'
+        return @pub_year
+      end
+      #if there are multiples, check for ones with CE after them
+      if matches.length > 0
+        matches.each do |match|
+          pos = f_date.index(Regexp.new(match+'...CE'))
+          pos = pos ? pos.to_i : f_date.index(Regexp.new(match+' century CE'))
+          pos = pos ? pos.to_i : 0
+          if f_date.include?(match+' CE') or pos > 0
+            @pub_year=((match[0,2].to_i) - 1).to_s+'--'
+            return @pub_year
+          end 
+        end
+      end
+    end
+    return nil
+  end
+  
+  #get a 3 digit year like 965 from the date array
+  def get_three_digit_year dates
+    dates.each do |f_date|
+      matches=f_date.scan(/\d{3}/)
+      if matches.length > 0
+        return matches.first
+      end
+    end
+    return nil
+  end
+  
+  #get a single digit century like '9th century' from the date array
+  def get_single_digit_century dates
+    dates.each do |f_date|
+      matches=f_date.scan(/\d{1}th/)
+      if matches.length == 1
+        @pub_year=((matches.first[0,2].to_i)-1).to_s+'--'
+        return @pub_year
+      end
+      #if there are multiples, check for ones with CE after them
+      if matches.length > 0
+        matches.each do |match|
+          pos = f_date.index(Regexp.new(match+'...CE'))
+          pos = pos ? pos.to_i : f_date.index(Regexp.new(match+' century CE'))
+          pos = pos ? pos.to_i : 0
+          if f_date.include?(match+' CE') or pos > 0
+            @pub_year=((match[0,1].to_i) - 1).to_s+'--'
+            return @pub_year
+          end 
+        end
+      end
+    end 
+    return nil
   end
 end
