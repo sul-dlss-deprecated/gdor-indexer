@@ -137,7 +137,7 @@ class Indexer < Harvestdor::Indexer
         @success_count+=1
       rescue => e
         @error_count+=1
-        logger.error "Failed to index #{druid}: #{e.message}"
+        logger.error "Failed to index #{druid}: #{e.message} #{e.backtrace}"
       end
     end
   end
