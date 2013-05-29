@@ -53,36 +53,36 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
         it "should be nil if there are no values in the MODS" do
           @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_no_subject)
           sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-          sdb.topic_search.should == nil
+          sdb.smods_rec.topic_search.should == nil
         end
         it "should contain subject <topic> subelement data" do
-          @sdb.topic_search.should include(@topic)
+          @sdb.smods_rec.topic_search.should include(@topic)
         end
         it "should contain top level <genre> element data" do
-          @sdb.topic_search.should include(@genre)
+          @sdb.smods_rec.topic_search.should include(@genre)
         end
         it "should not contain other subject element data" do
-          @sdb.topic_search.should_not include(@cart_coord)
-          @sdb.topic_search.should_not include(@s_genre)
-          @sdb.topic_search.should_not include(@geo)
-          @sdb.topic_search.should_not include(@geo_code)
-          @sdb.topic_search.should_not include(@hier_geo_country)
-          @sdb.topic_search.should_not include(@s_name)
-          @sdb.topic_search.should_not include(@occupation)
-          @sdb.topic_search.should_not include(@temporal)
-          @sdb.topic_search.should_not include(@s_title)
+          @sdb.smods_rec.topic_search.should_not include(@cart_coord)
+          @sdb.smods_rec.topic_search.should_not include(@s_genre)
+          @sdb.smods_rec.topic_search.should_not include(@geo)
+          @sdb.smods_rec.topic_search.should_not include(@geo_code)
+          @sdb.smods_rec.topic_search.should_not include(@hier_geo_country)
+          @sdb.smods_rec.topic_search.should_not include(@s_name)
+          @sdb.smods_rec.topic_search.should_not include(@occupation)
+          @sdb.smods_rec.topic_search.should_not include(@temporal)
+          @sdb.smods_rec.topic_search.should_not include(@s_title)
         end
         it "should not be nil if there are only subject/topic elements (no <genre>)" do
           m = "<mods #{@ns_decl}><subject><topic>#{@topic}</topic></subject></mods>"
           @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-          sdb.topic_search.should == [@topic]
+          sdb.smods_rec.topic_search.should == [@topic]
         end
         it "should not be nil if there are only <genre> elements (no subject/topic elements)" do
           m = "<mods #{@ns_decl}><genre>#{@genre}</genre></mods>"
           @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-          sdb.topic_search.should == [@genre]
+          sdb.smods_rec.topic_search.should == [@genre]
         end
         context "topic subelement" do
           it "should have a separate value for each topic element" do
@@ -95,13 +95,13 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
             </mods>"
             @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
             sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-            sdb.topic_search.should == ['first', 'second', 'third']
+            sdb.smods_rec.topic_search.should == ['first', 'second', 'third']
           end
           it "should be nil if there are only empty values in the MODS" do
             m = "<mods #{@ns_decl}><subject><topic/></subject><note>notit</note></mods>"
             @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
             sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-            sdb.topic_search.should == nil
+            sdb.smods_rec.topic_search.should == nil
           end
         end
       end # topic_search
@@ -112,14 +112,14 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
           @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
           sdb.smods_rec.should_receive(:sw_geographic_search)
-          sdb.geographic_search
+          sdb.smods_rec.geographic_search
         end
         it "should log an info message when it encounters a geographicCode encoding it doesn't translate" do
           m = "<mods #{@ns_decl}><subject><geographicCode authority='iso3166'>ca</geographicCode></subject></mods>"
           @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-          sdb.logger.should_receive(:info).with(/#{@fake_druid} has subject geographicCode element with untranslated encoding \(iso3166\): <geographicCode authority=.*>ca<\/geographicCode>/)
-          sdb.geographic_search
+          sdb.smods_rec.sw_logger.should_receive(:info).with(/#{@fake_druid} has subject geographicCode element with untranslated encoding \(iso3166\): <geographicCode authority=.*>ca<\/geographicCode>/)
+          sdb.smods_rec.geographic_search
         end
       end # geographic_search
 
@@ -128,55 +128,55 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
           @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods)
           sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
           sdb.smods_rec.should_receive(:sw_subject_names)
-          sdb.subject_other_search
+          sdb.smods_rec.subject_other_search
         end
         it "should call sw_subject_titles (from stanford-mods gem)" do
           @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods)
           sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
           sdb.smods_rec.should_receive(:sw_subject_titles)
-          sdb.subject_other_search
+          sdb.smods_rec.subject_other_search
         end
         it "should be nil if there are no values in the MODS" do
           @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_no_subject)
           sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-          sdb.subject_other_search.should == nil
+          sdb.smods_rec.subject_other_search.should == nil
         end
         it "should contain subject <name> SUBelement data" do
-          @sdb.subject_other_search.should include(@s_name)
+          @sdb.smods_rec.subject_other_search.should include(@s_name)
         end
         it "should contain subject <occupation> subelement data" do
-          @sdb.subject_other_search.should include(@occupation)
+          @sdb.smods_rec.subject_other_search.should include(@occupation)
         end
         it "should contain subject <titleInfo> SUBelement data" do
-          @sdb.subject_other_search.should include(@s_title)
+          @sdb.smods_rec.subject_other_search.should include(@s_title)
         end
         it "should not contain other subject element data" do
-          @sdb.subject_other_search.should_not include(@genre)
-          @sdb.subject_other_search.should_not include(@cart_coord)
-          @sdb.subject_other_search.should_not include(@s_genre)
-          @sdb.subject_other_search.should_not include(@geo)
-          @sdb.subject_other_search.should_not include(@geo_code)
-          @sdb.subject_other_search.should_not include(@hier_geo_country)
-          @sdb.subject_other_search.should_not include(@temporal)
-          @sdb.subject_other_search.should_not include(@topic)
+          @sdb.smods_rec.subject_other_search.should_not include(@genre)
+          @sdb.smods_rec.subject_other_search.should_not include(@cart_coord)
+          @sdb.smods_rec.subject_other_search.should_not include(@s_genre)
+          @sdb.smods_rec.subject_other_search.should_not include(@geo)
+          @sdb.smods_rec.subject_other_search.should_not include(@geo_code)
+          @sdb.smods_rec.subject_other_search.should_not include(@hier_geo_country)
+          @sdb.smods_rec.subject_other_search.should_not include(@temporal)
+          @sdb.smods_rec.subject_other_search.should_not include(@topic)
         end
         it "should not be nil if there are only subject/name elements" do
           m = "<mods #{@ns_decl}><subject><name><namePart>#{@s_name}</namePart></name></subject></mods>"
           @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-          sdb.subject_other_search.should == [@s_name]
+          sdb.smods_rec.subject_other_search.should == [@s_name]
         end
         it "should not be nil if there are only subject/occupation elements" do
           m = "<mods #{@ns_decl}><subject><occupation>#{@occupation}</occupation></subject></mods>"
           @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-          sdb.subject_other_search.should == [@occupation]
+          sdb.smods_rec.subject_other_search.should == [@occupation]
         end
         it "should not be nil if there are only subject/titleInfo elements" do
           m = "<mods #{@ns_decl}><subject><titleInfo><title>#{@s_title}</title></titleInfo></subject></mods>"
           @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-          sdb.subject_other_search.should == [@s_title]
+          sdb.smods_rec.subject_other_search.should == [@s_title]
         end
         context "occupation subelement" do
           it "should have a separate value for each occupation element" do
@@ -189,13 +189,13 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
             </mods>"
             @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
             sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-            sdb.subject_other_search.should == ['first', 'second', 'third']
+            sdb.smods_rec.subject_other_search.should == ['first', 'second', 'third']
           end
           it "should be nil if there are only empty values in the MODS" do
             m = "<mods #{@ns_decl}><subject><occupation/></subject><note>notit</note></mods>"
             @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
             sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-            sdb.subject_other_search.should == nil
+            sdb.smods_rec.subject_other_search.should == nil
           end
         end
       end # subject_other_search
@@ -204,36 +204,36 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
         it "should be nil if there are no values in the MODS" do
           @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_no_subject)
           sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-          sdb.subject_other_subvy_search.should == nil
+          sdb.smods_rec.subject_other_subvy_search.should == nil
         end
         it "should contain subject <temporal> subelement data" do
-          @sdb.subject_other_subvy_search.should include(@temporal)
+          @sdb.smods_rec.subject_other_subvy_search.should include(@temporal)
         end
         it "should contain subject <genre> SUBelement data" do
-          @sdb.subject_other_subvy_search.should include(@s_genre)
+          @sdb.smods_rec.subject_other_subvy_search.should include(@s_genre)
         end
         it "should not contain other subject element data" do
-          @sdb.subject_other_subvy_search.should_not include(@genre)
-          @sdb.subject_other_subvy_search.should_not include(@cart_coord)
-          @sdb.subject_other_subvy_search.should_not include(@geo)
-          @sdb.subject_other_subvy_search.should_not include(@geo_code)
-          @sdb.subject_other_subvy_search.should_not include(@hier_geo_country)
-          @sdb.subject_other_subvy_search.should_not include(@s_name)
-          @sdb.subject_other_subvy_search.should_not include(@occupation)
-          @sdb.subject_other_subvy_search.should_not include(@topic)
-          @sdb.subject_other_subvy_search.should_not include(@s_title)
+          @sdb.smods_rec.subject_other_subvy_search.should_not include(@genre)
+          @sdb.smods_rec.subject_other_subvy_search.should_not include(@cart_coord)
+          @sdb.smods_rec.subject_other_subvy_search.should_not include(@geo)
+          @sdb.smods_rec.subject_other_subvy_search.should_not include(@geo_code)
+          @sdb.smods_rec.subject_other_subvy_search.should_not include(@hier_geo_country)
+          @sdb.smods_rec.subject_other_subvy_search.should_not include(@s_name)
+          @sdb.smods_rec.subject_other_subvy_search.should_not include(@occupation)
+          @sdb.smods_rec.subject_other_subvy_search.should_not include(@topic)
+          @sdb.smods_rec.subject_other_subvy_search.should_not include(@s_title)
         end
         it "should not be nil if there are only subject/temporal elements (no subject/genre)" do
           m = "<mods #{@ns_decl}><subject><temporal>#{@temporal}</temporal></subject></mods>"
           @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-          sdb.subject_other_subvy_search.should == [@temporal]
+          sdb.smods_rec.subject_other_subvy_search.should == [@temporal]
         end
         it "should not be nil if there are only subject/genre elements (no subject/temporal)" do
           m = "<mods #{@ns_decl}><subject><genre>#{@s_genre}</genre></subject></mods>"
           @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-          sdb.subject_other_subvy_search.should == [@s_genre]
+          sdb.smods_rec.subject_other_subvy_search.should == [@s_genre]
         end
         context "temporal subelement" do
           it "should have a separate value for each temporal element" do
@@ -246,20 +246,20 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
             </mods>"
             @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
             sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-            sdb.subject_other_subvy_search.should == ['1890-1910', '20th century', 'another']
+            sdb.smods_rec.subject_other_subvy_search.should == ['1890-1910', '20th century', 'another']
           end
           it "should log an info message when it encounters an encoding it doesn't translate" do
             m = "<mods #{@ns_decl}><subject><temporal encoding='iso8601'>197505</temporal></subject></mods>"
             @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
             sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-            sdb.logger.should_receive(:info).with(/#{@fake_druid} has subject temporal element with untranslated encoding: <temporal encoding=.*>197505<\/temporal>/)
-            sdb.subject_other_subvy_search
+            sdb.smods_rec.sw_logger.should_receive(:info).with(/#{@fake_druid} has subject temporal element with untranslated encoding: <temporal encoding=.*>197505<\/temporal>/)
+            sdb.smods_rec.subject_other_subvy_search
           end
           it "should be nil if there are only empty values in the MODS" do
             m = "<mods #{@ns_decl}><subject><temporal/></subject><note>notit</note></mods>"
             @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
             sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-            sdb.subject_other_subvy_search.should == nil
+            sdb.smods_rec.subject_other_subvy_search.should == nil
           end
         end
         context "genre subelement" do
@@ -273,13 +273,13 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
             </mods>"
             @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
             sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-            sdb.subject_other_subvy_search.should == ['first', 'second', 'third']
+            sdb.smods_rec.subject_other_subvy_search.should == ['first', 'second', 'third']
           end
           it "should be nil if there are only empty values in the MODS" do
             m = "<mods #{@ns_decl}><subject><genre/></subject><note>notit</note></mods>"
             @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
             sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-            sdb.subject_other_subvy_search.should == nil
+            sdb.smods_rec.subject_other_subvy_search.should == nil
           end
         end
       end # subject_other_subvy_search
@@ -288,26 +288,26 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
         it "should be nil if there are no values in the MODS" do
           @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_no_subject)
           sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-          sdb.subject_all_search.should == nil
+          sdb.smods_rec.subject_all_search.should == nil
         end
         it "should contain top level <genre> element data" do
-          @sdb.subject_all_search.should include(@genre)
+          @sdb.smods_rec.subject_all_search.should include(@genre)
         end
         it "should not contain cartographic sub element" do
-          @sdb.subject_all_search.should_not include(@cart_coord)
+          @sdb.smods_rec.subject_all_search.should_not include(@cart_coord)
         end
         it "should not include codes from hierarchicalGeographic sub element" do
-          @sdb.subject_all_search.should_not include(@geo_code)
+          @sdb.smods_rec.subject_all_search.should_not include(@geo_code)
         end
         it "should contain all other subject subelement data" do
-          @sdb.subject_all_search.should include(@s_genre)
-          @sdb.subject_all_search.should include(@geo)
-          @sdb.subject_all_search.should include(@hier_geo_country)
-          @sdb.subject_all_search.should include(@s_name)
-          @sdb.subject_all_search.should include(@occupation)
-          @sdb.subject_all_search.should include(@temporal)
-          @sdb.subject_all_search.should include(@s_title)
-          @sdb.subject_all_search.should include(@topic)
+          @sdb.smods_rec.subject_all_search.should include(@s_genre)
+          @sdb.smods_rec.subject_all_search.should include(@geo)
+          @sdb.smods_rec.subject_all_search.should include(@hier_geo_country)
+          @sdb.smods_rec.subject_all_search.should include(@s_name)
+          @sdb.smods_rec.subject_all_search.should include(@occupation)
+          @sdb.smods_rec.subject_all_search.should include(@temporal)
+          @sdb.smods_rec.subject_all_search.should include(@s_title)
+          @sdb.smods_rec.subject_all_search.should include(@topic)
         end
       end # subject_all_search
     end # subject search fields
@@ -315,16 +315,16 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
     context "facet fields" do
       context "topic_facet" do
         it "should include topic subelement" do
-          @sdb.topic_facet.should include(@topic)
+          @sdb.smods_rec.topic_facet.should include(@topic)
         end
         it "should include sw_subject_names" do
-          @sdb.topic_facet.should include(@s_name)
+          @sdb.smods_rec.topic_facet.should include(@s_name)
         end
         it "should include sw_subject_titles" do
-          @sdb.topic_facet.should include(@s_title)
+          @sdb.smods_rec.topic_facet.should include(@s_title)
         end
         it "should include occupation subelement" do
-          @sdb.topic_facet.should include(@occupation)
+          @sdb.smods_rec.topic_facet.should include(@occupation)
         end
         it "should have the trailing punctuation removed" do
           m = "<mods #{@ns_decl}><subject>
@@ -335,21 +335,21 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
           </subject></mods>"
           @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-          sdb.topic_facet.should include('comma')
-          sdb.topic_facet.should include('semicolon')
-          sdb.topic_facet.should include('backslash')
-          sdb.topic_facet.should include('internal, punct;uation')
+          sdb.smods_rec.topic_facet.should include('comma')
+          sdb.smods_rec.topic_facet.should include('semicolon')
+          sdb.smods_rec.topic_facet.should include('backslash')
+          sdb.smods_rec.topic_facet.should include('internal, punct;uation')
         end
         it "should be nil if there are no values" do
           @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_no_subject)
           sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-          sdb.topic_facet.should == nil
+          sdb.smods_rec.topic_facet.should == nil
         end
       end
       context "geographic_facet" do
         it "should call geographic_search" do
-          @sdb.should_receive(:geographic_search)
-          @sdb.geographic_facet
+          @sdb.smods_rec.should_receive(:geographic_search)
+          @sdb.smods_rec.geographic_facet
         end
         it "should be like geographic_search with the trailing punctuation (and preceding spaces) removed" do
           m = "<mods #{@ns_decl}><subject>
@@ -360,15 +360,15 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
           </subject></mods>"
           @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-          sdb.geographic_facet.should include('comma')
-          sdb.geographic_facet.should include('semicolon')
-          sdb.geographic_facet.should include('backslash')
-          sdb.geographic_facet.should include('internal, punct;uation')
+          sdb.smods_rec.geographic_facet.should include('comma')
+          sdb.smods_rec.geographic_facet.should include('semicolon')
+          sdb.smods_rec.geographic_facet.should include('backslash')
+          sdb.smods_rec.geographic_facet.should include('internal, punct;uation')
         end
         it "should be nil if there are no values" do
           @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_no_subject)
           sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-          sdb.geographic_facet.should == nil
+          sdb.smods_rec.geographic_facet.should == nil
         end
       end
       context "era_facet" do
@@ -403,7 +403,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
         </originInfo></mods>"
         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-        sdb.pub_dates.should == ['1906','1904','1904']
+        sdb.smods_rec.pub_dates.should == ['1906','1904','1904']
       end
     end
   end # context sw subject methods 
@@ -414,7 +414,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       </originInfo></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-      sdb.pub_date.should == '1904'
+      sdb.smods_rec.pub_date.should == '1904'
     end
     it "should parse a date" do
       m = "<mods #{@ns_decl}><originInfo>
@@ -422,7 +422,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       </originInfo></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-      sdb.pub_date.should == '1886'
+      sdb.smods_rec.pub_date.should == '1886'
     end
     it "should remove question marks and brackets" do
       m = "<mods #{@ns_decl}><originInfo>
@@ -430,7 +430,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       </originInfo></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-      sdb.pub_date.should == '1886'
+      sdb.smods_rec.pub_date.should == '1886'
     end
     it 'should handle an s after the decade' do
       m = "<mods #{@ns_decl}><originInfo>
@@ -438,7 +438,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       </originInfo></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-      sdb.pub_date.should == '1890'
+      sdb.smods_rec.pub_date.should == '1890'
     end
     it "should ignore a date if it falls outside the constraints" do
       m = "<mods #{@ns_decl}><originInfo>
@@ -447,59 +447,59 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       Indexer.stub(:config).and_return({:max_pub_date => 1000, :min_pub_date => 1})
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-      sdb.pub_date.should == nil
+      sdb.smods_rec.pub_date.should == nil
     end
     it 'should choose a date ending with CE if there are multiple dates' do
      m = "<mods #{@ns_decl}><originInfo><dateIssued>7192 AM (li-Adam) / 1684 CE</dateIssued><issuance>monographic</issuance></originInfo>"
      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-     sdb.pub_date.should == '1684'
+     sdb.smods_rec.pub_date.should == '1684'
     end
     it 'should handle hyphenated range dates' do
       m = "<mods #{@ns_decl}><originInfo><dateIssued>1282 AH / 1865-6 CE</dateIssued><issuance>monographic</issuance></originInfo>"
        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-       sdb.pub_date.should == '1865'
+       sdb.smods_rec.pub_date.should == '1865'
     end
     it 'should handle century based dates' do
       m = "<mods #{@ns_decl}><originInfo><dateIssued>13th century AH / 19th CE</dateIssued><issuance>monographic</issuance></originInfo>"
        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-       sdb.pub_date_facet.should == '19th century'
-       sdb.pub_date_sort.should =='1800'
-       sdb.pub_date.should == '18--'
+       sdb.smods_rec.pub_date_facet.should == '19th century'
+       sdb.smods_rec.pub_date_sort.should =='1800'
+       sdb.smods_rec.pub_date.should == '18--'
     end
     it 'should handle multiple CE dates' do
       m = "<mods #{@ns_decl}><originInfo><dateIssued>6 Dhu al-Hijjah 923 AH / 1517 CE -- 7 Rabi I 924 AH / 1518 CE</dateIssued><issuance>monographic</issuance></originInfo>"
        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-       sdb.pub_date.should == '1517'
-       sdb.pub_date_sort.should =='1517'
-       sdb.pub_date_facet.should == '1517'
+       sdb.smods_rec.pub_date.should == '1517'
+       sdb.smods_rec.pub_date_sort.should =='1517'
+       sdb.smods_rec.pub_date_facet.should == '1517'
     end
     it 'should handle this case from walters' do
       m = "<mods #{@ns_decl}><originInfo><dateIssued>Late 14th or early 15th century CE</dateIssued><issuance>monographic</issuance></originInfo>"
        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-       sdb.pub_date.should == '14--'
-       sdb.pub_date_sort.should =='1400'
-       sdb.pub_date_facet.should == '15th century'
+       sdb.smods_rec.pub_date.should == '14--'
+       sdb.smods_rec.pub_date_sort.should =='1400'
+       sdb.smods_rec.pub_date_facet.should == '15th century'
     end
     it 'should work on 3 digit dates' do
       m = "<mods #{@ns_decl}><originInfo><dateIssued>966 CE</dateIssued><issuance>monographic</issuance></originInfo>"
        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-       sdb.pub_date.should == '966'
-       sdb.pub_date_sort.should =='0966'
-       sdb.pub_date_facet.should == '966'
+       sdb.smods_rec.pub_date.should == '966'
+       sdb.smods_rec.pub_date_sort.should =='0966'
+       sdb.smods_rec.pub_date_facet.should == '966'
     end
     it 'should work on 3 digit dates' do
       m = "<mods #{@ns_decl}><originInfo><dateIssued>3rd century AH / 9th CE</dateIssued><issuance>monographic</issuance></originInfo>"
        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-       sdb.pub_date.should == '8--'
-       sdb.pub_date_sort.should =='0800'
-       sdb.pub_date_facet.should == '9th century'
+       sdb.smods_rec.pub_date.should == '8--'
+       sdb.smods_rec.pub_date_sort.should =='0800'
+       sdb.smods_rec.pub_date_facet.should == '9th century'
     end
     
     
@@ -516,20 +516,20 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
        @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
     end
     it 'should work on normal dates' do
-      @sdb.stub(:pub_date).and_return('1945')
-      @sdb.pub_date_sort.should == '1945'
+      @sdb.smods_rec.stub(:pub_date).and_return('1945')
+      @sdb.smods_rec.pub_date_sort.should == '1945'
     end
     it 'should work on 3 digit dates' do
-      @sdb.stub(:pub_date).and_return('945')
-      @sdb.pub_date_sort.should == '0945'
+      @sdb.smods_rec.stub(:pub_date).and_return('945')
+      @sdb.smods_rec.pub_date_sort.should == '0945'
     end
     it 'should work on century dates' do
-      @sdb.stub(:pub_date).and_return('16--')
-      @sdb.pub_date_sort.should == '1600'
+      @sdb.smods_rec.stub(:pub_date).and_return('16--')
+      @sdb.smods_rec.pub_date_sort.should == '1600'
     end
     it 'should work on 3 digit century dates' do
-      @sdb.stub(:pub_date).and_return('9--')
-      @sdb.pub_date_sort.should == '0900'
+      @sdb.smods_rec.stub(:pub_date).and_return('9--')
+      @sdb.smods_rec.pub_date_sort.should == '0900'
     end
   end
 
@@ -538,14 +538,14 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       m = "<mods #{@ns_decl}><typeOfResource>still image</typeOfResouce></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-      sdb.format.should == ['Image']
+      sdb.smods_rec.format.should == ['Image']
     end
     it "should add a format from a config file" do
       m = "<mods #{@ns_decl}><typeOfResource>still image</typeOfResouce></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
       Indexer.stub(:config).and_return({:add_format => 'Map / Globe'})
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-      sdb.format.should == ['Image', 'Map / Globe']
+      sdb.smods_rec.format.should == ['Image', 'Map / Globe']
     end
     it 'should fetch collection formats from the hash of formats for the member objects' do
       m = "<mods #{@ns_decl}><originInfo>
@@ -554,7 +554,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
       Indexer.stub(:format_hash).and_return({@fake_druid=>['Image']})
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-      sdb.format.should == ['Image']
+      sdb.smods_rec.format.should == ['Image']
     end
     it "should return nothing if there is no format info" do
       m = "<mods #{@ns_decl}><originInfo>
@@ -562,7 +562,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       </originInfo></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-      sdb.format.should == []
+      sdb.smods_rec.format.should == []
     end
   end#context format
   context "pub_date_groups" do
@@ -572,7 +572,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       </originInfo></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-      sdb.pub_date_groups(1904).should == ['More than 50 years ago']
+      sdb.smods_rec.pub_date_groups(1904).should == ['More than 50 years ago']
     end
     it 'should work for a modern date too' do
       m = "<mods #{@ns_decl}><originInfo>
@@ -580,7 +580,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       </originInfo></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-      sdb.pub_date_groups(2013).should == ["This year"]
+      sdb.smods_rec.pub_date_groups(2013).should == ["This year"]
     end
     it 'should work ok given a nil date' do
       m = "<mods #{@ns_decl}><originInfo>
@@ -588,7 +588,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       </originInfo></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-      sdb.pub_date_groups(nil).should == nil
+      sdb.smods_rec.pub_date_groups(nil).should == nil
     end
   end#context pub date groups
 end
