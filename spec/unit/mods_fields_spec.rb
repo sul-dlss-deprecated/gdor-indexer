@@ -501,6 +501,16 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
        sdb.pub_date_sort.should =='0800'
        sdb.pub_date_facet.should == '9th century'
     end
+    it 'should work on 3 digit BC dates' do
+      m = "<mods #{@ns_decl}><originInfo><dateCreated>300 B.C.</dateCreated></originInfo>"
+       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+       sdb.pub_year.should == '-700'
+       sdb.pub_date.should == '-700'
+       sdb.pub_date_sort.should =='-700'
+       sdb.pub_date_facet.should == '300 B.C.'
+    end
+    
     
     
     

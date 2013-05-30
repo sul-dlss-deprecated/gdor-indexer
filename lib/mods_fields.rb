@@ -246,6 +246,8 @@ class SolrDocBuilder
       return @pub_year if @pub_year
       @pub_year=get_double_digit_century pruned_dates
       return @pub_year if @pub_year
+      @pub_year=get_bc_year pruned_dates
+      return @pub_year if @pub_year
       @pub_year=get_three_digit_year pruned_dates
       return @pub_year if @pub_year
       @pub_year=get_single_digit_century pruned_dates
@@ -288,13 +290,16 @@ class SolrDocBuilder
   #@return <Array[String]> with values for the pub date facet
   def pub_date_facet
     if pub_date
+      if pub_date.start_with?('-')
+        return (pub_date.to_i + 1000).to_s + ' B.C.'
+      end
       if pub_date.include? '--'
         cent=pub_date[0,2].to_i
         cent+=1
         cent=cent.to_s+'th century'
-        cent
+        return cent
       else
-        pub_date
+        return pub_date
       end
     else
       nil
@@ -420,6 +425,17 @@ class SolrDocBuilder
       matches=f_date.scan(/\d{3}/)
       if matches.length > 0
         return matches.first
+      end
+    end
+    return nil
+  end
+  #get the 3 digit BC year, return it as a negative, so -700 for 300 BC. Other methods will translate it to proper display, this is good for sorting.
+  def get_bc_year dates
+    dates.each do |f_date|
+      matches=f_date.scan(/\d{3} B.C./)
+      if matches.length > 0   
+        bc_year=matches.first[0..2]
+        return (bc_year.to_i-1000).to_s
       end
     end
     return nil
