@@ -124,7 +124,9 @@ class Indexer < Harvestdor::Indexer
   def self.format_hash
     @@format_hash ||= {}
   end
-
+  def self.language_hash
+    @@language_hash ||= {}
+  end
   # create Solr doc for the druid and add it to Solr, unless it is on the blacklist.  
   #  NOTE: don't forget to send commit to Solr, either once at end (already in harvest_and_index), or for each add, or ...
   def index druid
@@ -162,6 +164,9 @@ class Indexer < Harvestdor::Indexer
         if !Indexer.format_hash.keys.include? coll_druid
           Indexer.format_hash[coll_druid]={}
         end
+        if !Indexer.language_hash.keys.include? coll_druid
+          Indexer.language_hash[coll_druid]={}
+        end
         #store the format(s) of this object with each collection, so when the collections are being indexed, they get all of the formats of the members
         if doc_hash[:format]
           if doc_hash[:format].kind_of?(Array)
@@ -171,7 +176,16 @@ class Indexer < Harvestdor::Indexer
           else
             Indexer.format_hash[coll_druid][doc_hash[:format]]=doc_hash[:format]
           end
+        end
+        if doc_hash[:language]
+          if doc_hash[:language].kind_of?(Array)
+            doc_hash[:language].each do |lang|
+              Indexer.language_hash[coll_druid][lang]=lang
+            end
+          else
+            Indexer.language_hash[coll_druid][doc_hash[:language]]=doc_hash[:language]
           end
+        end
           if catkey
             doc_hash[:collection] << catkey
           else

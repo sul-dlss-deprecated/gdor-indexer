@@ -177,6 +177,19 @@ class SolrDocBuilder
       []
     end
   end
+  #get the languages stored during the indexing process for this collection
+  def collection_language
+    if Indexer.language_hash[@druid]
+      toret=[]
+      Indexer.language_hash[@druid].each do |k,v|
+        toret<<k
+      end
+      toret=toret.uniq
+      toret
+    end
+  end
+  
+  #get the formats stored during the indexing process for this collection
   def collection_formats
     if Indexer.format_hash[@druid]
       toret=[]

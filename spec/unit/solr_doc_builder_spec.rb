@@ -130,6 +130,16 @@ describe SolrDocBuilder do
       smr.should_receive(:sw_language_facet)
       sdb.doc_hash_from_mods
     end
+    it "collection_language should aggregate item languages" do
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+      smr = sdb.smods_rec
+      smr.should_receive(:sw_language_facet)
+      Indexer.language_hash[@fake_druid] = ['English']
+      sdb.doc_hash_from_mods
+      sdb.collection_language.should == ['English']
+    end
+    
 
     context "<physicalDescription><extent> --> physical" do
       it "should be populated when the MODS has mods/physicalDescription/extent element" do
