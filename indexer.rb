@@ -65,6 +65,28 @@ class Indexer < Harvestdor::Indexer
       logger.info("Error count: #{@error_count}")
       logger.info("Retry count: #{@retries}")
       logger.info("Total records processed: #{total_objects}")
+      send_notifications
+    end
+    
+    def send_notifications
+      total_objects=@success_count+@error_count
+      notifications= Indexer::config.notification ? Indexer::config.notification || 'jdeering@stanford.edu'
+      subject="#{Indexer.config.log_name} is ready"
+      body=("Successful count: #{@success_count}\n")
+      body +=("Error count: #{@error_count}\n")
+      body +=("Retry count: #{@retries}\n")
+      body +=("Total records processed: #{total_objects}\n")
+      opts={}
+      opts[:from_alias] = 'gryphondor'
+      opts[:server] = 'localhost'
+      opts[:from] = 'gryphondor@stanford.edu'
+      opts[:subject]=subject
+      opts[:body] = body
+      begin
+      send_email(notifications,opts)
+      rescue
+        logger.error('Failed to send email notification!')
+      end
     end
 
 
@@ -209,5 +231,24 @@ class Indexer < Harvestdor::Indexer
       ng_imd = harvestdor_client.identity_metadata druid
       # TODO: create nom-xml terminology for identityMetadata in harvestdor?
       ng_imd.xpath('identityMetadata/objectLabel').text
+    end
+    def send_email(to,opts={})
+      opts[:server]      ||= 'localhost'
+      opts[:from]        ||= 'email@example.com'
+      opts[:from_alias]  ||= 'Example Emailer'
+      opts[:subject]     ||= "You need to see this"
+      opts[:body]        ||= "Important stuff!"
+
+      msg = <<END_OF_MESSAGE
+      From: #{opts[:from_alias]} <#{opts[:from]}>
+      To: <#{to}>
+      Subject: #{opts[:subject]}
+
+      #{opts[:body]}
+      END_OF_MESSAGE
+
+      Net::SMTP.start(opts[:server]) do |smtp|
+        smtp.send_message msg, opts[:from], to
+      end
     end
   end
