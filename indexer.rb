@@ -70,7 +70,7 @@ class Indexer < Harvestdor::Indexer
     
     def send_notifications
       total_objects=@success_count+@error_count
-      notifications= Indexer::config.notification ? Indexer::config.notification || 'jdeering@stanford.edu'
+      notifications= Indexer::config.notification ? Indexer::config.notification : 'jdeering@stanford.edu'
       subject="#{Indexer.config.log_name} is ready"
       body=("Successful count: #{@success_count}\n")
       body +=("Error count: #{@error_count}\n")
@@ -245,7 +245,7 @@ class Indexer < Harvestdor::Indexer
       Subject: #{opts[:subject]}
 
       #{opts[:body]}
-      END_OF_MESSAGE
+END_OF_MESSAGE
 
       Net::SMTP.start(opts[:server]) do |smtp|
         smtp.send_message msg, opts[:from], to
