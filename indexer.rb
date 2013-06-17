@@ -5,7 +5,7 @@ require 'rsolr'
 # stdlib
 require 'logger'
 require 'threach'
-
+require 'net/smtp'
 # local files
 require 'solr_doc_builder'
 require 'harvestdor-indexer'
