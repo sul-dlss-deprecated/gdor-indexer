@@ -151,17 +151,7 @@ end
     if @indexer.collection_is_mergable?
       puts 'A collection merge will happen!'
     end
-    @indexer.harvest_and_index
-    @indexer.index_collection_druid
-    puts "Ran indexing with #{@indexer.retries} retries and #{@indexer.errors} errors."
-    
-    ## Commit our indexing job unless the :nocommit flag was passed
-    unless @opts[:nocommit]
-      puts "Starting commit..."
-      @indexer.solr_client.commit
-    else
-      puts "Skipping commit because :nocommit flag was passed"
-    end
+    @indexer.harvest_and_index @opts[:nocommit]
     
   end
   # puts "Indexing set objects only" if @indexer.config[:sets_only]

@@ -43,18 +43,28 @@ class Indexer < Harvestdor::Indexer
   #  harvest the druids via OAI
   #   create a Solr document for each druid suitable for SearchWorks
   #   write the result to the SearchWorks Solr index
-    def harvest_and_index
+    def harvest_and_index nocommit=false
       start_time=Time.now
+      
       logger.info("Started harvest_and_index at #{start_time}")
       if whitelist.empty?
         druids.threach(3) { |druid| index druid }
       else
         whitelist.threach(3) { |druid| index druid }
       end
+      index_collection_druid
       total_time=elapsed_time(start_time)
       total_objects=@success_count+@error_count
       logger.info("Finished harvest_and_index at #{Time.now}: final Solr commit returned")
       logger.info("Total elapsed time for harvest and index: #{(total_time/60.0)} minutes")
+      logger.info("Beginning Commit.")
+      ## Commit our indexing job unless the :nocommit flag was passed
+      unless nocommit
+        solr_client.commit
+      else
+        puts "Skipping commit because :nocommit flag was passed"
+      end
+      verify
       logger.info("Avg solr commit time per object (successful): #{@total_time_to_solr/@success_count} seconds") unless (@total_time_to_solr == 0 || @success_count == 0)
       logger.info("Avg solr commit time per object (all): #{@total_time_to_solr/total_objects} seconds") unless (@total_time_to_solr == 0 || @error_count == 0 || total_objects == 0)
       logger.info("Avg parse time per object (successful): #{@total_time_to_parse/@success_count} seconds") unless (@total_time_to_parse == 0 || @success_count == 0)
@@ -62,6 +72,11 @@ class Indexer < Harvestdor::Indexer
       logger.info("Avg complete index time per object (successful): #{total_time/@success_count} seconds") unless (@success_count == 0)
       logger.info("Avg complete index time per object (all): #{total_time/total_objects} seconds") unless (@error_count == 0 || total_objects == 0)
       logger.info("Successful count: #{@success_count}")
+      if @found_in_solr_count == @success_count
+        logger.info("Records verified in solr: #{@found_in_solr_count}")
+      else
+        logger.info("Success Count and Solr count dont match, this might be a problem! Records verified in solr: #{@found_in_solr_count}")
+      end
       logger.info("Error count: #{@error_count}")
       logger.info("Retry count: #{@retries}")
       logger.info("Total records processed: #{total_objects}")
@@ -73,6 +88,11 @@ class Indexer < Harvestdor::Indexer
       notifications= Indexer::config.notification ? Indexer::config.notification : 'jdeering@stanford.edu'
       subject="#{Indexer.config.log_name} is ready"
       body=("Successful count: #{@success_count}\n")
+      if @found_in_solr_count == @success_count
+        body += ("Records verified in solr: #{@found_in_solr_count}")
+      else
+        body += ("Success Count and Solr count dont match, this might be a problem!\nRecords verified in solr: #{@found_in_solr_count}")
+      end
       body +=("Error count: #{@error_count}\n")
       body +=("Retry count: #{@retries}\n")
       body +=("Total records processed: #{total_objects}\n")
@@ -110,16 +130,20 @@ class Indexer < Harvestdor::Indexer
       begin
         logger.debug "Merging collection object #{collection_druid} into #{catkey}"
         RecordMerger.merge(collection_druid,catkey)
+        @success_count+=1
       rescue => e
         logger.error "Failed to merge collection object #{collection_druid}: #{e.message}"
+         @error_count+=1
       end
     else
     begin
       logger.debug "Indexing collection object #{collection_druid}"
       solr_client.add(sw_solr_doc(collection_druid)) unless collection_druid.nil?
+      @success_count+=1
       # update DOR object's workflow datastream??   for harvest?  for indexing?
     rescue => e
       logger.error "Failed to index collection object #{collection_druid}: #{e.message}"
+       @error_count+=1
     end
     end
   end
@@ -218,6 +242,14 @@ class Indexer < Harvestdor::Indexer
       end
       doc_hash[:url_fulltext] = "#{Indexer.config.purl}/#{druid}"
       doc_hash
+    end
+    def verify
+      params={:fl => 'id', :rows => 1000}
+      col= catkey ? catkey : collection_druid
+      params[:q] = "collection:\"#{col}\""
+      params[:start] ||= 0
+      resp = solr_client.get 'select', :params => params
+      @found_in_solr_count = resp['response']['numFound'].to_i
     end
 
     def solr_client
