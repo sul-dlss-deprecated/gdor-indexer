@@ -42,6 +42,21 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
         sdb.display_type.should == 'collection'
       end
+      #!!!
+      it "should be 'hydrus_collection' if it is a collection and :display_type=hydrus is in the collection yml file" do
+        coll_mods_xml = "<mods #{@ns_decl}><typeOfResource collection='yes'/><note>hi</note></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(coll_mods_xml))
+        Indexer.stub(:config).and_return({:add_display_type => 'hydrus'})
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+        sdb.display_type.should == 'hydrus_collection'
+      end
+      it "should be 'hydrus_object' if it is not a collection and :display_type=hydrus is in the collection yml file" do
+        coll_mods_xml = "<mods #{@ns_decl}><typeOfResource/><note>hi</note></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(coll_mods_xml))
+        Indexer.stub(:config).and_return({:add_display_type => 'hydrus'})
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+        sdb.display_type.should == 'hydrus_object'
+      end
       it "should be the same as <contentMetadata> type attribute if it's not a collection" do
         # NOTE: from the contentMetadata, not the mods
         m = "<mods #{@ns_decl}><typeOfResource>sound recording</typeOfResource></mods>"

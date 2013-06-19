@@ -131,6 +131,15 @@ class SolrDocBuilder
       end
     end
   end
+  
+  # add_display_type is a way of adding distinguishing display_type values to searchworks 
+  # so that we can use to distinguish different display needs for specific collections
+  # e.g., Hydrus objects are a special display case
+  # Based on a value of :add_display_type in a collection's config file
+  # @return String the string to add to the front of the display_type value
+  def add_display_type
+    Indexer.config[:add_display_type]
+  end
 
   # select one or more format values from the controlled vocabulary here:
   #   http://searchworks-solr-lb.stanford.edu:8983/solr/select?facet.field=format&rows=0&facet.sort=index
