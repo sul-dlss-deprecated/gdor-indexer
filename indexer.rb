@@ -250,6 +250,11 @@ class Indexer < Harvestdor::Indexer
       params[:start] ||= 0
       resp = solr_client.get 'select', :params => params
       @found_in_solr_count = resp['response']['numFound'].to_i
+      
+      #get the collection record too
+      params[:q] = "id:\"#{col}\""
+      resp = solr_client.get 'select', :params => params
+      @found_in_solr_count += resp['response']['numFound'].to_i
     end
 
     def solr_client
