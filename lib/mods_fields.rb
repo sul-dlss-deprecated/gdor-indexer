@@ -148,9 +148,15 @@ class SolrDocBuilder
   def format
     val=[]
     formats=@smods_rec.term_values(:typeOfResource)
+    genres = @smods_rec.term_values(:genre)
+    issuance = @smods_rec.term_values([:origin_info,:issuance])
     if formats
       formats.each do |form|
         case form
+        when 'text'
+          val << 'Thesis' if genres and genres.include? 'thesis'
+          val << 'Book' if issuance and issuance.include? 'monographic'
+          val << 'Journal / Periodical' if issuance and issuance.include? 'continuing'
         when 'still image'
           val << 'Image'
         when 'mixed material'

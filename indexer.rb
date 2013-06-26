@@ -247,6 +247,7 @@ class Indexer < Harvestdor::Indexer
       params={:fl => 'id', :rows => 1000}
       col= catkey ? catkey : collection_druid
       params[:q] = "collection:\"#{col}\""
+      params[:qt] = 'advanced'
       params[:start] ||= 0
       resp = solr_client.get 'select', :params => params
       @found_in_solr_count = resp['response']['numFound'].to_i
