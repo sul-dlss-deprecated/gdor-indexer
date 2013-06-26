@@ -157,6 +157,7 @@ class SolrDocBuilder
           val << 'Thesis' if genres and genres.include? 'thesis'
           val << 'Book' if issuance and issuance.include? 'monographic'
           val << 'Journal / Periodical' if issuance and issuance.include? 'continuing'
+          val << 'Journal / Periodical' if genre and genre.include? 'article'
         when 'still image'
           val << 'Image'
         when 'mixed material'
