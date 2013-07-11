@@ -14,15 +14,17 @@ require 'harvestdor-indexer'
 class Indexer < Harvestdor::Indexer
 
 
-  def initialize yml_path, options = {}
+  def initialize yml_path, solr_config_path,options = {}
     @success_count=0
     @error_count=0
     @total_time_to_solr=0
     @total_time_to_parse=0
     @retries=0
     @yml_path = yml_path
+    solr_config=YAML.load_file(solr_config_path)
     Indexer.config.configure(YAML.load_file(yml_path)) if yml_path    
     Indexer.config.configure options 
+    Indexer.config[:solr][:url]=solr_config["solr"]["url"]
     yield(Indexer.config) if block_given?
   end
 
