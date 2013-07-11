@@ -14,6 +14,7 @@ gem 'solrmarc_wrapper'
 gem 'solrj_wrapper'
 gem 'threach'
 gem 'activesupport', '~> 3.0.0'
+gem 'mail'
 # documentation
 group :doc do
 	gem 'rdoc'

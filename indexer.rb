@@ -2,6 +2,7 @@
 require 'confstruct'
 require 'harvestdor'
 require 'rsolr'
+require 'mail'
 # stdlib
 require 'logger'
 require 'threach'
@@ -250,14 +251,14 @@ class Indexer < Harvestdor::Indexer
       params[:start] ||= 0
       resp = solr_client.get 'select', :params => params
       puts resp.inspect
-      @found_in_solr_count = resp['responseHeader']['response']['numFound'].to_i
+      @found_in_solr_count = resp['response']['numFound'].to_i
       
       #get the collection record too
       params.delete(:fq)
       params[:qt] = "document"
       params[:q] = "id:\"#{col}\""
       resp = solr_client.get 'select', :params => params
-      resp['responseHeader']['response']['docs'].each do |doc|
+      resp['response']['docs'].each do |doc|
         if doc['url_fulltext'] and doc['url_fulltext'].include?('http://purl/'+doc['id'])
           @found_in_solr_count += 1
         end
@@ -283,17 +284,12 @@ class Indexer < Harvestdor::Indexer
       opts[:from_alias]  ||= 'Example Emailer'
       opts[:subject]     ||= "You need to see this"
       opts[:body]        ||= "Important stuff!"
-
-      msg = <<END_OF_MESSAGE
-      From: #{opts[:from_alias]} <#{opts[:from]}>
-      To: <#{to}>
-      Subject: #{opts[:subject]}
-
-      #{opts[:body]}
-END_OF_MESSAGE
-
-      Net::SMTP.start(opts[:server]) do |smtp|
-        smtp.send_message msg, opts[:from], to
+      mail = Mail.new do
+        from    opts[:from]
+        to      to
+        subject opts[:subject]
+        body    opts[:body]
       end
+      mail.deliver!
     end
   end

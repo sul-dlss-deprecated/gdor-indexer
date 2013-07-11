@@ -28,6 +28,10 @@ GEM
       bouncy-castle-java (>= 1.5.0147)
     json (1.8.0)
     json (1.8.0-java)
+    mail (2.5.4)
+      mime-types (~> 1.16)
+      treetop (~> 1.4.8)
+    mime-types (1.23)
     mini_portile (0.5.0)
     mods (0.0.22)
       iso-639
@@ -47,6 +51,7 @@ GEM
       builder (>= 2.0.0)
       faraday
       faraday_middleware
+    polyglot (0.3.3)
     rake (10.1.0)
     rdoc (4.0.1)
       json (~> 1.4)
@@ -71,6 +76,9 @@ GEM
     stanford-mods (0.0.15)
       mods
     threach (0.2.0)
+    treetop (1.4.14)
+      polyglot
+      polyglot (>= 0.3.1)
     trollop (2.0)
     yard (0.8.6.1)
 
@@ -84,6 +92,7 @@ DEPENDENCIES
   harvestdor
   harvestdor-indexer
   jruby-openssl
+  mail
   nokogiri
   rake
   rdoc
