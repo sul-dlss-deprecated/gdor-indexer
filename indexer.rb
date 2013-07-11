@@ -261,7 +261,7 @@ class Indexer < Harvestdor::Indexer
       params[:q] = "id:\"#{col}\""
       resp = solr_client.get 'select', :params => params
       resp['response']['docs'].each do |doc|
-        if doc['url_fulltext'] and doc['url_fulltext'].include?('http://purl/'+doc['id'])
+        if doc['url_fulltext'] and doc['url_fulltext'].to_s.include?('http://purl/'+doc['id'])
           @found_in_solr_count += 1
         end
       end

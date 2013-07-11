@@ -150,8 +150,8 @@ describe Indexer do
   end # sw_solr_doc
   
   it "solr_client should initialize the rsolr client using the options from the config" do
-    indexer = Indexer.new(nil, Confstruct::Configuration.new(:solr => { :url => 'http://localhost:2345', :a => 1 }) )
-    RSolr.should_receive(:connect).with(hash_including(:a => 1, :url => 'http://localhost:2345')).and_return('foo')
+    indexer = Indexer.new(nil,  File.join(File.dirname(__FILE__), "..", "..", "config", "solr.yml") ,Confstruct::Configuration.new(:solr => { :url => 'http://localhost:2345', :a => 1 }) )
+    RSolr.should_receive(:connect).with(hash_including(:url => 'http://localhost:8983/solr')).and_return('foo')
     indexer.solr_client
   end
   
@@ -173,14 +173,15 @@ describe Indexer do
   end
   context "verify" do
     before :each do 
-      @collection_response = {'response' => {'numFound'=>'1','docs'=>[{'id'=>'dm212rn7381', 'url_fulltext' => 'http://purl/dm212rn7381'}]}}
+      @collection_response = {'response' => {'numFound'=>'1','docs'=>[{'id'=>'dm212rn7381', 'url_fulltext' => ['http://purl/dm212rn7381']}]}}
       @bad_collection_response = {'response' => {'numFound'=>'1','docs'=>[{'id'=>'dm212rn7381'}]}}
       @item_response = {'response' => {'numFound'=>'265','docs'=>[{'id'=>'dm212rn7381'}]}}
     end
 
     it 'should verify the items and the collection object in the solr index after indexing' do
       @indexer.solr_client.stub(:get) do |wt, params|
-        if params[:qt]
+        puts params.inspect
+        if not params[:params][:qt].nil?
           @collection_response
         else
           @item_response
