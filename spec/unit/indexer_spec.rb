@@ -5,7 +5,8 @@ describe Indexer do
   
   before(:all) do
     config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "walters_integration_spec.yml")
-    @indexer = Indexer.new(config_yml_path)
+    solr_yml_path = File.join(File.dirname(__FILE__), "..", "..", "config", "solr.yml")
+    @indexer = Indexer.new(config_yml_path, solr_yml_path)
     require 'yaml'
     @yaml = YAML.load_file(config_yml_path)
     @hdor_client = @indexer.send(:harvestdor_client)
@@ -85,9 +86,9 @@ describe Indexer do
       before(:all) do
         @coll_druid = 'ww121ss5000'
         rels_ext_xml = "<rdf:RDF  xmlns:fedora='info:fedora/fedora-system:def/relations-external#' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
-          <rdf:Description rdf:about='info:fedora/druid:#{@fake_druid}'>
-            <fedora:isMemberOfCollection rdf:resource='info:fedora/druid:#{@coll_druid}'/>
-          </rdf:Description></rdf:RDF>"
+        <rdf:Description rdf:about='info:fedora/druid:#{@fake_druid}'>
+        <fedora:isMemberOfCollection rdf:resource='info:fedora/druid:#{@coll_druid}'/>
+        </rdf:Description></rdf:RDF>"
         @pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{rels_ext_xml}</publicObject>")
         @coll_title = "My Collection Has an Interesting Title"
       end
@@ -115,10 +116,10 @@ describe Indexer do
         coll_druid1 = 'oo111oo2222'
         coll_druid2 = 'oo333oo4444'
         rels_ext_xml = "<rdf:RDF  xmlns:fedora='info:fedora/fedora-system:def/relations-external#' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
-          <rdf:Description rdf:about='info:fedora/druid:#{item_druid}'>
-            <fedora:isMemberOfCollection rdf:resource='info:fedora/druid:#{coll_druid1}'/>
-            <fedora:isMemberOfCollection rdf:resource='info:fedora/druid:#{coll_druid2}'/>
-          </rdf:Description></rdf:RDF>"
+        <rdf:Description rdf:about='info:fedora/druid:#{item_druid}'>
+        <fedora:isMemberOfCollection rdf:resource='info:fedora/druid:#{coll_druid1}'/>
+        <fedora:isMemberOfCollection rdf:resource='info:fedora/druid:#{coll_druid2}'/>
+        </rdf:Description></rdf:RDF>"
         pub_xml = Nokogiri::XML("<publicObject id='druid:#{item_druid}'>#{rels_ext_xml}</publicObject>")
         @hdor_client.stub(:public_xml).with(item_druid).and_return(pub_xml)
         @hdor_client.stub(:mods).with(item_druid).and_return(Nokogiri::XML(@mods_xml))
@@ -131,8 +132,8 @@ describe Indexer do
       it "should add no collection field values if there are none" do
         item_druid = 'oo123oo4567'
         rels_ext_xml = "<rdf:RDF  xmlns:fedora='info:fedora/fedora-system:def/relations-external#' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
-          <rdf:Description rdf:about='info:fedora/druid:#{item_druid}'>
-          </rdf:Description></rdf:RDF>"
+        <rdf:Description rdf:about='info:fedora/druid:#{item_druid}'>
+        </rdf:Description></rdf:RDF>"
         pub_xml = Nokogiri::XML("<publicObject id='druid:#{item_druid}'>#{rels_ext_xml}</publicObject>")
         @hdor_client.stub(:public_xml).with(item_druid).and_return(pub_xml)
         @hdor_client.stub(:mods).with(item_druid).and_return(Nokogiri::XML(@mods_xml))
@@ -170,5 +171,32 @@ describe Indexer do
       @indexer.identity_md_obj_label(@fake_druid).should == @coll_title
     end
   end
-  
+  context "verify" do
+    before :each do 
+      @collection_response = {'response' => {'numFound'=>'1','docs'=>[{'id'=>'dm212rn7381', 'url_fulltext' => 'http://purl/dm212rn7381'}]}}
+      @bad_collection_response = {'response' => {'numFound'=>'1','docs'=>[{'id'=>'dm212rn7381'}]}}
+      @item_response = {'response' => {'numFound'=>'265','docs'=>[{'id'=>'dm212rn7381'}]}}
+    end
+
+    it 'should verify the items and the collection object in the solr index after indexing' do
+      @indexer.solr_client.stub(:get) do |wt, params|
+        if params[:qt]
+          @collection_response
+        else
+          @item_response
+        end
+      end
+      @indexer.verify.should == 266
+    end
+    it 'should verify the collection object has a purl' do
+      @indexer.solr_client.stub(:get) do |wt, params|
+        if params[:qt]
+          @bad_collection_response
+        else
+          @item_response
+        end
+        @indexer.verify.should == 265
+      end
+    end
+  end
 end
