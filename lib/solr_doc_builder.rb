@@ -40,7 +40,7 @@ class SolrDocBuilder
     # from public_xml_fields
     doc_hash[:display_type] = display_type  # defined in public_xml_fields
     doc_hash[:img_info] = image_ids unless !image_ids
-    doc_hash[:format] = format
+    doc_hash[:format] = @smods_rec.format
 
     doc_hash.merge!(doc_hash_from_mods) if doc_hash_from_mods
     
