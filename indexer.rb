@@ -246,16 +246,23 @@ class Indexer < Harvestdor::Indexer
     def verify
       params={:fl => 'id', :rows => 1000}
       col= catkey ? catkey : collection_druid
-      params[:q] = "collection:\"#{col}\""
-      params[:qt] = 'advanced'
+      params[:fq] = "collection:\"#{col}\""
       params[:start] ||= 0
       resp = solr_client.get 'select', :params => params
-      @found_in_solr_count = resp['response']['numFound'].to_i
+      puts resp.inspect
+      @found_in_solr_count = resp['responseHeader']['response']['numFound'].to_i
       
       #get the collection record too
+      params.delete(:fq)
+      params[:qt] = "document"
       params[:q] = "id:\"#{col}\""
       resp = solr_client.get 'select', :params => params
-      @found_in_solr_count += resp['response']['numFound'].to_i
+      resp['responseHeader']['response']['docs'].each do |doc|
+        if doc['url_fulltext'] and doc['url_fulltext'].include?('http://purl/'+doc['id'])
+          @found_in_solr_count += 1
+        end
+      end
+      @found_in_solr_count
     end
 
     def solr_client
