@@ -90,9 +90,9 @@ class Indexer < Harvestdor::Indexer
       subject="#{Indexer.config.log_name} is ready"
       body=("Successful count: #{@success_count}\n")
       if @found_in_solr_count == @success_count
-        body += ("Records verified in solr: #{@found_in_solr_count}")
+        body += ("Records verified in solr: #{@found_in_solr_count}\n")
       else
-        body += ("Success Count and Solr count dont match, this might be a problem!\nRecords verified in solr: #{@found_in_solr_count}")
+        body += ("Success Count and Solr count dont match, this might be a problem!\nRecords verified in solr: #{@found_in_solr_count}\n")
       end
       body +=("Error count: #{@error_count}\n")
       body +=("Retry count: #{@retries}\n")
