@@ -24,7 +24,7 @@ class Indexer < Harvestdor::Indexer
     solr_config=YAML.load_file(solr_config_path)
     Indexer.config.configure(YAML.load_file(yml_path)) if yml_path    
     Indexer.config.configure options 
-    Indexer.config[:solr][:url]=solr_config["solr"]["url"]
+    Indexer.config[:solr]={:url => solr_config["solr"]["url"], :read_timeout => 3600, :open_timeout => 3600}
     yield(Indexer.config) if block_given?
   end
 
