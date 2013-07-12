@@ -146,7 +146,7 @@ class SolrDocBuilder
   # based on the dor_content_type
   # @return [String] value in the SearchWorks controlled vocabulary
   def format
-    val=@smods_rec.format
+    val=@smods_rec.format ? @smods_rec.format : []
     
     if Indexer.config[:add_format]
       val << Indexer.config[:add_format]
