@@ -48,7 +48,7 @@ describe SolrDocBuilder do
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
       sdb.should_receive(:display_type)
       sdb.should_receive(:image_ids)
-      sdb.smods_rec.should_receive(:format)
+      sdb.should_receive(:format)
       sdb.doc_hash
     end
     context "img_info" do

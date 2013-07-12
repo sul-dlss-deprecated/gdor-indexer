@@ -146,39 +146,8 @@ class SolrDocBuilder
   # based on the dor_content_type
   # @return [String] value in the SearchWorks controlled vocabulary
   def format
-    val=[]
-    formats=@smods_rec.term_values(:typeOfResource)
-    genres = @smods_rec.term_values(:genre)
-    issuance = @smods_rec.term_values([:origin_info,:issuance])
-    if formats
-      formats.each do |form|
-        case form
-        when 'text'
-          val << 'Thesis' if genres and genres.include? 'thesis'
-          val << 'Book' if issuance and issuance.include? 'monographic'
-          val << 'Journal / Periodical' if issuance and issuance.include? 'continuing'
-          val << 'Journal / Periodical' if genres and genres.include? 'article'
-        when 'still image'
-          val << 'Image'
-        when 'mixed material'
-          val << 'Manuscript/Archive'
-        when 'moving image'
-          val << 'Video'
-        when 'three dimensional object'
-          val <<'Other'
-        when 'cartographic'
-          val << 'Map/Globe'
-        when 'sound recording-musical'
-          val << 'Music-Recording'
-        when 'sound recording-nonmusical'
-          val << 'Sound Recording'
-        when 'software, multimedia'
-          val << 'Computer File'      
-        else
-          @logger.warn "#{@druid} has an unknown typeOfResource #{form}"
-        end
-      end
-    end
+    val=@smods_rec.format
+    
     if Indexer.config[:add_format]
       val << Indexer.config[:add_format]
     end
