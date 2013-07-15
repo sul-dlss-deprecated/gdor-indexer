@@ -8,7 +8,11 @@ class SolrDocBuilder
   #   https://consul.stanford.edu/display/chimera/DOR+content+types%2C+resource+types+and+interpretive+metadata
   # @return [String] 'collection' or DOR content type
   def display_type
-    if collection?
+    if add_display_type && collection?
+      "#{add_display_type}_collection"
+    elsif add_display_type
+      "#{add_display_type}_object"
+    elsif collection?
       'collection'
     elsif dor_content_type
       dor_content_type

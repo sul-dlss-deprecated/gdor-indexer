@@ -49,8 +49,6 @@ class SolrDocBuilder
     doc_hash
   end
   
-  
-  
   # If MODS record has a top level typeOfResource element with attribute collection set to 'yes,
   #  (<mods><typeOfResource collection='yes'>) then return true; false otherwise
   # @return true if MODS indicates this is a collection object
@@ -133,6 +131,7 @@ class SolrDocBuilder
       raise "Empty MODS metadata for #{druid}: #{ng_doc.to_xml}" if ng_doc.root.xpath('//text()').empty?
       @mods_rec = Stanford::Mods::Record.new
       @mods_rec.from_nk_node(ng_doc.root)
+      @mods_rec.druid = @druid
     end
     @mods_rec
   end

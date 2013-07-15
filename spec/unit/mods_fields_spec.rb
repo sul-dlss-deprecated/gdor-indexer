@@ -501,6 +501,16 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
        sdb.smods_rec.pub_date_sort.should =='0800'
        sdb.smods_rec.pub_date_facet.should == '9th century'
     end
+    it 'should work on 3 digit BC dates' do
+      m = "<mods #{@ns_decl}><originInfo><dateCreated>300 B.C.</dateCreated></originInfo>"
+       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+       sdb.pub_year.should == '-700'
+       sdb.pub_date.should == '-700'
+       sdb.pub_date_sort.should =='-700'
+       sdb.pub_date_facet.should == '300 B.C.'
+    end
+    
     
     
     
@@ -530,6 +540,16 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
     it 'should work on 3 digit century dates' do
       @sdb.smods_rec.stub(:pub_date).and_return('9--')
       @sdb.smods_rec.pub_date_sort.should == '0900'
+    end
+  end
+  
+  context "add_display_type" do
+    it "should add a display_type from a config file" do
+      m = "<mods #{@ns_decl}><typeOfResource>still image</typeOfResouce></mods>"
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      Indexer.stub(:config).and_return({:add_display_type => 'hydrus'})
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+      sdb.add_display_type.should == 'hydrus'
     end
   end
 

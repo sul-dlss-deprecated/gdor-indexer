@@ -86,6 +86,25 @@ describe SolrDocBuilder do
         sdb.doc_hash_from_mods[:collection_type].should == nil
       end
     end
+    
+    context "display_type" do
+      it "should be hydrus_collection for hydrus collections" do
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+        Indexer.stub(:config).and_return({:add_display_type => 'hydrus'})
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+        sdb.stub(:collection?).and_return(true)
+        sdb.add_display_type.should eql("hydrus")
+        sdb.display_type.should eql("hydrus_collection")
+      end
+      it "should be hydrus_object for hydrus objects" do
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+        Indexer.stub(:config).and_return({:add_display_type => 'hydrus'})
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+        sdb.stub(:collection?).and_return(false)
+        sdb.add_display_type.should eql("hydrus")
+        sdb.display_type.should eql("hydrus_object")      
+      end
+    end
 
     context "<abstract> --> summary_search" do
       it "should be populated when the MODS has a top level <abstract> element" do
@@ -130,6 +149,16 @@ describe SolrDocBuilder do
       smr.should_receive(:sw_language_facet)
       sdb.doc_hash_from_mods
     end
+    it "collection_language should aggregate item languages" do
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+      smr = sdb.smods_rec
+      smr.should_receive(:sw_language_facet)
+      Indexer.language_hash[@fake_druid] = ['English']
+      sdb.doc_hash_from_mods
+      sdb.collection_language.should == ['English']
+    end
+    
 
     context "<physicalDescription><extent> --> physical" do
       it "should be populated when the MODS has mods/physicalDescription/extent element" do
@@ -543,7 +572,8 @@ describe SolrDocBuilder do
   context "using Harvestdor::Client" do
     before(:all) do
       config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "walters_integration_spec.yml")
-      @indexer = Indexer.new(config_yml_path)
+      solr_yml_path = File.join(File.dirname(__FILE__), "..", "..", "config", "solr.yml")
+      @indexer = Indexer.new(config_yml_path, solr_yml_path)
       @real_hdor_client = @indexer.send(:harvestdor_client)
     end
     context "smods_rec method (called in initialize method)" do

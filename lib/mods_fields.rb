@@ -131,38 +131,23 @@ class SolrDocBuilder
       end
     end
   end
+  
+  # add_display_type is a way of adding distinguishing display_type values to searchworks 
+  # so that we can use to distinguish different display needs for specific collections
+  # e.g., Hydrus objects are a special display case
+  # Based on a value of :add_display_type in a collection's config file
+  # @return String the string to add to the front of the display_type value
+  def add_display_type
+    Indexer.config[:add_display_type]
+  end
 
   # select one or more format values from the controlled vocabulary here:
   #   http://searchworks-solr-lb.stanford.edu:8983/solr/select?facet.field=format&rows=0&facet.sort=index
   # based on the dor_content_type
   # @return [String] value in the SearchWorks controlled vocabulary
   def format
-    val=[]
-    formats=@smods_rec.term_values(:typeOfResource)
-    if formats
-      formats.each do |form|
-        case form
-        when 'still image'
-          val << 'Image'
-        when 'mixed material'
-          val << 'Manuscript/Archive'
-        when 'moving image'
-          val << 'Video'
-        when 'three dimensional object'
-          val <<'Other'
-        when 'cartographic'
-          val << 'Map/Globe'
-        when 'sound recording-musical'
-          val << 'Music-Recording'
-        when 'sound recording-nonmusical'
-          val << 'Sound Recording'
-        when 'software, multimedia'
-          val << 'Computer File'      
-        else
-          @logger.warn "#{@druid} has an unknown typeOfResource #{form}"
-        end
-      end
-    end
+    val=@smods_rec.format ? @smods_rec.format : []
+    
     if Indexer.config[:add_format]
       val << Indexer.config[:add_format]
     end
@@ -177,6 +162,19 @@ class SolrDocBuilder
       []
     end
   end
+  #get the languages stored during the indexing process for this collection
+  def collection_language
+    if Indexer.language_hash[@druid]
+      toret=[]
+      Indexer.language_hash[@druid].each do |k,v|
+        toret<<k
+      end
+      toret=toret.uniq
+      toret
+    end
+  end
+  
+  #get the formats stored during the indexing process for this collection
   def collection_formats
     if Indexer.format_hash[@druid]
       toret=[]
@@ -246,6 +244,8 @@ class SolrDocBuilder
       return @pub_year if @pub_year
       @pub_year=get_double_digit_century pruned_dates
       return @pub_year if @pub_year
+      @pub_year=get_bc_year pruned_dates
+      return @pub_year if @pub_year
       @pub_year=get_three_digit_year pruned_dates
       return @pub_year if @pub_year
       @pub_year=get_single_digit_century pruned_dates
@@ -288,13 +288,16 @@ class SolrDocBuilder
   #@return <Array[String]> with values for the pub date facet
   def pub_date_facet
     if pub_date
+      if pub_date.start_with?('-')
+        return (pub_date.to_i + 1000).to_s + ' B.C.'
+      end
       if pub_date.include? '--'
         cent=pub_date[0,2].to_i
         cent+=1
         cent=cent.to_s+'th century'
-        cent
+        return cent
       else
-        pub_date
+        return pub_date
       end
     else
       nil
@@ -420,6 +423,17 @@ class SolrDocBuilder
       matches=f_date.scan(/\d{3}/)
       if matches.length > 0
         return matches.first
+      end
+    end
+    return nil
+  end
+  #get the 3 digit BC year, return it as a negative, so -700 for 300 BC. Other methods will translate it to proper display, this is good for sorting.
+  def get_bc_year dates
+    dates.each do |f_date|
+      matches=f_date.scan(/\d{3} B.C./)
+      if matches.length > 0   
+        bc_year=matches.first[0..2]
+        return (bc_year.to_i-1000).to_s
       end
     end
     return nil

@@ -21,7 +21,6 @@ class RecordMerger
     #at the moment we  only merge collections, this will have to check for item vs collection in the future
     solrj.add_val_to_fld(doc, "collection_type", "Digital Collection")
     solrj.add_doc_to_ix(doc, @catkey)
-    solrj.commit
   end
   def print doc
     doc.keys.each do |key|
