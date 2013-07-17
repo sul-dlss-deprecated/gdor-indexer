@@ -434,14 +434,14 @@ describe SolrDocBuilder do
       end
       it "should call the appropriate methods in mods_fields mixin to populate the Solr fields" do
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        sdb.should_receive(:topic_search)
-        sdb.should_receive(:geographic_search)
-        sdb.should_receive(:subject_other_search)
-        sdb.should_receive(:subject_other_subvy_search)
-        sdb.should_receive(:subject_all_search)
-        sdb.should_receive(:topic_facet)
-        sdb.should_receive(:geographic_facet)
-        sdb.should_receive(:era_facet)
+        sdb.smods_rec.should_receive(:topic_search)
+        sdb.smods_rec.should_receive(:geographic_search)
+        sdb.smods_rec.should_receive(:subject_other_search)
+        sdb.smods_rec.should_receive(:subject_other_subvy_search)
+        sdb.smods_rec.should_receive(:subject_all_search)
+        sdb.smods_rec.should_receive(:topic_facet)
+        sdb.smods_rec.should_receive(:geographic_facet)
+        sdb.smods_rec.should_receive(:era_facet)
         sdb.doc_hash_from_mods
       end
       it "topic_search" do
@@ -483,7 +483,7 @@ describe SolrDocBuilder do
       end
     end # subject fields
     context 'date fields' do
-      it 'should populate all 4 date fields' do
+      it 'should populate all date fields' do
         m = "<mods #{@ns_decl}><originInfo><dateIssued>13th century AH / 19th CE</dateIssued><issuance>monographic</issuance></originInfo>"
          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT)).doc_hash_from_mods
@@ -491,6 +491,8 @@ describe SolrDocBuilder do
          sdb[:pub_date_sort].should == '1800'
          sdb[:pub_date_group_facet].should == ["More than 50 years ago"]
          sdb[:pub_date_display].should == '13th century AH / 19th CE'
+         sdb[:publication_year_isi].should == '1800'
+         sdb[:imprint_display].should == '13th century AH / 19th CE'
       end
     end
   end # doc_hash_from_mods

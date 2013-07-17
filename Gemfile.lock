@@ -73,7 +73,7 @@ GEM
       simplecov (>= 0.4.1)
     solrj_wrapper (0.0.2)
     solrmarc_wrapper (0.0.4)
-    stanford-mods (0.0.16)
+    stanford-mods (0.0.17)
       mods
     threach (0.2.0)
     treetop (1.4.14)

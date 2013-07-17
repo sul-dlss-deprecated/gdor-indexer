@@ -422,7 +422,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       </originInfo></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-      sdb.smods_rec.pub_date.should == '1886'
+      sdb.pub_date.should == '1886'
     end
     it "should remove question marks and brackets" do
       m = "<mods #{@ns_decl}><originInfo>
@@ -430,7 +430,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       </originInfo></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-      sdb.smods_rec.pub_date.should == '1886'
+      sdb.pub_date.should == '1886'
     end
     it 'should handle an s after the decade' do
       m = "<mods #{@ns_decl}><originInfo>
@@ -438,7 +438,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       </originInfo></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-      sdb.smods_rec.pub_date.should == '1890'
+      sdb.pub_date.should == '1890'
     end
     it "should ignore a date if it falls outside the constraints" do
       m = "<mods #{@ns_decl}><originInfo>
@@ -447,19 +447,19 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       Indexer.stub(:config).and_return({:max_pub_date => 1000, :min_pub_date => 1})
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-      sdb.smods_rec.pub_date.should == nil
+      sdb.pub_date.should == nil
     end
     it 'should choose a date ending with CE if there are multiple dates' do
      m = "<mods #{@ns_decl}><originInfo><dateIssued>7192 AM (li-Adam) / 1684 CE</dateIssued><issuance>monographic</issuance></originInfo>"
      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-     sdb.smods_rec.pub_date.should == '1684'
+     sdb.pub_date.should == '1684'
     end
     it 'should handle hyphenated range dates' do
       m = "<mods #{@ns_decl}><originInfo><dateIssued>1282 AH / 1865-6 CE</dateIssued><issuance>monographic</issuance></originInfo>"
        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-       sdb.smods_rec.pub_date.should == '1865'
+       sdb.pub_date.should == '1865'
     end
     it 'should handle century based dates' do
       m = "<mods #{@ns_decl}><originInfo><dateIssued>13th century AH / 19th CE</dateIssued><issuance>monographic</issuance></originInfo>"
@@ -505,17 +505,11 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       m = "<mods #{@ns_decl}><originInfo><dateCreated>300 B.C.</dateCreated></originInfo>"
        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-       sdb.pub_year.should == '-700'
-       sdb.pub_date.should == '-700'
-       sdb.pub_date_sort.should =='-700'
-       sdb.pub_date_facet.should == '300 B.C.'
+       sdb.smods_rec.pub_year.should == '-700'
+       sdb.smods_rec.pub_date.should == '-700'
+       sdb.smods_rec.pub_date_sort.should =='-700'
+       sdb.smods_rec.pub_date_facet.should == '300 B.C.'
     end
-    
-    
-    
-    
-    
-    
   end #context pub_dates
   context 'pub_date_sort' do
     before :each do
@@ -565,7 +559,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
       Indexer.stub(:config).and_return({:add_format => 'Map / Globe'})
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-      sdb.smods_rec.format.should == ['Image', 'Map / Globe']
+      sdb.format.should == ['Image', 'Map / Globe']
     end
     it 'should fetch collection formats from the hash of formats for the member objects' do
       m = "<mods #{@ns_decl}><originInfo>
@@ -574,7 +568,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
       Indexer.stub(:format_hash).and_return({@fake_druid=>['Image']})
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-      sdb.smods_rec.format.should == ['Image']
+      sdb.format.should == ['Image']
     end
     it "should return nothing if there is no format info" do
       m = "<mods #{@ns_decl}><originInfo>

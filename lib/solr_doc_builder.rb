@@ -24,6 +24,7 @@ class SolrDocBuilder
     @harvestdor_client = harvestdor_client
     @logger = logger
     @smods_rec = smods_rec
+    @smods_rec.druid=druid
     @public_xml = public_xml
   end
   
@@ -48,6 +49,8 @@ class SolrDocBuilder
 
     doc_hash
   end
+  
+  
   
   # If MODS record has a top level typeOfResource element with attribute collection set to 'yes,
   #  (<mods><typeOfResource collection='yes'>) then return true; false otherwise
@@ -80,7 +83,7 @@ class SolrDocBuilder
       :title_sort => @smods_rec.sw_sort_title,
       :title_245a_display => @smods_rec.sw_short_title,
       :title_display => @smods_rec.sw_full_title,
-      :title_full_display => sw_full_title,
+      :title_full_display => @smods_rec.sw_full_title,
       
       # author fields
       :author_1xx_search => @smods_rec.sw_main_author,
@@ -94,14 +97,14 @@ class SolrDocBuilder
       :author_person_full_display => @smods_rec.sw_person_authors,
       
       # subject search fields
-      :topic_search => topic_search, 
-      :geographic_search => geographic_search,
-      :subject_other_search => subject_other_search, 
-      :subject_other_subvy_search => subject_other_subvy_search,
-      :subject_all_search => subject_all_search, 
-      :topic_facet => topic_facet,
-      :geographic_facet => geographic_facet,
-      :era_facet => era_facet,
+      :topic_search => @smods_rec.topic_search, 
+      :geographic_search => @smods_rec.geographic_search,
+      :subject_other_search => @smods_rec.subject_other_search, 
+      :subject_other_subvy_search => @smods_rec.subject_other_subvy_search,
+      :subject_all_search => @smods_rec.subject_all_search, 
+      :topic_facet => @smods_rec.topic_facet,
+      :geographic_facet => @smods_rec.geographic_facet,
+      :era_facet => @smods_rec.era_facet,
 
       :language => @smods_rec.sw_language_facet,
       :physical =>  @smods_rec.term_values([:physical_description, :extent]),
@@ -110,14 +113,19 @@ class SolrDocBuilder
       :url_suppl => @smods_rec.term_values([:related_item, :location, :url]),
 
       #publish date fields
-      :pub_search => place,
-      :pub_date_sort => pub_date_sort,
-      :pub_date_group_facet => pub_date_groups(pub_date), 
-      :pub_date =>pub_date_facet,
-      :pub_date_display => pub_date_display,
+      :pub_year_tisim =>  pub_date,
+      :production_year_isi =>  pub_date,
+      :pub_search =>  @smods_rec.place,
+      :pub_date_sort =>  @smods_rec.pub_date_sort,
+      :pub_date_group_facet =>  @smods_rec.pub_date_groups(pub_date), 
+      :pub_date =>  @smods_rec.pub_date_facet,
+      :imprint_display =>  @smods_rec.pub_date_display,
+      :pub_date_display =>  @smods_rec.pub_date_display,
       :all_search => @smods_rec.text
       
     }
+    doc_hash[date_type_sym] =  @smods_rec.pub_date_sort  if date_type_sym
+    
     doc_hash[:collection_type] = 'Digital Collection' if collection?
     doc_hash
   end
@@ -131,7 +139,6 @@ class SolrDocBuilder
       raise "Empty MODS metadata for #{druid}: #{ng_doc.to_xml}" if ng_doc.root.xpath('//text()').empty?
       @mods_rec = Stanford::Mods::Record.new
       @mods_rec.from_nk_node(ng_doc.root)
-      @mods_rec.druid = @druid
     end
     @mods_rec
   end
@@ -143,3 +150,4 @@ class SolrDocBuilder
   end
 
 end # SolrDocBuilder class
+
