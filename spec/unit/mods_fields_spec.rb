@@ -381,15 +381,15 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
           </subject></mods>"
           @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-          sdb.era_facet.should include('comma')
-          sdb.era_facet.should include('semicolon')
-          sdb.era_facet.should include('backslash')
-          sdb.era_facet.should include('internal, punct;uation')
+          sdb.smods_rec.era_facet.should include('comma')
+          sdb.smods_rec.era_facet.should include('semicolon')
+          sdb.smods_rec.era_facet.should include('backslash')
+          sdb.smods_rec.era_facet.should include('internal, punct;uation')
         end
         it "should be nil if there are no values" do
           @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_no_subject)
           sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-          sdb.era_facet.should == nil
+          sdb.smods_rec.era_facet.should == nil
         end
       end
     end # subject facet fields

@@ -9,7 +9,7 @@ class SimpleCov::Formatter::MergedFormatter
 end
 SimpleCov.formatter = SimpleCov::Formatter::MergedFormatter
 SimpleCov.start do
-  add_filter "/spec/"
+ # add_filter "/spec/"
 end
 
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
