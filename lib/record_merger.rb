@@ -4,9 +4,7 @@ class RecordMerger
   def self.fetch_sw_solr_input_doc
     dist_dir = Indexer.config.solrmarc.dist_dir
     sw_solr_url = Indexer.config.solrmarc.sw_solr_url
-    puts sw_solr_url
     config_file = Indexer.config.solrmarc.config_file
-    puts config_file.to_s
     smwrapper = SolrmarcWrapper.new(dist_dir, config_file, sw_solr_url)
     @sw_solr_input_doc = smwrapper.get_solr_input_doc_from_marcxml(@catkey)
   end
