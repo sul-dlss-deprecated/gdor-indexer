@@ -113,8 +113,8 @@ class SolrDocBuilder
       :url_suppl => @smods_rec.term_values([:related_item, :location, :url]),
 
       #publish date fields
-      :pub_year_tisim =>  pub_date,
-      :production_year_isi =>  pub_date,
+      :pub_year_tisim =>  @smods_rec.pub_date_sort,
+      :production_year_isi =>  @smods_rec.pub_date_sort,
       :pub_search =>  @smods_rec.place,
       :pub_date_sort =>  @smods_rec.pub_date_sort,
       :pub_date_group_facet =>  @smods_rec.pub_date_groups(pub_date), 
