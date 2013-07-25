@@ -51,10 +51,9 @@ class Indexer < Harvestdor::Indexer
       
       logger.info("Started harvest_and_index at #{start_time}")
       if whitelist.empty?
-        #druids.threach(3) { |druid| index druid }
-        index druids.first
+        druids.threach(3) { |druid| index druid }
       else
-        #whitelist.threach(3) { |druid| index druid }
+        whitelist.threach(3) { |druid| index druid }
       end
       index_collection_druid
       total_time=elapsed_time(start_time)
@@ -68,7 +67,7 @@ class Indexer < Harvestdor::Indexer
       else
         puts "Skipping commit because :nocommit flag was passed"
       end
-      #verify
+      verify
       logger.info("Avg solr commit time per object (successful): #{@total_time_to_solr/@success_count} seconds") unless (@total_time_to_solr == 0 || @success_count == 0)
       logger.info("Avg solr commit time per object (all): #{@total_time_to_solr/total_objects} seconds") unless (@total_time_to_solr == 0 || @error_count == 0 || total_objects == 0)
       logger.info("Avg parse time per object (successful): #{@total_time_to_parse/@success_count} seconds") unless (@total_time_to_parse == 0 || @success_count == 0)
@@ -131,14 +130,14 @@ class Indexer < Harvestdor::Indexer
   # @param [String] druid 
   def index_collection_druid
     if catkey
-      #begin
+      begin
         logger.debug "Merging collection object #{collection_druid} into #{catkey}"
         RecordMerger.merge(collection_druid,catkey)
         @success_count+=1
-        #rescue => e
-        #logger.error "Failed to merge collection object #{collection_druid}: #{e.message}"
-        # @error_count+=1
-        #end
+      rescue => e
+        logger.error "Failed to merge collection object #{collection_druid}: #{e.message}"
+         @error_count+=1
+      end
     else
     begin
       logger.debug "Indexing collection object #{collection_druid}"
