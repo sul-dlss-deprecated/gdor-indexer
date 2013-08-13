@@ -21,6 +21,7 @@ class Indexer < Harvestdor::Indexer
     @total_time_to_parse=0
     @retries=0
     @yml_path = yml_path
+    @validation_messages=''
     solr_config=YAML.load_file(solr_config_path)
     Indexer.config.configure(YAML.load_file(yml_path)) if yml_path    
     Indexer.config.configure options 
@@ -99,6 +100,7 @@ class Indexer < Harvestdor::Indexer
       body +=("Error count: #{@error_count}\n")
       body +=("Retry count: #{@retries}\n")
       body +=("Total records processed: #{total_objects}\n")
+      body +=(@validation_messages)
       opts={}
       opts[:from_alias] = 'gryphondor'
       opts[:server] = 'localhost'
@@ -201,6 +203,9 @@ class Indexer < Harvestdor::Indexer
   def sw_solr_doc druid
     sdb = SolrDocBuilder.new(druid, harvestdor_client, logger)
     doc_hash = sdb.doc_hash
+    sdb.validate.each do |msg|
+      @validation_messages+=msg+"\n"
+    end
     # determine collection druids and their titles and add to solr doc
     coll_druids = sdb.collection_druids    
     if coll_druids

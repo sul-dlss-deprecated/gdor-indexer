@@ -24,7 +24,7 @@ class SolrDocBuilder
     end
     vals = @smods_rec.term_values([:origin_info,:dateCreated])  
     if vals and vals.length > 0
-      return :production_year_isi
+      return :creation_year_isi
     end
     nil
   end

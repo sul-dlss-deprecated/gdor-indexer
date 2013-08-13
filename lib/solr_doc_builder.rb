@@ -31,23 +31,22 @@ class SolrDocBuilder
   # Create a Hash representing the Solr doc to be written to Solr, based on MODS and public_xml
   # @return [Hash] Hash representing the Solr document
   def doc_hash
-    doc_hash = {
-      :id => @druid, 
-      :druid => @druid, 
-      :modsxml => "#{@smods_rec.to_xml}",
-    }
+    if not @doc_hash
+      doc_hash = {
+        :id => @druid, 
+        :druid => @druid, 
+        :modsxml => "#{@smods_rec.to_xml}",
+      }
     
-    doc_hash[:access_facet] = 'Online'
-    # from public_xml_fields
-    doc_hash[:display_type] = display_type  # defined in public_xml_fields
-    doc_hash[:img_info] = image_ids unless !image_ids
-    doc_hash[:format] = format
-
-    doc_hash.merge!(doc_hash_from_mods) if doc_hash_from_mods
-    
-    # TODO:  verify:  all searchworks fields per sw_index.properties and  schema.xml
-
-    doc_hash
+      doc_hash[:access_facet] = 'Online'
+      # from public_xml_fields
+      doc_hash[:display_type] = display_type  # defined in public_xml_fields
+      doc_hash[:img_info] = image_ids unless !image_ids
+      doc_hash[:format] = format
+      doc_hash.merge!(doc_hash_from_mods) if doc_hash_from_mods
+      @doc_hash=doc_hash
+    end
+    @doc_hash
   end
   
   
@@ -114,7 +113,6 @@ class SolrDocBuilder
 
       #publish date fields
       :pub_year_tisim =>  @smods_rec.pub_date_sort,
-      :production_year_isi =>  @smods_rec.pub_date_sort,
       :pub_search =>  @smods_rec.place,
       :pub_date_sort =>  @smods_rec.pub_date_sort,
       :pub_date_group_facet =>  @smods_rec.pub_date_groups(pub_date), 
@@ -124,6 +122,7 @@ class SolrDocBuilder
       :all_search => @smods_rec.text
       
     }
+    #put the year in the correct field, :creation_year_isi for example
     doc_hash[date_type_sym] =  @smods_rec.pub_date_sort  if date_type_sym
     
     doc_hash[:collection_type] = 'Digital Collection' if collection?
@@ -148,6 +147,22 @@ class SolrDocBuilder
   def public_xml 
     @public_xml ||= @harvestdor_client.public_xml @druid
   end
+  
+
+  
+  def validate
+    messages = []
+    messages << "#{@druid} missing format" if doc_hash[:format].nil? or doc_hash[:format].length == 0 
+    messages << "#{@druid} missing title" if doc_hash.blank? :title_display
+    messages << "#{@druid} missing author" if doc_hash.blank? :author_person_display
+    messages << "#{@druid} missing pub year for date slider" if doc_hash.blank? :pub_year_tisim
+    messages
+  end
 
 end # SolrDocBuilder class
+class Hash
+  def blank? field
+    self[field].nil? || self[field].length == 0
+  end
+end
 
