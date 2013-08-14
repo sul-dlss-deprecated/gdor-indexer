@@ -257,21 +257,22 @@ class Indexer < Harvestdor::Indexer
       params[:fq] = "collection:\"#{col}\""
       params[:start] ||= 0
       resp = solr_client.get 'select', :params => params
-      puts resp.inspect
       @found_in_solr_count = resp['response']['numFound'].to_i
-      
+
       #get the collection record too
       params.delete(:fq)
-      params[:qt] = "document"
+      params[:fl] = 'id, url_fulltext'
       params[:fq] = "id:\"#{col}\""
       resp = solr_client.get 'select', :params => params
+      puts resp.inspect
       resp['response']['docs'].each do |doc|
-        if doc['url_fulltext'] and doc['url_fulltext'].to_s.include?('http://purl/'+doc['id'])
+        if doc['url_fulltext'] and doc['url_fulltext'].to_s.include?('http://purl.stanford.edu/'+doc['id'])
           @found_in_solr_count += 1
         end
       end
       @found_in_solr_count
     end
+    
 
     def solr_client
       @solr_client ||= RSolr.connect(Indexer.config.solr.to_hash)
