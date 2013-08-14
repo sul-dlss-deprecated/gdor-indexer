@@ -29,10 +29,11 @@ GEM
       harvestdor
       rsolr
       stanford-mods
-    i18n (0.6.4)
+    i18n (0.6.5)
     iso-639 (0.1.0)
     jruby-openssl (0.8.8)
       bouncy-castle-java (>= 1.5.0147)
+    json (1.8.0)
     json (1.8.0-java)
     mail (2.5.4)
       mime-types (~> 1.16)
@@ -76,7 +77,7 @@ GEM
     simplecov-rcov (0.2.3)
       simplecov (>= 0.4.1)
     solrmarc_wrapper (0.0.4)
-    stanford-mods (0.0.17)
+    stanford-mods (0.0.18)
       mods
     threach (0.2.0)
     treetop (1.4.14)

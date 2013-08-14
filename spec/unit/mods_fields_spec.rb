@@ -416,6 +416,14 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
       sdb.smods_rec.pub_date.should == '1904'
     end
+    it "should correctly parse a ranged date" do
+      m = "<mods #{@ns_decl}><originInfo>
+      <dateCreated>Text dated June 4, 1594; miniatures added by 1596</dateCreated>
+      </originInfo></mods>"
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+      sdb.smods_rec.pub_date.should == '1594'
+    end
     it "should parse a date" do
       m = "<mods #{@ns_decl}><originInfo>
       <dateCreated>Aug. 3rd, 1886</dateCreated>
