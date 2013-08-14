@@ -263,7 +263,7 @@ class Indexer < Harvestdor::Indexer
       #get the collection record too
       params.delete(:fq)
       params[:qt] = "document"
-      params[:q] = "id:\"#{col}\""
+      params[:fq] = "id:\"#{col}\""
       resp = solr_client.get 'select', :params => params
       resp['response']['docs'].each do |doc|
         if doc['url_fulltext'] and doc['url_fulltext'].to_s.include?('http://purl/'+doc['id'])
