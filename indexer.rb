@@ -251,6 +251,8 @@ class Indexer < Harvestdor::Indexer
       doc_hash[:url_fulltext] = "#{Indexer.config.purl}/#{druid}"
       doc_hash
     end
+    
+    #count the number of records in solr for this collection (and the collection record itself), to compare against the number the indexer thinks it indexed.
     def verify
       params={:fl => 'id', :rows => 1000}
       col= catkey ? catkey : collection_druid
