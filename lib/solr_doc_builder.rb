@@ -112,7 +112,6 @@ class SolrDocBuilder
       :url_suppl => @smods_rec.term_values([:related_item, :location, :url]),
 
       #publish date fields
-      :pub_year_tisim =>  @smods_rec.pub_date_sort,
       :pub_search =>  @smods_rec.place,
       :pub_date_sort =>  @smods_rec.pub_date_sort,
       :pub_date_group_facet =>  @smods_rec.pub_date_groups(pub_date), 
@@ -122,14 +121,26 @@ class SolrDocBuilder
       :all_search => @smods_rec.text
       
     }
-    #put the year in the correct field, :creation_year_isi for example
-    doc_hash[date_type_sym] =  @smods_rec.pub_date_sort  if date_type_sym
-    
+    if is_positive_int? @smods_rec.pub_date_sort
+       doc_hash[:pub_year_tisim] =  @smods_rec.pub_date_sort
+      #put the year in the correct field, :creation_year_isi for example
+      doc_hash[date_type_sym] =  @smods_rec.pub_date_sort  if date_type_sym
+    end
     doc_hash[:collection_type] = 'Digital Collection' if collection?
     doc_hash
   end
-  
-  
+  #Check whether the string parses into an int, and if so, whether that int is >= 0, because we dont put non integer values or values <0 into the date slider
+  def is_positive_int? str
+    begin
+      if str.to_i>=0
+        return true
+      else
+        return false
+      end
+    rescue
+    end
+    return false
+  end
   # return the MODS for the druid as a Stanford::Mods::Record object
   # @return [Stanford::Mods::Record] created from the MODS xml for the druid
   def smods_rec

@@ -32,7 +32,7 @@ describe SolrDocBuilder do
       hash=solr_doc.doc_hash
       puts hash
       hash[:format] = ['Map/Globe']
-      puts solr_doc.doc_hash.inspect
+      puts  solr_doc.doc_hash.inspect
       messages=solr_doc.validate
       messages.length.should == 3
     end
@@ -507,6 +507,13 @@ describe SolrDocBuilder do
          sdb[:pub_date_display].should == '13th century AH / 19th CE'
          sdb[:publication_year_isi].should == '1800'
          sdb[:imprint_display].should == '13th century AH / 19th CE'
+         sdb[:pub_year_tisim].should == '1800'
+      end
+      it 'should not populate the date slider for BC dates' do
+        m = "<mods #{@ns_decl}><originInfo><dateIssued>199 B.C.</dateIssued><issuance>monographic</issuance></originInfo>"
+         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT)).doc_hash_from_mods
+         sdb.has_key?(:pub_year_tisim).should == false
       end
     end
   end # doc_hash_from_mods
