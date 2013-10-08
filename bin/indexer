@@ -138,7 +138,7 @@ end
   EOM
     
   opt :collection, 
-    "Index a given collection. Possible values are #{collections}",
+    "Index a given collection. Possible values are #{collections.sort}",
     :default => nil,
     :short => 'c',
     :type => String,
