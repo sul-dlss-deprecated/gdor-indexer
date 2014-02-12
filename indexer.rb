@@ -90,7 +90,7 @@ class Indexer < Harvestdor::Indexer
     total_objects = @success_count + @error_count
     notifications = Indexer::config.notification ? Indexer::config.notification : 'lauraw15@stanford.edu'
     subject = "#{Indexer.config.log_name} is ready"
-    body = "Successful count: #{@success_count}\n")
+    body = "Successful count: #{@success_count}\n"
     if @found_in_solr_count == @success_count
       body += "Records verified in solr: #{@found_in_solr_count}\n"
     else
@@ -276,7 +276,6 @@ class Indexer < Harvestdor::Indexer
     end
     @found_in_solr_count
   end
-  
 
   def solr_client
     @solr_client ||= RSolr.connect(Indexer.config.solr.to_hash)
