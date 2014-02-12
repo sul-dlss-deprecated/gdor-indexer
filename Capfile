@@ -1,31 +1,26 @@
-#deploy for dor-sw-indexer
+# Load DSL and Setup Up Stages
+require 'capistrano/setup'
 
-load 'deploy' if respond_to?(:namespace) # cap2 differentiator
+# Includes default deployment tasks
+require 'capistrano/deploy'
+
+# Includes tasks from other gems included in your Gemfile
+#
+# For documentation on these, see for example:
+#
+# https://github.com/capistrano/rvm
+# https://github.com/capistrano/rbenv
+# https://github.com/capistrano/chruby
+# https://github.com/capistrano/bundler
+# https://github.com/capistrano/rails
+#
+# require 'capistrano/rvm'
+# require 'capistrano/rbenv'
+# require 'capistrano/chruby'
+require 'capistrano/bundler'
+#require 'capistrano/rails'
 
 require 'dlss/capistrano'
 
-
-
-set :application, "dor-sw-indexer"
-set :user, "lyberadmin"
-set :repository,  "/afs/ir.stanford.edu/dev/dlss/git/gryphondor/dor-sw-indexer"
-set :local_repository, "ssh://corn.stanford.edu#{repository}"
-set :deploy_to, "/home/#{user}/#{application}"
-
-
-# deploy to the test server with test and development gems for integration testing
-task :dev do
-  role :app, "harvestdor-dev.stanford.edu"
-  set :deploy_env, "production"
-end
-
-task :stage do
-  role :app, "harvestdor-stage.stanford.edu"
-  set :deploy_env, "test"
-end
-
-task :production do
-  role :app, "harvestdor-prod.stanford.edu"
-  set :deploy_env, "production"
-end
-
+# Loads custom tasks from `lib/capistrano/tasks' if you have any defined.
+Dir.glob('lib/capistrano/tasks/*.cap').each { |r| import r }
