@@ -89,7 +89,7 @@ class Indexer < Harvestdor::Indexer
   def send_notifications
     total_objects = @success_count + @error_count
     notifications = Indexer::config.notification ? Indexer::config.notification : 'lauraw15@stanford.edu'
-    subject = "#{Indexer.config.log_name} is ready"
+    subject = "#{Indexer.config.log_name} for #{Indexer.config.solr.url} is ready"
     body = "Successful count: #{@success_count}\n"
     if @found_in_solr_count == @success_count
       body += "Records verified in solr: #{@found_in_solr_count}\n"
