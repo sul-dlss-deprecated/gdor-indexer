@@ -1,2 +1,3 @@
-solr
+# NOTE:  this is for testing.  Your real solr url should live in shared/config/solr.yml
+solr:
   url: http://localhost:8983/solr
