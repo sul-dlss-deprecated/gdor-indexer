@@ -5,8 +5,8 @@ describe Indexer do
   
   before(:all) do
     config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "walters_integration_spec.yml")
-    solr_yml_path = File.join(File.dirname(__FILE__), "..", "..", "config", "solr.yml")
-    @indexer = Indexer.new(config_yml_path, solr_yml_path)
+    @solr_yml_path = File.join(File.dirname(__FILE__), "..", "config", "solr.yml")
+    @indexer = Indexer.new(config_yml_path, @solr_yml_path)
     require 'yaml'
     @yaml = YAML.load_file(config_yml_path)
     @hdor_client = @indexer.send(:harvestdor_client)
@@ -150,8 +150,8 @@ describe Indexer do
   end # sw_solr_doc
   
   it "solr_client should initialize the rsolr client using the options from the config" do
-    indexer = Indexer.new(nil,  File.join(File.dirname(__FILE__), "..", "..", "config", "solr.yml") ,Confstruct::Configuration.new(:solr => { :url => 'http://localhost:2345', :a => 1 }) )
-    RSolr.should_receive(:connect).with(hash_including(:url => 'http://localhost:8983/solr')).and_return('foo')
+    indexer = Indexer.new(nil, @solr_yml_path, Confstruct::Configuration.new(:solr => { :url => 'http://localhost:2345', :a => 1 }) )
+    RSolr.should_receive(:connect).with(hash_including(:url => 'http://solr.baseurl.org'))
     indexer.solr_client
   end
   
