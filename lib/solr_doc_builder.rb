@@ -16,8 +16,8 @@ class SolrDocBuilder
   attr_reader :public_xml
   attr_reader :logger
 
-  # @param [String] druid, e.g. ab123cd4567
-  # @param [Harvestdor::Client] harvestdor client used to get MODS and public_xml
+  # @param [String] druid e.g. ab123cd4567
+  # @param [Harvestdor::Client] harvestdor_client used to get MODS and public_xml
   # @param [Logger] logger for indexing messages
   def initialize(druid, harvestdor_client, logger)
     @druid = druid
