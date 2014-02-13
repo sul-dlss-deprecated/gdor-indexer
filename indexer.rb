@@ -13,7 +13,7 @@ require 'harvestdor-indexer'
 # Base class to harvest from DOR via harvestdor gem
 class Indexer < Harvestdor::Indexer
 
-  def initialize yml_path, solr_config_path,options = {}
+  def initialize yml_path, solr_config_path, options = {}
     @success_count = 0
     @error_count = 0
     @total_time_to_solr = 0
@@ -21,8 +21,8 @@ class Indexer < Harvestdor::Indexer
     @retries = 0
     @yml_path = yml_path
     @validation_messages = ''
-    solr_config = YAML.load_file(solr_config_path)
-    Indexer.config.configure(YAML.load_file(yml_path)) if yml_path    
+    solr_config = YAML.load_file(solr_config_path) if solr_config_path && File.exists?(solr_config_path)
+    Indexer.config.configure(YAML.load_file(yml_path)) if yml_path && File.exists?(yml_path)
     Indexer.config.configure options 
     Indexer.config[:solr] = {:url => solr_config["solr"]["url"], :read_timeout => 3600, :open_timeout => 3600}
     yield(Indexer.config) if block_given?
@@ -46,7 +46,7 @@ class Indexer < Harvestdor::Indexer
   #  harvest the druids via OAI
   #   create a Solr document for each druid suitable for SearchWorks
   #   write the result to the SearchWorks Solr index
-  def harvest_and_index nocommit=false
+  def harvest_and_index(nocommit = false)
     start_time=Time.now
     
     logger.info("Started harvest_and_index at #{start_time}")
