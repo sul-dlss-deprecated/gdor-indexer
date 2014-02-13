@@ -3,15 +3,18 @@ lock '3.1.0'
 
 set :application, 'gdor-indexer'
 set :repo_url, 'https://github.com/sul-dlss/gdor-indexer.git'
-set :user, "lyberadmin"
 
 # Default branch is :master
 # ask :branch, proc { `git rev-parse --abbrev-ref HEAD`.chomp }
 
+# gdor-indexer needs jruby until merge-manager
+set :rvm_ruby_version, "jruby-1.7.10"
+
+set :user, "lyberadmin"
 set :deploy_to, "/home/#{fetch(:user)}/#{fetch(:application)}"
 
-set :linked_dirs, %w(log logs config/collections tmp bin/log bin/logs)
-#set :linked_files, %w{config/solr.yml, bin/index_prod_collections.sh bin/index_stage_collections.sh bin/index_university_archives.sh}
+set :linked_dirs, %w(logs config/collections tmp)
+set :linked_files, %w{.ruby-version config/solr.yml bin/index_prod_collections.sh bin/index_stage_collections.sh}
 
 set :stages, %W(dev stage prod)
 
@@ -29,6 +32,3 @@ set :stages, %W(dev stage prod)
 
 # Default value for keep_releases is 5
 #set :keep_releases, 5
-
-namespace :deploy do
-end

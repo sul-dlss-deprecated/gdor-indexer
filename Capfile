@@ -14,11 +14,11 @@ require 'capistrano/deploy'
 # https://github.com/capistrano/bundler
 # https://github.com/capistrano/rails
 #
-# require 'capistrano/rvm'
 # require 'capistrano/rbenv'
 # require 'capistrano/chruby'
 require 'capistrano/bundler'
 #require 'capistrano/rails'
+require 'capistrano/rvm'  # gdor-indexer needs jruby until merge-manager
 
 require 'dlss/capistrano'
 
