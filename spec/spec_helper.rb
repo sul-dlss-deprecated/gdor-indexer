@@ -9,7 +9,10 @@ class SimpleCov::Formatter::MergedFormatter
 end
 SimpleCov.formatter = SimpleCov::Formatter::MergedFormatter
 SimpleCov.start do
- # add_filter "/spec/"
+  # exclude from coverage
+  add_filter "spec/"
+  add_filter "config/deploy"
+  add_filter "config/deploy.rb"
 end
 
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
