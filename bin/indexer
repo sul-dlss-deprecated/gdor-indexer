@@ -160,11 +160,11 @@ else
   @collections << @opts[:collection]
 end
 
-@collections.each do |c|
+@collections.each do |coll|
   solr_config_path = File.join(File.dirname(__FILE__), "..", "config", "solr.yml")
-  config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "collections", "#{c}.yml")
+  config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "collections", "#{coll}.yml")
   @indexer = Indexer.new(config_yml_path, solr_config_path)
-  puts "Indexing #{c} into Solr server #{Indexer.config[:solr][:url]}"
+  puts "Indexing #{coll} into Solr server #{Indexer.config[:solr][:url]}"
   puts "Logging output to #{Indexer.config[:log_dir]}/#{Indexer.config[:log_name]}"
   time do
     if @indexer.collection_is_mergable?
