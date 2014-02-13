@@ -5,6 +5,7 @@
 .yardoc
 .travis
 .rvmrc
+.ruby-version
 InstalledFiles
 _yardoc
 coverage
