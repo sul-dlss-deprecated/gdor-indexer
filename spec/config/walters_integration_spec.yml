@@ -1,0 +1,47 @@
+# Settings for Archives Parlementaires
+
+# log_dir:  directory for log file  (default logs, relative to harvestdor gem path)
+log_dir: spec/test_logs  
+
+# log_name: name of log file  (default: harvestdor.log)
+log_name: walters.log
+
+# purl: url for the DOR purl server (used to get ContentMetadata, etc.)
+purl: http://purl.stanford.edu
+
+# ---------- OAI harvesting parameters -----------
+
+# oai_client_debug:  true for OAI::Client debug mode  (default: false)
+
+# oai_repository_url:  URL of the OAI data provider
+oai_repository_url: https://dor-oaiprovider-prod.stanford.edu/oai
+#oai_repository_url: https://dor-oaiprovider-test.stanford.edu/oai
+
+# default_metadata_prefix:  default metadata prefix to be used for harvesting  (default: mods)
+#   can be overridden on calls to harvest_ids and harvest_records
+
+# default_from_date:  default from date for harvest  (default: nil)
+#   can be overridden on calls to harvest_ids and harvest_records
+
+# default_until_date:  default until date for harvest  (default: nil)
+#   can be overridden on calls to harvest_ids and harvest_records
+
+# default_set:  default set for harvest  (default: nil)
+#   can be overridden on calls to harvest_ids and harvest_records
+default_set: is_member_of_collection_ww121ss5000
+
+# Additional options to pass to Faraday http client (https://github.com/technoweenie/faraday)
+http_options:
+  ssl:
+    verify: false
+  timeout: 500
+  open_timeout: 500
+  
+
+# ----------- SOLR index (that we're writing INTO) parameters ------------
+solr:
+  url: http://sw-solr-test-a.stanford.edu:8983/solr
+  # SearchWorks commits take a long time to process. Don't time out.
+  read_timeout: 3600
+  open_timeout: 3600
+  

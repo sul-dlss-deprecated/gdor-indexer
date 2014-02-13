@@ -24,11 +24,10 @@ set :deploy_to, "/home/#{fetch(:user)}/#{fetch(:application)}"
 # set :pty, true
 
 # Default value for :linked_files is []
-# set :linked_files, %w{config/database.yml}
+set :linked_files, %w{config/solr.yml, bin/index_prod_collections.sh bin/index_stage_collections.sh bin/index_university_archives.sh}
 
 # Default value for linked_dirs is []
-# set :linked_dirs, %w{bin log tmp/pids tmp/cache tmp/sockets vendor/bundle public/system}
-set :linked_dirs, %w(log logs config/collections config/solr.yml tmp bin/log bin/logs)
+set :linked_dirs, %w(log logs config/collections tmp bin/log bin/logs)
 
 # Default value for default_env is {}
 # set :default_env, { path: "/opt/ruby/bin:$PATH" }
