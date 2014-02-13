@@ -18,11 +18,11 @@ set :linked_files, %w{.ruby-version config/solr.yml bin/index_prod_collections.s
 
 set :stages, %W(dev stage prod)
 
-# Default value for :format is :pretty
-# set :format, :pretty
-
 # Default value for :log_level is :debug
 set :log_level, :info
+
+# Default value for :format is :pretty
+# set :format, :pretty
 
 # Default value for :pty is false
 # set :pty, true
