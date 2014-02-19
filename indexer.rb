@@ -99,6 +99,10 @@ class Indexer < Harvestdor::Indexer
     body += "Error count: #{@error_count}\n"
     body += "Retry count: #{@retries}\n"
     body += "Total records processed: #{total_objects}\n"
+    body += "\n"
+    require 'socket'
+    body += "full log is at gdor_indexer/shared/#{Indexer.config.log_dir}/#{Indexer.config.log_name} on #{Socket.gethostname}"
+    body += "\n"
     body += @validation_messages
     opts = {}
     opts[:from_alias] = 'gryphondor'
