@@ -89,11 +89,24 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
         @sdb.stub(:content_md).and_return(ng_xml.root)
         @sdb.image_ids.should == nil
       end
-      it "should ignore <resource> elements with attribute type other than 'image'" do
+      it "should ignore <resource> elements with attribute type other than 'image' or 'page'" do
         ng_xml = Nokogiri::XML("#{@content_md_start}<resource type='blarg'><file id='foo'/></resource>#{@content_md_end}")
         @sdb.stub(:content_md).and_return(ng_xml.root)
         @sdb.image_ids.should == nil
       end
+      
+      # Addresses GRYPHONDOR-313: image resources from book pages not appearing in searchworks
+      it "should not ignore <resource> elements with attribute type of 'page'" do
+        ng_xml = Nokogiri::XML("#{@content_md_start}<resource type=\"page\" sequence=\"1\" id=\"ft092fb6660_1\">
+            <label>Image 1</label>
+            <file id=\"ft092fb6660_00_0001.jp2\" mimetype=\"image/jp2\" size=\"1884208\" preserve=\"no\" publish=\"yes\" shelve=\"yes\">
+              <imageData width=\"3184\" height=\"3122\"/>
+            </file>
+          </resource>#{@content_md_end}")
+        @sdb.stub(:content_md).and_return(ng_xml.root)
+        @sdb.image_ids.should == ['ft092fb6660_00_0001']
+      end
+      
       it "should be ignore all but <file> element children of the image resource element" do
         ng_xml = ng_xml = Nokogiri::XML("#{@content_md_start}<resource type='image'><label id='foo'>bar</label></resource>#{@content_md_end}")
         @sdb.stub(:content_md).and_return(ng_xml.root)

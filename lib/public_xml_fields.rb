@@ -21,14 +21,14 @@ class SolrDocBuilder
     end
   end
   
-  # Retrieve the image file ids from the contentMetadata: xpath  contentMetadata/resource[@type='image']/file/@id
+  # Retrieve the image file ids from the contentMetadata: xpath  contentMetadata/resource[@type='image' or @type='page']/file/@id
   #  but with jp2 file extension stripped off.
   # @return [Array<String>] the ids of the image files, without file type extension (e.g. 'W188_000002_300')
   def image_ids
     @image_ids ||= begin
       ids = []
       if content_md
-        content_md.xpath('./resource[@type="image"]/file/@id').each { |node|
+        content_md.xpath('./resource[@type="image" or @type="page"]/file/@id').each { |node|
           ids << node.text.gsub(".jp2", '')
         }
       end
