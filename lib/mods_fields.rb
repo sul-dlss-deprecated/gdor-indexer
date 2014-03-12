@@ -1,12 +1,6 @@
 # A mixin to the SolrDocBuilder class.
 # Methods for Solr field values determined from MODS that aren't absolutely trivial mods or stanford-mods method calls 
-class SolrDocBuilder
-
-
-
-
-
- 
+class SolrDocBuilder 
   
   # add_display_type is a way of adding distinguishing display_type values to searchworks 
   # so that we can use to distinguish different display needs for specific collections
@@ -50,6 +44,7 @@ class SolrDocBuilder
       []
     end
   end
+  
   #get the languages stored during the indexing process for this collection
   def collection_language
     if Indexer.language_hash[@druid]
@@ -74,8 +69,6 @@ class SolrDocBuilder
     end
   end
 
-
-
   def pub_date
     val=@smods_rec.pub_year
     if val
@@ -94,9 +87,10 @@ class SolrDocBuilder
   # @return [String] value with the numeric catkey in it, or nil if none exists
   def catkey
     catkey=@smods_rec.term_values([:record_info,:recordIdentifier])
-    if catkey and catkey.length>0
+    if catkey and catkey.length > 0
       return catkey.first.gsub('a','') #need to ensure catkey is numeric only
     end
     nil
   end
+  
 end
