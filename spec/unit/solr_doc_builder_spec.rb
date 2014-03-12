@@ -68,8 +68,8 @@ describe SolrDocBuilder do
     context "img_info" do
       it "should have img_info as an Array of file ids from content metadata" do
         ng_xml = Nokogiri::XML("<contentMetadata type='image'>
-        <resource type='image'><file id='foo'/></resource>
-        <resource type='image'><file id='bar'/></resource></contentMetadata>")
+        <resource type='image'><file id='foo' mimetype='image/jp2'/></resource>
+        <resource type='image'><file id='bar' mimetype='image/jp2'/></resource></contentMetadata>")
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
         sdb.stub(:content_md).and_return(ng_xml.root)
         sdb.doc_hash[:img_info].should == ['foo', 'bar']

@@ -28,7 +28,7 @@ class SolrDocBuilder
     @image_ids ||= begin
       ids = []
       if content_md
-        content_md.xpath('./resource[@type="image" or @type="page"]/file/@id').each { |node|
+        content_md.xpath('./resource[@type="image" or @type="page"]/file[@mimetype="image/jp2"]/@id').each { |node|
           ids << node.text.gsub(".jp2", '')
         }
       end
