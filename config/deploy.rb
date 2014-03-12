@@ -13,7 +13,7 @@ set :rvm_ruby_version, "jruby-1.7.10"
 set :user, "lyberadmin"
 set :deploy_to, "/home/#{fetch(:user)}/#{fetch(:application)}"
 
-set :linked_dirs, %w(logs config/collections tmp)
+set :linked_dirs, %w(logs config/collections tmp solrmarc-sw)
 set :linked_files, %w{.ruby-version config/solr.yml bin/index_prod_collections.sh bin/index_stage_collections.sh}
 
 set :stages, %W(dev stage prod)
