@@ -1,4 +1,4 @@
-= dor-searchworks-indexer
+= gdor-indexer
 
 Code to harvest DOR druids via OAI, mods from PURL, and use it to index items into the Searchworks index.
 
@@ -11,11 +11,11 @@ You must use jruby in 1.9 compatibility mode to run this app. Version 1.6.8 is k
 export JRUBY_OPTS="--1.9"
 rvm use jruby-1.6.8
 
-check out this code from git
+You must also clone the solrmarc code from git (for merged records)
 clone /afs/ir/dev/dlss/git/searchworks/solrmarc-sw.git
 run 'ant dist_site'
 set dist_dir to the path of the dist directory that is created, like dist_dir: ./solrmarc-sw/dist
-create a collection config file based on config/collection/reid_dennis.yaml
-  
+
 == Usage
+create a collection config file based on spec/config/walters_integration_spec.yml in the config/collections folder
 ./bin/indexer -c {name of collection config file}
