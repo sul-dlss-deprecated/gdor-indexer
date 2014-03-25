@@ -48,25 +48,14 @@ class SolrDocBuilder
   # get the languages stored during the indexing process for this collection
   #  FIXME:  not used as of 2014-03-24 ... should it be?
   def collection_languages
-    if Indexer.language_hash[@druid]
-      vals = []
-      Indexer.language_hash[@druid].each do |k,v|
-        vals << k
-      end
-      vals.uniq
-    end
+    vals = Indexer.language_hash[@druid]
+    vals ? vals.uniq : nil
   end
   
   # get the formats stored during the indexing process for this collection
   def collection_formats
-    if Indexer.format_hash[@druid]
-      vals = Indexer.format_hash[@druid]
-#      vals = []
-#      Indexer.format_hash[@druid].each do |k,v|
-#        vals << k
-#      end
-      vals.uniq
-    end
+    vals = Indexer.format_hash[@druid]
+    vals ? vals.uniq : nil
   end
 
   def pub_date

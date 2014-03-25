@@ -177,35 +177,34 @@ class Indexer < Harvestdor::Indexer
       doc_hash[:collection] = []
       doc_hash[:collection_with_title] = []
       coll_druids.each { |coll_druid|  
+        # cache the collection title
         if !coll_hash.keys.include? coll_druid
           @coll_hash[coll_druid] = identity_md_obj_label(coll_druid)
         end
-        if !Indexer.format_hash.keys.include? coll_druid
-          Indexer.format_hash[coll_druid] = []
-        end
-        if !Indexer.language_hash.keys.include? coll_druid
-          Indexer.language_hash[coll_druid] = {}
-        end
+        
         # store the format(s) of this object with each of its collections, so when the collections 
         # are being indexed, they get all of the formats of the members
+        Indexer.format_hash[coll_druid] ||= []
         if doc_hash[:format]
           if doc_hash[:format].kind_of?(Array)
             doc_hash[:format].each do |format|
               Indexer.format_hash[coll_druid] << format
             end
           else
-            Indexer.format_hash[coll_druid] = doc_hash[:format]
+            Indexer.format_hash[coll_druid] << doc_hash[:format]
           end
         end
+        
         # store the language(s) of this object with each of its collections, so when the collections 
         # are being indexed, they get all of the languages of the members
+        Indexer.language_hash[coll_druid] ||= []
         if doc_hash[:language]
           if doc_hash[:language].kind_of?(Array)
             doc_hash[:language].each do |lang|
-              Indexer.language_hash[coll_druid][lang]=lang
+              Indexer.language_hash[coll_druid] << lang
             end
           else
-            Indexer.language_hash[coll_druid][doc_hash[:language]] = doc_hash[:language]
+            Indexer.language_hash[coll_druid] << doc_hash[:language]
           end
         end
         if catkey
@@ -304,14 +303,13 @@ class Indexer < Harvestdor::Indexer
   end
 
   # cache formats from each item so we have this info for indexing collection record 
-  # @return [Hash<String, String>] collection druidsas keys, array of item formats as values
+  # @return [Hash<String, String>] collection druids as keys, array of item formats as values
   def self.format_hash
     @@format_hash ||= {}
   end
 
-  # FIXME: this should be array, not hash
   # cache languages from each item so we have this info for indexing collection record 
-  # @return [Hash<Array[String, String], String>] collection druid then item language val as keys, and language val as value
+  # @return [Hash<String, String>] collection druids as keys, array of item languages as values
   def self.language_hash
     @@language_hash ||= {}
   end
