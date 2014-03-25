@@ -42,7 +42,7 @@ class SolrDocBuilder
       # from public_xml_fields
       doc_hash[:display_type] = display_type  # defined in public_xml_fields
       doc_hash[:img_info] = image_ids unless !image_ids
-      doc_hash[:format] = format
+      doc_hash[:format] = format # defined in mods_fields
       doc_hash.merge!(doc_hash_from_mods) if doc_hash_from_mods
       @doc_hash=doc_hash
     end
@@ -129,7 +129,9 @@ class SolrDocBuilder
     doc_hash[:collection_type] = 'Digital Collection' if collection?
     doc_hash
   end
-  #Check whether the string parses into an int, and if so, whether that int is >= 0, because we dont put non integer values or values <0 into the date slider
+  
+  # Check whether the string parses into an int, and if so, whether that int is >= 0,
+  # because we don't put non integer values or values <0 into the date slider
   def is_positive_int? str
     begin
       if str.to_i>=0
@@ -141,6 +143,7 @@ class SolrDocBuilder
     end
     return false
   end
+  
   # return the MODS for the druid as a Stanford::Mods::Record object
   # @return [Stanford::Mods::Record] created from the MODS xml for the druid
   def smods_rec
