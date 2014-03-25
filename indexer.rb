@@ -181,7 +181,7 @@ class Indexer < Harvestdor::Indexer
           @coll_hash[coll_druid] = identity_md_obj_label(coll_druid)
         end
         if !Indexer.format_hash.keys.include? coll_druid
-          Indexer.format_hash[coll_druid] = {}
+          Indexer.format_hash[coll_druid] = []
         end
         if !Indexer.language_hash.keys.include? coll_druid
           Indexer.language_hash[coll_druid] = {}
@@ -191,10 +191,10 @@ class Indexer < Harvestdor::Indexer
         if doc_hash[:format]
           if doc_hash[:format].kind_of?(Array)
             doc_hash[:format].each do |format|
-              Indexer.format_hash[coll_druid][format] = format
+              Indexer.format_hash[coll_druid] << format
             end
           else
-            Indexer.format_hash[coll_druid][doc_hash[:format]] = doc_hash[:format]
+            Indexer.format_hash[coll_druid] = doc_hash[:format]
           end
         end
         # store the language(s) of this object with each of its collections, so when the collections 
@@ -303,9 +303,8 @@ class Indexer < Harvestdor::Indexer
     @coll_hash ||= {}
   end
 
-  # FIXME: this should be array, not hash
   # cache formats from each item so we have this info for indexing collection record 
-  # @return [Hash<Array[String, String], String>] collection druid then item format val as keys, and format val as value
+  # @return [Hash<String, String>] collection druidsas keys, array of item formats as values
   def self.format_hash
     @@format_hash ||= {}
   end

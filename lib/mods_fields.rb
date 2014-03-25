@@ -57,13 +57,14 @@ class SolrDocBuilder
     end
   end
   
-  #get the formats stored during the indexing process for this collection
+  # get the formats stored during the indexing process for this collection
   def collection_formats
     if Indexer.format_hash[@druid]
-      vals = []
-      Indexer.format_hash[@druid].each do |k,v|
-        vals << k
-      end
+      vals = Indexer.format_hash[@druid]
+#      vals = []
+#      Indexer.format_hash[@druid].each do |k,v|
+#        vals << k
+#      end
       vals.uniq
     end
   end
