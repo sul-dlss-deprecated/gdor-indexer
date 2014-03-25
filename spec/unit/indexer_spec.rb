@@ -93,11 +93,11 @@ describe Indexer do
         @coll_title = "My Collection Has an Interesting Title"
       end
       before(:each) do
-        @hdor_client.stub(:mods).and_return(Nokogiri::XML(@mods_xml))
-        
+        @hdor_client.stub(:mods).and_return(Nokogiri::XML(@mods_xml))        
         @hdor_client.stub(:public_xml).with(@fake_druid).and_return(@pub_xml)
         @indexer.stub(:identity_md_obj_label).with(@coll_druid).and_return(@coll_title)
       end
+      
       it "should add any missing druids" do
         @indexer.coll_hash.keys.should == []
         @indexer.sw_solr_doc(@fake_druid)
@@ -147,6 +147,49 @@ describe Indexer do
       end
     end # coll_hash
 
+    context "#format_hash" do
+      before(:all) do
+        @coll_druid_from_config = 'ww121ss5000'
+      end
+      before(:each) do
+        Indexer.format_hash[@coll_druid_from_config] = []
+      end
+      it "gets single item format for single collection" do
+        # setup
+        m = "<mods #{@ns_decl}>
+          <typeOfResource>still image</typeOfResource>
+        </mods>"
+        @hdor_client.stub(:mods).and_return(Nokogiri::XML(m))
+        SolrDocBuilder.any_instance.stub(:collection_druids).and_return([@coll_druid_from_config])
+        @indexer.stub(:identity_md_obj_label).with(@coll_druid_from_config).and_return('coll title')
+        # actual test
+        @indexer.sw_solr_doc 'fake_item_druid'
+        Indexer.format_hash[@coll_druid_from_config].should == ['Image']
+      end
+      it "gets multiple formats from single item for single collection" do
+        # setup
+        @hdor_client.stub(:mods).and_return(Nokogiri::XML("<mods #{@ns_decl}> </mods>"))
+        SolrDocBuilder.any_instance.stub(:collection_druids).and_return([@coll_druid_from_config])
+        @indexer.stub(:identity_md_obj_label).with(@coll_druid_from_config).and_return('coll title')
+        Stanford::Mods::Record.any_instance.stub(:format).and_return(['Image', 'Video'])
+        # actual test
+        @indexer.sw_solr_doc 'fake_item_druid'
+        Indexer.format_hash[@coll_druid_from_config].should == ['Image', 'Video']
+      end
+      it "gets multiple formats from multiple items for single collection" do
+        # setup
+        @hdor_client.stub(:mods).and_return(Nokogiri::XML("<mods #{@ns_decl}> </mods>"))
+        SolrDocBuilder.any_instance.stub(:collection_druids).and_return([@coll_druid_from_config])
+        @indexer.stub(:identity_md_obj_label).with(@coll_druid_from_config).and_return('coll title')
+        Stanford::Mods::Record.any_instance.stub(:format).and_return(['Image'])
+        # actual test
+        @indexer.sw_solr_doc 'fake_item_druid'
+        Stanford::Mods::Record.any_instance.stub(:format).and_return(['Video'])
+        # actual test
+        @indexer.sw_solr_doc 'fake_item_druid2'
+        Indexer.format_hash[@coll_druid_from_config].should == ['Image', 'Video']
+      end
+    end # format_hash
   end # sw_solr_doc
   
   it "solr_client should initialize the rsolr client using the options from the config" do
@@ -171,6 +214,7 @@ describe Indexer do
       @indexer.identity_md_obj_label(@fake_druid).should == @coll_title
     end
   end
+  
   context "verify" do
     before :each do 
       @collection_response = {'response' => {'numFound'=>'1','docs'=>[{'id'=>'dm212rn7381', 'url_fulltext' => ['http://purl.stanford.edu/dm212rn7381']}]}}
@@ -198,5 +242,6 @@ describe Indexer do
         @indexer.verify.should == 265
       end
     end
-  end
+  end # verify
+
 end

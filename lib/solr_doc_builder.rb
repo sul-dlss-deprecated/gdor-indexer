@@ -117,8 +117,7 @@ class SolrDocBuilder
       :imprint_display =>  @smods_rec.pub_date_display,
       :pub_date_display =>  @smods_rec.pub_date_display,
       
-      :all_search => @smods_rec.text
-      
+      :all_search => @smods_rec.text  
     }
     if is_positive_int? @smods_rec.pub_date_sort
        doc_hash[:pub_year_tisim] =  @smods_rec.pub_date_sort
