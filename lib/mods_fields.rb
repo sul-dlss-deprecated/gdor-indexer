@@ -28,7 +28,7 @@ class SolrDocBuilder
   # based on the dor_content_type
   # @return [String] value in the SearchWorks controlled vocabulary
   def format
-    val=@smods_rec.format ? @smods_rec.format : []
+    val = @smods_rec.format ? @smods_rec.format : []
     
     if Indexer.config[:add_format]
       val << Indexer.config[:add_format]
@@ -46,6 +46,7 @@ class SolrDocBuilder
   end
   
   # get the languages stored during the indexing process for this collection
+  #  FIXME:  not used as of 2014-03-24 ... should it be?
   def collection_languages
     if Indexer.language_hash[@druid]
       vals = []
