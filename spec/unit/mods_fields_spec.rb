@@ -4,13 +4,13 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
   before(:all) do
     @fake_druid = 'oo000oo0000'
     @ns_decl = "xmlns='#{Mods::MODS_NS}'"
+    @strio = StringIO.new
   end
 
   before(:each) do
     @hdor_client = double()
     @hdor_client.stub(:public_xml).with(@fake_druid).and_return(nil)
     Indexer.stub(:config).and_return({:max_pub_date => 2013, :min_pub_date => 1})
-
   end
 
   context "sw subject methods" do
@@ -45,14 +45,14 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
     end
     before(:each) do
       @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods)      
-      @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+      @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
     end
 
     context "search fields" do      
       context "topic_search" do
         it "should be nil if there are no values in the MODS" do
           @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_no_subject)
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           sdb.smods_rec.topic_search.should == nil
         end
         it "should contain subject <topic> subelement data" do
@@ -75,13 +75,13 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
         it "should not be nil if there are only subject/topic elements (no <genre>)" do
           m = "<mods #{@ns_decl}><subject><topic>#{@topic}</topic></subject></mods>"
           @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           sdb.smods_rec.topic_search.should == [@topic]
         end
         it "should not be nil if there are only <genre> elements (no subject/topic elements)" do
           m = "<mods #{@ns_decl}><genre>#{@genre}</genre></mods>"
           @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           sdb.smods_rec.topic_search.should == [@genre]
         end
         context "topic subelement" do
@@ -94,13 +94,13 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
             <subject><topic>third</topic></subject>
             </mods>"
             @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-            sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+            sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
             sdb.smods_rec.topic_search.should == ['first', 'second', 'third']
           end
           it "should be nil if there are only empty values in the MODS" do
             m = "<mods #{@ns_decl}><subject><topic/></subject><note>notit</note></mods>"
             @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-            sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+            sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
             sdb.smods_rec.topic_search.should == nil
           end
         end
@@ -110,14 +110,14 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
         it "should call sw_geographic_search (from stanford-mods gem)" do
           m = "<mods #{@ns_decl}><subject><geographic>#{@geo}</geographic></subject></mods>"
           @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           sdb.smods_rec.should_receive(:sw_geographic_search)
           sdb.smods_rec.geographic_search
         end
         it "should log an info message when it encounters a geographicCode encoding it doesn't translate" do
           m = "<mods #{@ns_decl}><subject><geographicCode authority='iso3166'>ca</geographicCode></subject></mods>"
           @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           sdb.smods_rec.sw_logger.should_receive(:info).with(/#{@fake_druid} has subject geographicCode element with untranslated encoding \(iso3166\): <geographicCode authority=.*>ca<\/geographicCode>/)
           sdb.smods_rec.geographic_search
         end
@@ -126,19 +126,19 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       context "subject_other_search" do
         it "should call sw_subject_names (from stanford-mods gem)" do
           @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods)
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           sdb.smods_rec.should_receive(:sw_subject_names)
           sdb.smods_rec.subject_other_search
         end
         it "should call sw_subject_titles (from stanford-mods gem)" do
           @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods)
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           sdb.smods_rec.should_receive(:sw_subject_titles)
           sdb.smods_rec.subject_other_search
         end
         it "should be nil if there are no values in the MODS" do
           @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_no_subject)
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           sdb.smods_rec.subject_other_search.should == nil
         end
         it "should contain subject <name> SUBelement data" do
@@ -163,19 +163,19 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
         it "should not be nil if there are only subject/name elements" do
           m = "<mods #{@ns_decl}><subject><name><namePart>#{@s_name}</namePart></name></subject></mods>"
           @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           sdb.smods_rec.subject_other_search.should == [@s_name]
         end
         it "should not be nil if there are only subject/occupation elements" do
           m = "<mods #{@ns_decl}><subject><occupation>#{@occupation}</occupation></subject></mods>"
           @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           sdb.smods_rec.subject_other_search.should == [@occupation]
         end
         it "should not be nil if there are only subject/titleInfo elements" do
           m = "<mods #{@ns_decl}><subject><titleInfo><title>#{@s_title}</title></titleInfo></subject></mods>"
           @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           sdb.smods_rec.subject_other_search.should == [@s_title]
         end
         context "occupation subelement" do
@@ -188,13 +188,13 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
             <subject><occupation>third</occupation></subject>
             </mods>"
             @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-            sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+            sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
             sdb.smods_rec.subject_other_search.should == ['first', 'second', 'third']
           end
           it "should be nil if there are only empty values in the MODS" do
             m = "<mods #{@ns_decl}><subject><occupation/></subject><note>notit</note></mods>"
             @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-            sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+            sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
             sdb.smods_rec.subject_other_search.should == nil
           end
         end
@@ -203,7 +203,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       context "subject_other_subvy_search" do
         it "should be nil if there are no values in the MODS" do
           @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_no_subject)
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           sdb.smods_rec.subject_other_subvy_search.should == nil
         end
         it "should contain subject <temporal> subelement data" do
@@ -226,13 +226,13 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
         it "should not be nil if there are only subject/temporal elements (no subject/genre)" do
           m = "<mods #{@ns_decl}><subject><temporal>#{@temporal}</temporal></subject></mods>"
           @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           sdb.smods_rec.subject_other_subvy_search.should == [@temporal]
         end
         it "should not be nil if there are only subject/genre elements (no subject/temporal)" do
           m = "<mods #{@ns_decl}><subject><genre>#{@s_genre}</genre></subject></mods>"
           @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           sdb.smods_rec.subject_other_subvy_search.should == [@s_genre]
         end
         context "temporal subelement" do
@@ -245,20 +245,20 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
             <subject><temporal>another</temporal></subject>
             </mods>"
             @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-            sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+            sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
             sdb.smods_rec.subject_other_subvy_search.should == ['1890-1910', '20th century', 'another']
           end
           it "should log an info message when it encounters an encoding it doesn't translate" do
             m = "<mods #{@ns_decl}><subject><temporal encoding='iso8601'>197505</temporal></subject></mods>"
             @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-            sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+            sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
             sdb.smods_rec.sw_logger.should_receive(:info).with(/#{@fake_druid} has subject temporal element with untranslated encoding: <temporal encoding=.*>197505<\/temporal>/)
             sdb.smods_rec.subject_other_subvy_search
           end
           it "should be nil if there are only empty values in the MODS" do
             m = "<mods #{@ns_decl}><subject><temporal/></subject><note>notit</note></mods>"
             @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-            sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+            sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
             sdb.smods_rec.subject_other_subvy_search.should == nil
           end
         end
@@ -272,13 +272,13 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
             <subject><genre>third</genre></subject>
             </mods>"
             @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-            sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+            sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
             sdb.smods_rec.subject_other_subvy_search.should == ['first', 'second', 'third']
           end
           it "should be nil if there are only empty values in the MODS" do
             m = "<mods #{@ns_decl}><subject><genre/></subject><note>notit</note></mods>"
             @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-            sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+            sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
             sdb.smods_rec.subject_other_subvy_search.should == nil
           end
         end
@@ -287,7 +287,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       context "subject_all_search" do
         it "should be nil if there are no values in the MODS" do
           @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_no_subject)
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           sdb.smods_rec.subject_all_search.should == nil
         end
         it "should contain top level <genre> element data" do
@@ -334,7 +334,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
           <name><namePart>internal, punct;uation</namePart></name>
           </subject></mods>"
           @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           sdb.smods_rec.topic_facet.should include('comma')
           sdb.smods_rec.topic_facet.should include('semicolon')
           sdb.smods_rec.topic_facet.should include('backslash')
@@ -342,7 +342,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
         end
         it "should be nil if there are no values" do
           @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_no_subject)
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           sdb.smods_rec.topic_facet.should == nil
         end
       end
@@ -359,7 +359,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
           <geographic>internal, punct;uation</geographic>
           </subject></mods>"
           @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           sdb.smods_rec.geographic_facet.should include('comma')
           sdb.smods_rec.geographic_facet.should include('semicolon')
           sdb.smods_rec.geographic_facet.should include('backslash')
@@ -367,7 +367,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
         end
         it "should be nil if there are no values" do
           @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_no_subject)
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           sdb.smods_rec.geographic_facet.should == nil
         end
       end
@@ -380,7 +380,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
           <temporal>internal, punct;uation</temporal>
           </subject></mods>"
           @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           sdb.smods_rec.era_facet.should include('comma')
           sdb.smods_rec.era_facet.should include('semicolon')
           sdb.smods_rec.era_facet.should include('backslash')
@@ -388,7 +388,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
         end
         it "should be nil if there are no values" do
           @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_no_subject)
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           sdb.smods_rec.era_facet.should == nil
         end
       end
@@ -402,18 +402,19 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
 
         </originInfo></mods>"
         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
         sdb.smods_rec.pub_dates.should == ['1906','1904','1904']
       end
     end
   end # context sw subject methods 
+  
   context "pub_date" do
     it "should choose the first date" do
       m = "<mods #{@ns_decl}><originInfo>
       <dateCreated>1904</dateCreated>
       </originInfo></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
       sdb.smods_rec.pub_date.should == '1904'
     end
     it "should correctly parse a ranged date" do
@@ -421,7 +422,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       <dateCreated>Text dated June 4, 1594; miniatures added by 1596</dateCreated>
       </originInfo></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
       sdb.smods_rec.pub_date.should == '1594'
     end
     it "should parse a date" do
@@ -429,7 +430,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       <dateCreated>Aug. 3rd, 1886</dateCreated>
       </originInfo></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
       sdb.pub_date.should == '1886'
     end
     it "should remove question marks and brackets" do
@@ -437,7 +438,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       <dateCreated>Aug. 3rd, [18]86?</dateCreated>
       </originInfo></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
       sdb.pub_date.should == '1886'
     end
     it 'should handle an s after the decade' do
@@ -445,7 +446,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       <dateCreated>early 1890s</dateCreated>
       </originInfo></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
       sdb.pub_date.should == '1890'
     end
     it "should ignore a date if it falls outside the constraints" do
@@ -454,25 +455,25 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       </originInfo></mods>"
       Indexer.stub(:config).and_return({:max_pub_date => 1000, :min_pub_date => 1})
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
       sdb.pub_date.should == nil
     end
     it 'should choose a date ending with CE if there are multiple dates' do
      m = "<mods #{@ns_decl}><originInfo><dateIssued>7192 AM (li-Adam) / 1684 CE</dateIssued><issuance>monographic</issuance></originInfo>"
      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-     sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+     sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
      sdb.pub_date.should == '1684'
     end
     it 'should handle hyphenated range dates' do
       m = "<mods #{@ns_decl}><originInfo><dateIssued>1282 AH / 1865-6 CE</dateIssued><issuance>monographic</issuance></originInfo>"
        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
        sdb.pub_date.should == '1865'
     end
     it 'should handle century based dates' do
       m = "<mods #{@ns_decl}><originInfo><dateIssued>13th century AH / 19th CE</dateIssued><issuance>monographic</issuance></originInfo>"
        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
        sdb.smods_rec.pub_date_facet.should == '19th century'
        sdb.smods_rec.pub_date_sort.should =='1800'
        sdb.smods_rec.pub_date.should == '18--'
@@ -480,7 +481,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
     it 'should handle multiple CE dates' do
       m = "<mods #{@ns_decl}><originInfo><dateIssued>6 Dhu al-Hijjah 923 AH / 1517 CE -- 7 Rabi I 924 AH / 1518 CE</dateIssued><issuance>monographic</issuance></originInfo>"
        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
        sdb.smods_rec.pub_date.should == '1517'
        sdb.smods_rec.pub_date_sort.should =='1517'
        sdb.smods_rec.pub_date_facet.should == '1517'
@@ -488,7 +489,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
     it 'should handle this case from walters' do
       m = "<mods #{@ns_decl}><originInfo><dateIssued>Late 14th or early 15th century CE</dateIssued><issuance>monographic</issuance></originInfo>"
        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
        sdb.smods_rec.pub_date.should == '14--'
        sdb.smods_rec.pub_date_sort.should =='1400'
        sdb.smods_rec.pub_date_facet.should == '15th century'
@@ -496,7 +497,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
     it 'should work on 3 digit dates' do
       m = "<mods #{@ns_decl}><originInfo><dateIssued>966 CE</dateIssued><issuance>monographic</issuance></originInfo>"
        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
        sdb.smods_rec.pub_date.should == '966'
        sdb.smods_rec.pub_date_sort.should =='0966'
        sdb.smods_rec.pub_date_facet.should == '966'
@@ -504,7 +505,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
     it 'should work on 3 digit dates' do
       m = "<mods #{@ns_decl}><originInfo><dateIssued>3rd century AH / 9th CE</dateIssued><issuance>monographic</issuance></originInfo>"
        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
        sdb.smods_rec.pub_date.should == '8--'
        sdb.smods_rec.pub_date_sort.should =='0800'
        sdb.smods_rec.pub_date_facet.should == '9th century'
@@ -512,20 +513,21 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
     it 'should work on 3 digit BC dates' do
       m = "<mods #{@ns_decl}><originInfo><dateCreated>300 B.C.</dateCreated></originInfo>"
        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
        sdb.smods_rec.pub_year.should == '-700'
        sdb.smods_rec.pub_date.should == '-700'
        sdb.smods_rec.pub_date_sort.should =='-700'
        sdb.smods_rec.pub_date_facet.should == '300 B.C.'
     end
   end #context pub_dates
+  
   context 'pub_date_sort' do
     before :each do
       m = "<mods #{@ns_decl}><originInfo>
       <dateCreated>Aug. 3rd, 1886</dateCreated>
       </originInfo></mods>"
        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-       @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+       @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
     end
     it 'should work on normal dates' do
       @sdb.smods_rec.stub(:pub_date).and_return('1945')
@@ -550,50 +552,72 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       m = "<mods #{@ns_decl}><typeOfResource>still image</typeOfResouce></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
       Indexer.stub(:config).and_return({:add_display_type => 'hydrus'})
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
       sdb.add_display_type.should == 'hydrus'
     end
   end
 
   context "format" do
-    it "should choose the format" do
+    it "should get format from call to stanford-mods searchworks format method " do
       m = "<mods #{@ns_decl}><typeOfResource>still image</typeOfResouce></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+      sdb.smods_rec.should_receive(:format).and_call_original
       sdb.smods_rec.format.should == ['Image']
     end
     it "should add a format from a config file" do
       m = "<mods #{@ns_decl}><typeOfResource>still image</typeOfResouce></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
       Indexer.stub(:config).and_return({:add_format => 'Map / Globe'})
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
       sdb.format.should == ['Image', 'Map / Globe']
     end
-    it 'should fetch collection formats from the hash of formats for the member objects' do
+    it "should include formats from the Indexer.format_hash when the druid matches" do
       m = "<mods #{@ns_decl}><originInfo>
       <dateCreated>1904</dateCreated>
       </originInfo></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
       Indexer.stub(:format_hash).and_return({@fake_druid=>['Image']})
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
       sdb.format.should == ['Image']
+    end
+    it "should not include formats from the Indexer.format_hash when the druid doesn't match" do
+      m = "<mods #{@ns_decl}><originInfo>
+      <dateCreated>1904</dateCreated>
+      </originInfo></mods>"
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      Indexer.stub(:format_hash).and_return({'foo'=>['Image']})
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+      sdb.format.should == []
     end
     it "should return nothing if there is no format info" do
       m = "<mods #{@ns_decl}><originInfo>
       <dateCreated>1904</dateCreated>
       </originInfo></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
       sdb.smods_rec.format.should == []
     end
-  end#context format
+    context "collection_formats should aggregate item formats" do
+      it "should not have duplicate values" do
+        m = "<mods #{@ns_decl}>
+          <note>hi</note>
+        </mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        Indexer.stub(:format_hash).and_return({@fake_druid=>['Image', 'Video', 'Image']})
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+        sdb.format.should == ['Image', 'Video']
+      end
+    end # collection_formats
+  end # context format
+  
   context "pub_date_groups" do
     it 'should generate the groups' do
       m = "<mods #{@ns_decl}><originInfo>
       <dateCreated>1904</dateCreated>
       </originInfo></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
       sdb.smods_rec.pub_date_groups(1904).should == ['More than 50 years ago']
     end
     it 'should work for a modern date too' do
@@ -601,7 +625,7 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       <dateCreated>1904</dateCreated>
       </originInfo></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
       sdb.smods_rec.pub_date_groups(2013).should == ["This year"]
     end
     it 'should work ok given a nil date' do
@@ -609,8 +633,9 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
       <dateCreated>1904</dateCreated>
       </originInfo></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
       sdb.smods_rec.pub_date_groups(nil).should == nil
     end
-  end#context pub date groups
+  end # context pub date groups
+  
 end
