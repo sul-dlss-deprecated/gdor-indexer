@@ -25,7 +25,7 @@ describe SolrDocBuilder do
       @hdor_client = double
       @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
       @hdor_client.stub(:public_xml).with(@fake_druid).and_return(@ng_pub_xml)
-      @doc_hash = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash
+      @doc_hash = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT)).doc_hash
     end
     it 'should have no validation messages for a complete record' do
       solr_doc=SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
