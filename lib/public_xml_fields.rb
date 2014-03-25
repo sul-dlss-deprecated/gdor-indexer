@@ -1,9 +1,7 @@
 # A mixin to the SolrDocBuilder class.
 # Methods for Solr field values determined from the DOR object's purl page public xml 
 class SolrDocBuilder
-
   
-  #  TODO:  ask Jessie if this Solr field is still used by SearchWorks
   # information on DOR content types:
   #   https://consul.stanford.edu/display/chimera/DOR+content+types%2C+resource+types+and+interpretive+metadata
   # @return [String] 'collection' or DOR content type

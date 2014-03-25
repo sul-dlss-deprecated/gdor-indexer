@@ -29,7 +29,7 @@ group :test do
 	gem 'simplecov', :require => false
 	gem 'simplecov-rcov', :require => false
 #  gem 'jettywrapper'
-  gem 'equivalent-xml'
+  gem 'equivalent-xml', '0.4.0' # 0.4.1 causes a failure 
 end
 
 group :deployment do

@@ -25,7 +25,7 @@ describe SolrDocBuilder do
       @hdor_client = double
       @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
       @hdor_client.stub(:public_xml).with(@fake_druid).and_return(@ng_pub_xml)
-      @doc_hash = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT)).doc_hash
+      @doc_hash = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash
     end
     it 'should have no validation messages for a complete record' do
       solr_doc=SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
@@ -48,6 +48,7 @@ describe SolrDocBuilder do
       @doc_hash[:druid].should == @fake_druid
     end
     it "should have the full MODS in the modsxml field" do
+      # this fails with equivalent-xml 0.4.1 or 0.4.2, but passes with 0.4.0
       @doc_hash[:modsxml].should be_equivalent_to @mods_xml
     end 
     it "should call doc_hash_from_mods to populate hash fields from MODS" do

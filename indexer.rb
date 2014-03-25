@@ -293,7 +293,7 @@ class Indexer < Harvestdor::Indexer
   end
 
   # cache formats from each item so we have this info for indexing collection record 
-  # @return [Hash<String, String>] collection druids as keys, array of item formats as values
+  # @return [Hash<String, Array<String>>] collection druids as keys, array of item formats as values
   def self.format_hash
     @@format_hash ||= {}
   end
