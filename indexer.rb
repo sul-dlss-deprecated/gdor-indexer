@@ -31,7 +31,6 @@ class Indexer < Harvestdor::Indexer
   def self.config
     @@config ||= Confstruct::Configuration.new()
   end
-
   def logger
     @logger ||= load_logger(Indexer.config.log_dir, Indexer.config.log_name)
   end
@@ -117,72 +116,6 @@ class Indexer < Harvestdor::Indexer
     end
   end
 
-  # @return [boolean] true if the collection has a catkey
-  def collection_is_mergable?
-    sdb = SolrDocBuilder.new(collection_druid, harvestdor_client, logger)
-    if sdb.catkey
-      logger.info "Collection #{collection_druid} is being merged with cat key #{sdb.catkey}"
-    end
-    false
-  end
-  
-  # @return [String]The collection object catkey or nil if none exists
-  def catkey
-    @catkey ||= SolrDocBuilder.new(collection_druid, harvestdor_client, logger).catkey
-  end
-  
-  # Create a solr document for the collection druid suitable for searchworks
-  # write the result to the SearchWorks Solr Index
-  # @param [String] druid 
-  def index_collection_druid
-    if catkey
-      begin
-        logger.debug "Merging collection object #{collection_druid} into #{catkey}"
-        RecordMerger.merge(collection_druid,catkey)
-        @success_count += 1
-      rescue => e
-        logger.error "Failed to merge collection object #{collection_druid}: #{e.message}"
-         @error_count += 1
-      end
-    else
-      begin
-        logger.debug "Indexing collection object #{collection_druid}"
-        solr_client.add(sw_solr_doc(collection_druid)) unless collection_druid.nil?
-        @success_count += 1
-        # update DOR object's workflow datastream??   for harvest?  for indexing?
-      rescue => e
-        logger.error "Failed to index collection object #{collection_druid}: #{e.message}"
-        @error_count += 1
-      end
-    end
-  end
-
-  # return String indicating the druid of a collection object, or nil if there is no collection druid
-  # @return [Array<String>] or enumeration over it, if block is given.  (strings are druids, e.g. ab123cd1234)
-  def collection_druid
-    # @collection_druid ||= 
-    begin
-      if Indexer.config[:default_set].include? "is_member_of_collection_"
-        return Indexer.config[:default_set].gsub("is_member_of_collection_",'')
-      else
-        return nil
-      end
-    end
-  end
-
-  # coll_hash is in the indexer so each item doesn't need to look up the collection title -- we only look it up once per harvest.
-  # @return [Hash<String, String>] collection druids as keys, and the objectLabel from the collection's identityMetadata as the value
-  def coll_hash
-    @coll_hash ||= {}
-  end
-
-  def self.format_hash
-    @@format_hash ||= {}
-  end
-  def self.language_hash
-    @@language_hash ||= {}
-  end
-  
   # create Solr doc for the druid and add it to Solr, unless it is on the blacklist.  
   #  NOTE: don't forget to send commit to Solr, either once at end (already in harvest_and_index), or for each add, or ...
   def index druid
@@ -191,11 +124,38 @@ class Indexer < Harvestdor::Indexer
     else
       begin
         logger.info "indexing #{druid}"
-        solr_add(sw_solr_doc(druid),druid)
+        solr_add(sw_solr_doc(druid), druid)
         @success_count += 1
       rescue => e
         @error_count += 1
         logger.error "Failed to index #{druid}: #{e.message} #{e.backtrace}"
+      end
+    end
+  end
+
+  # Create a solr document for the collection druid suitable for searchworks
+  # write the result to the SearchWorks Solr Index
+  # @param [String] druid 
+  def index_collection_druid
+    coll_druid = collection_druid # cache it for this method
+    if catkey
+      begin
+        logger.debug "Merging collection object #{coll_druid} into #{catkey}"
+        RecordMerger.merge_and_index(coll_druid, catkey)
+        @success_count += 1
+      rescue => e
+        logger.error "Failed to merge collection object #{coll_druid}: #{e.message}"
+         @error_count += 1
+      end
+    else
+      begin
+        logger.debug "Indexing collection object #{coll_druid}"
+        solr_client.add(sw_solr_doc(coll_druid)) unless coll_druid.nil?
+        @success_count += 1
+        # update DOR object's workflow datastream??   for harvest?  for indexing?
+      rescue => e
+        logger.error "Failed to index collection object #{collection_druid}: #{e.message}"
+        @error_count += 1
       end
     end
   end
@@ -216,7 +176,7 @@ class Indexer < Harvestdor::Indexer
     if coll_druids
       doc_hash[:collection] = []
       doc_hash[:collection_with_title] = []
-      sdb.collection_druids.each { |coll_druid|  
+      coll_druids.each { |coll_druid|  
         if !coll_hash.keys.include? coll_druid
           @coll_hash[coll_druid] = identity_md_obj_label(coll_druid)
         end
@@ -226,7 +186,8 @@ class Indexer < Harvestdor::Indexer
         if !Indexer.language_hash.keys.include? coll_druid
           Indexer.language_hash[coll_druid] = {}
         end
-        #store the format(s) of this object with each collection, so when the collections are being indexed, they get all of the formats of the members
+        # store the format(s) of this object with each of its collections, so when the collections 
+        # are being indexed, they get all of the formats of the members
         if doc_hash[:format]
           if doc_hash[:format].kind_of?(Array)
             doc_hash[:format].each do |format|
@@ -236,6 +197,8 @@ class Indexer < Harvestdor::Indexer
             Indexer.format_hash[coll_druid][doc_hash[:format]] = doc_hash[:format]
           end
         end
+        # store the language(s) of this object with each of its collections, so when the collections 
+        # are being indexed, they get all of the languages of the members
         if doc_hash[:language]
           if doc_hash[:language].kind_of?(Array)
             doc_hash[:language].each do |lang|
@@ -255,6 +218,40 @@ class Indexer < Harvestdor::Indexer
     end
     doc_hash[:url_fulltext] = "#{Indexer.config.purl}/#{druid}"
     doc_hash
+  end
+  
+  # @return [boolean] true if the collection has a catkey
+  def collection_is_mergable?
+    if catkey
+      logger.info "Collection #{collection_druid} is being merged with cat key #{catkey}"
+    end
+    false
+  end
+  
+  # @return [String]The collection object catkey or nil if none exists
+  def catkey
+    @catkey ||= SolrDocBuilder.new(collection_druid, harvestdor_client, logger).catkey
+  end
+  
+  # return String indicating the druid of a collection object, or nil if there is no collection druid
+  # @return [Array<String>] or enumeration over it, if block is given.  (strings are druids, e.g. ab123cd1234)
+  def collection_druid
+    begin
+      if Indexer.config[:default_set].include? "is_member_of_collection_"
+        return Indexer.config[:default_set].gsub("is_member_of_collection_",'')
+      else
+        return nil
+      end
+    end
+  end
+
+  # given a druid, get its objectLabel from its purl page identityMetadata
+  # @param [String] druid, e.g. ab123cd4567
+  # @return [String] the value of the <objectLabel> element in the identityMetadata for the object
+  def identity_md_obj_label druid
+    ng_imd = harvestdor_client.identity_metadata druid
+    # TODO: create nom-xml terminology for identityMetadata in harvestdor?
+    ng_imd.xpath('identityMetadata/objectLabel').text
   end
   
   #count the number of records in solr for this collection (and the collection record itself), to compare against the number the indexer thinks it indexed.
@@ -281,19 +278,6 @@ class Indexer < Harvestdor::Indexer
     @found_in_solr_count
   end
 
-  def solr_client
-    @solr_client ||= RSolr.connect(Indexer.config.solr.to_hash)
-  end
-
-  # given a druid, get its objectLabel from its purl page identityMetadata
-  # @param [String] druid, e.g. ab123cd4567
-  # @return [String] the value of the <objectLabel> element in the identityMetadata for the object
-  def identity_md_obj_label druid
-    ng_imd = harvestdor_client.identity_metadata druid
-    # TODO: create nom-xml terminology for identityMetadata in harvestdor?
-    ng_imd.xpath('identityMetadata/objectLabel').text
-  end
-  
   def send_email(to, opts = {})
     opts[:server]      ||= 'localhost'
     opts[:from]        ||= 'email@example.com'
@@ -307,6 +291,30 @@ class Indexer < Harvestdor::Indexer
       body    opts[:body]
     end
     mail.deliver!
+  end
+  
+  def solr_client
+    @solr_client ||= RSolr.connect(Indexer.config.solr.to_hash)
+  end
+
+  # cache coll_hash so each item doesn't need to look up the collection title -- we only look it up once per harvest.
+  # @return [Hash<String, String>] collection druids as keys, and the objectLabel from the collection's identityMetadata as the value
+  def coll_hash
+    @coll_hash ||= {}
+  end
+
+  # FIXME: this should be array, not hash
+  # cache formats from each item so we have this info for indexing collection record 
+  # @return [Hash<Array[String, String], String>] collection druid then item format val as keys, and format val as value
+  def self.format_hash
+    @@format_hash ||= {}
+  end
+
+  # FIXME: this should be array, not hash
+  # cache languages from each item so we have this info for indexing collection record 
+  # @return [Hash<Array[String, String], String>] collection druid then item language val as keys, and language val as value
+  def self.language_hash
+    @@language_hash ||= {}
   end
   
 end
