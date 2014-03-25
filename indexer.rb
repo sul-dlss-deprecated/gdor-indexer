@@ -171,8 +171,10 @@ class Indexer < Harvestdor::Indexer
     sdb.validate.each do |msg|
       @validation_messages += msg + "\n"
     end
+    doc_hash[:url_fulltext] = "#{Indexer.config.purl}/#{druid}"
+
     # determine collection druids and their titles and add to solr doc
-    coll_druids = sdb.collection_druids    
+    coll_druids = sdb.collection_druids
     if coll_druids
       doc_hash[:collection] = []
       doc_hash[:collection_with_title] = []
@@ -182,7 +184,7 @@ class Indexer < Harvestdor::Indexer
           @coll_hash[coll_druid] = identity_md_obj_label(coll_druid)
         end
         
-        # store the format(s) of this object with each of its collections, so when the collections 
+        # cache the format(s) of this object with each of its collections, so when the collection recs 
         # are being indexed, they get all of the formats of the members
         Indexer.format_hash[coll_druid] ||= []
         if doc_hash[:format]
@@ -195,27 +197,15 @@ class Indexer < Harvestdor::Indexer
           end
         end
         
-        # store the language(s) of this object with each of its collections, so when the collections 
-        # are being indexed, they get all of the languages of the members
-        Indexer.language_hash[coll_druid] ||= []
-        if doc_hash[:language]
-          if doc_hash[:language].kind_of?(Array)
-            doc_hash[:language].each do |lang|
-              Indexer.language_hash[coll_druid] << lang
-            end
-          else
-            Indexer.language_hash[coll_druid] << doc_hash[:language]
-          end
-        end
         if catkey
           doc_hash[:collection] << catkey
         else
-      doc_hash[:collection] << coll_druid
-      end
-      doc_hash[:collection_with_title] << "#{coll_druid}-|-#{coll_hash[coll_druid]}"
-      }
+          doc_hash[:collection] << coll_druid
+        end
+        
+        doc_hash[:collection_with_title] << "#{coll_druid}-|-#{coll_hash[coll_druid]}"
+      } # each coll_druid
     end
-    doc_hash[:url_fulltext] = "#{Indexer.config.purl}/#{druid}"
     doc_hash
   end
   
@@ -308,10 +298,4 @@ class Indexer < Harvestdor::Indexer
     @@format_hash ||= {}
   end
 
-  # cache languages from each item so we have this info for indexing collection record 
-  # @return [Hash<String, String>] collection druids as keys, array of item languages as values
-  def self.language_hash
-    @@language_hash ||= {}
-  end
-  
 end

@@ -45,13 +45,6 @@ class SolrDocBuilder
     end
   end
   
-  # get the languages stored during the indexing process for this collection
-  #  FIXME:  not used as of 2014-03-24 ... should it be?
-  def collection_languages
-    vals = Indexer.language_hash[@druid]
-    vals ? vals.uniq : nil
-  end
-  
   # get the formats stored during the indexing process for this collection
   def collection_formats
     vals = Indexer.format_hash[@druid]

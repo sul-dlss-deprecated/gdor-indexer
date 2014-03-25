@@ -163,16 +163,6 @@ describe SolrDocBuilder do
       smr.should_receive(:sw_language_facet)
       sdb.doc_hash_from_mods
     end
-    it "collection_languages should aggregate item languages" do
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-      smr = sdb.smods_rec
-      smr.should_receive(:sw_language_facet)
-      Indexer.language_hash[@fake_druid] = ['English']
-      sdb.doc_hash_from_mods
-      sdb.collection_languages.should == ['English']
-    end
-    
 
     context "<physicalDescription><extent> --> physical" do
       it "should be populated when the MODS has mods/physicalDescription/extent element" do
@@ -500,7 +490,7 @@ describe SolrDocBuilder do
       it 'should populate all date fields' do
         m = "<mods #{@ns_decl}><originInfo><dateIssued>13th century AH / 19th CE</dateIssued><issuance>monographic</issuance></originInfo>"
          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT)).doc_hash_from_mods
+         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash_from_mods
          sdb[:pub_date].should == '19th century'
          sdb[:pub_date_sort].should == '1800'
          sdb[:pub_date_group_facet].should == ["More than 50 years ago"]
@@ -512,7 +502,7 @@ describe SolrDocBuilder do
       it 'should not populate the date slider for BC dates' do
         m = "<mods #{@ns_decl}><originInfo><dateIssued>199 B.C.</dateIssued><issuance>monographic</issuance></originInfo>"
          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT)).doc_hash_from_mods
+         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash_from_mods
          sdb.has_key?(:pub_year_tisim).should == false
       end
     end
