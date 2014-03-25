@@ -49,8 +49,6 @@ class SolrDocBuilder
     @doc_hash
   end
   
-  
-  
   # If MODS record has a top level typeOfResource element with attribute collection set to 'yes,
   #  (<mods><typeOfResource collection='yes'>) then return true; false otherwise
   # @return true if MODS indicates this is a collection object
@@ -111,7 +109,7 @@ class SolrDocBuilder
       :toc_search => @smods_rec.term_values(:tableOfContents),
       :url_suppl => @smods_rec.term_values([:related_item, :location, :url]),
 
-      #publish date fields
+      # publication fields
       :pub_search =>  @smods_rec.place,
       :pub_date_sort =>  @smods_rec.pub_date_sort,
       :pub_date_group_facet =>  @smods_rec.pub_date_groups(pub_date), 
@@ -124,9 +122,10 @@ class SolrDocBuilder
     }
     if is_positive_int? @smods_rec.pub_date_sort
        doc_hash[:pub_year_tisim] =  @smods_rec.pub_date_sort
-      #put the year in the correct field, :creation_year_isi for example
+      # put the year in the correct field, :creation_year_isi for example
       doc_hash[date_type_sym] =  @smods_rec.pub_date_sort  if date_type_sym
     end
+    # FIXME:  move this line out to indexer.index_collection_druid method?
     doc_hash[:collection_type] = 'Digital Collection' if collection?
     doc_hash
   end
@@ -160,8 +159,6 @@ class SolrDocBuilder
     @public_xml ||= @harvestdor_client.public_xml @druid
   end
   
-
-  
   def validate
     messages = []
     messages << "#{@druid} missing format" if doc_hash[:format].nil? or doc_hash[:format].length == 0 
@@ -172,6 +169,7 @@ class SolrDocBuilder
   end
 
 end # SolrDocBuilder class
+
 class Hash
   def blank? field
     self[field].nil? || self[field].length == 0
