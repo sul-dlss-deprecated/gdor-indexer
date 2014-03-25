@@ -45,7 +45,8 @@ class SolrDocBuilder
     end
   end
   
-  # get the formats stored during the indexing process for this collection
+  # get the formats for this solr_doc_builder's druid stored during the indexing process
+  #  note that the only formats stored are for collection druids
   def collection_formats
     vals = Indexer.format_hash[@druid]
     vals ? vals.uniq : nil
