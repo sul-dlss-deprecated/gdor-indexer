@@ -1,5 +1,5 @@
 require 'spec_helper'
-describe 'mods_fields mixin for SolrDocBuilder class' do
+describe 'gdor_mods_fields mixin for SolrDocBuilder class' do
 
   before(:all) do
     @fake_druid = 'oo000oo0000'

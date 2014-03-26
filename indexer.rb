@@ -1,15 +1,14 @@
 # external gems
 require 'confstruct'
-require 'harvestdor'
+require 'harvestdor-indexer'
 require 'rsolr'
 require 'mail'
+require 'threach'
 # stdlib
 require 'logger'
-require 'threach'
 require 'net/smtp'
 # local files
 require 'solr_doc_builder'
-require 'harvestdor-indexer'
 # Base class to harvest from DOR via harvestdor gem
 class Indexer < Harvestdor::Indexer
 

@@ -31,10 +31,9 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
       content_md.should be_an_instance_of(Nokogiri::XML::Element)
       content_md.name.should == 'contentMetadata'
 # NOTE:  the below isn't working -- probably due to Nokogiri attribute bug introduced      
-  #    content_md.should be_equivalent_to(@cntnt_md_xml)
+#      content_md.should be_equivalent_to(@cntnt_md_xml)
     end
     
-
     context "display_type" do
       it "should be 'collection' if solr_doc_builder.collection?" do
         coll_mods_xml = "<mods #{@ns_decl}><typeOfResource collection='yes'/><note>hi</note></mods>"
@@ -42,7 +41,6 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
         sdb.display_type.should == 'collection'
       end
-      #!!!
       it "should be 'hydrus_collection' if it is a collection and :display_type=hydrus is in the collection yml file" do
         coll_mods_xml = "<mods #{@ns_decl}><typeOfResource collection='yes'/><note>hi</note></mods>"
         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(coll_mods_xml))

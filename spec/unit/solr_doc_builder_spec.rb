@@ -1,6 +1,6 @@
-# encoding: UTF-8
 require 'spec_helper'
 require 'stringio'
+
 describe SolrDocBuilder do
 
   before(:all) do

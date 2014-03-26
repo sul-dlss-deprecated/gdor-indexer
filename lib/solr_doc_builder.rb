@@ -2,8 +2,11 @@ require 'logger'
 
 require 'harvestdor'
 require 'stanford-mods'
-require 'mods_fields'
+require 'gdor_mods_fields'
+include GdorModsFields
 require 'public_xml_fields'
+include PublicXmlFields
+
 
 # Class to build the Hash representing a Solr document for a particular druid
 class SolrDocBuilder
@@ -72,7 +75,7 @@ class SolrDocBuilder
   # Create a Hash representing a Solr doc, with all MODS related fields populated.
   # @return [Hash] Hash representing the Solr document
   def doc_hash_from_mods
-      doc_hash = { 
+    doc_hash = { 
       # title fields
       :title_245a_search => @smods_rec.sw_short_title,
       :title_245_search => @smods_rec.sw_full_title,

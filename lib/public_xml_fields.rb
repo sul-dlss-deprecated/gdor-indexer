@@ -1,6 +1,6 @@
 # A mixin to the SolrDocBuilder class.
 # Methods for Solr field values determined from the DOR object's purl page public xml 
-class SolrDocBuilder
+module PublicXmlFields
   
   # information on DOR content types:
   #   https://consul.stanford.edu/display/chimera/DOR+content+types%2C+resource+types+and+interpretive+metadata

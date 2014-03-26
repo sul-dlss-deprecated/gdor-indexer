@@ -1,6 +1,6 @@
 # A mixin to the SolrDocBuilder class.
 # Methods for Solr field values determined from MODS that aren't absolutely trivial mods or stanford-mods method calls 
-class SolrDocBuilder 
+module GdorModsFields
   
   # add_display_type is a way of adding distinguishing display_type values to searchworks 
   # so that we can use to distinguish different display needs for specific collections
@@ -69,6 +69,7 @@ class SolrDocBuilder
 
   # @return [String] value with the numeric catkey in it, or nil if none exists
   # sought in MODS top level:
+  # 
   # <recordInfo>
   #	  <recordIdentifier source="SIRSI">a6780453</recordIdentifier>
   # </recordInfo>
