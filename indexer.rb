@@ -172,7 +172,7 @@ class Indexer < Harvestdor::Indexer
 
     doc_hash[:url_fulltext] = "#{Indexer.config.purl}/#{druid}"
 
-    # cache collection level information and assign it
+    # cache collection level information and add coll data to this solr doc
     coll_druids = sdb.collection_druids
     if coll_druids
       doc_hash[:collection] = []
