@@ -174,8 +174,8 @@ class Indexer < Harvestdor::Indexer
       doc_hash[:collection_with_title] = []
       coll_druids.each { |coll_druid|  
         # cache the collection title
-        if !coll_hash.keys.include? coll_druid
-          @coll_hash[coll_druid] = identity_md_obj_label(coll_druid)
+        if !coll_druid_2_title_hash.keys.include? coll_druid
+          @coll_druid_2_title_hash[coll_druid] = identity_md_obj_label(coll_druid)
         end
         
         # cache the format(s) of this object with each of its collections, so when the collection recs 
@@ -197,7 +197,7 @@ class Indexer < Harvestdor::Indexer
           doc_hash[:collection] << coll_druid
         end
         
-        doc_hash[:collection_with_title] << "#{coll_druid}-|-#{coll_hash[coll_druid]}"
+        doc_hash[:collection_with_title] << "#{coll_druid}-|-#{coll_druid_2_title_hash[coll_druid]}"
       } # each coll_druid
     end
     doc_hash
@@ -281,10 +281,11 @@ class Indexer < Harvestdor::Indexer
     @solr_client ||= RSolr.connect(Indexer.config.solr.to_hash)
   end
 
-  # cache coll_hash so each item doesn't need to look up the collection title -- we only look it up once per harvest.
-  # @return [Hash<String, String>] collection druids as keys, and the objectLabel from the collection's identityMetadata as the value
-  def coll_hash
-    @coll_hash ||= {}
+  # cache collection titles so each item doesn't need to look it up -- we only look it up once per harvest.
+  # collection title is from the objectLabel from the collection record's identityMetadata
+  # @return [Hash<String, String>] collection druids as keys, and collection title as value
+  def coll_druid_2_title_hash
+    @coll_druid_2_title_hash ||= {}
   end
 
   # cache formats from each item so we have this info for indexing collection record 

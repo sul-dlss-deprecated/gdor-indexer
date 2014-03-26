@@ -82,7 +82,7 @@ describe Indexer do
       @doc_hash[:url_fulltext].should == "#{@yaml['purl']}/#{@fake_druid}"
     end
        
-    context "coll_hash (which maps coll druids to coll titles without extra calls to purl server)" do
+    context "coll_druid_2_title_hash" do
       before(:all) do
         @coll_druid = 'ww121ss5000'
         rels_ext_xml = "<rdf:RDF  xmlns:fedora='info:fedora/fedora-system:def/relations-external#' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
@@ -99,13 +99,13 @@ describe Indexer do
       end
       
       it "should add any missing druids" do
-        @indexer.coll_hash.keys.should == []
+        @indexer.coll_druid_2_title_hash.keys.should == []
         @indexer.sw_solr_doc(@fake_druid)
-        @indexer.coll_hash.keys.should == [@coll_druid]
+        @indexer.coll_druid_2_title_hash.keys.should == [@coll_druid]
       end
       it "should retrieve missing collection titles via identity_md_obj_label" do
         @indexer.sw_solr_doc(@fake_druid)
-        @indexer.coll_hash[@coll_druid].should == @coll_title
+        @indexer.coll_druid_2_title_hash[@coll_druid].should == @coll_title
       end
       it "should be used to add collection field to solr doc" do
         doc_hash = @indexer.sw_solr_doc(@fake_druid)
@@ -145,7 +145,7 @@ describe Indexer do
         doc_hash = @indexer.sw_solr_doc(@fake_druid)
         doc_hash[:collection_with_title].should == ["#{@coll_druid}-|-#{@coll_title}"]
       end
-    end # coll_hash
+    end # coll_druid_2_title_hash
 
     context "#format_hash" do
       before(:all) do
