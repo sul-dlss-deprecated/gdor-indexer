@@ -28,18 +28,20 @@ describe SolrDocBuilder do
       @doc_hash = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash
     end
     it 'should have no validation messages for a complete record' do
-      solr_doc=SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-      hash=solr_doc.doc_hash
-      puts hash
-      hash[:format] = ['Map/Globe']
-      puts  solr_doc.doc_hash.inspect
-      messages=solr_doc.validate
-      messages.length.should == 3
+      solr_doc = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+      hash = solr_doc.doc_hash
+      hash[:title_display] = 'title'
+      hash[:pub_year_tisim] = 'some year'
+      hash[:author_person_display] = 'author'
+      hash[:format] = 'Image'
+      hash[:language] = 'English'
+      messages = solr_doc.validate
+      messages.length.should == 0
     end
     it 'should have validation messages for an incomplete record' do
       solr_doc=SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
       messages=solr_doc.validate
-      messages.length.should == 4
+      messages.length.should > 0
     end
     it "id field should be set to druid" do
       @doc_hash[:id].should == @fake_druid

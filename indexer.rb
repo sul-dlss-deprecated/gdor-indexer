@@ -136,26 +136,21 @@ class Indexer < Harvestdor::Indexer
   # write the result to the SearchWorks Solr Index
   # @param [String] druid 
   def index_collection_druid
-    coll_druid = collection_druid # cache it for this method
-    if catkey
-      begin
+    begin
+      coll_druid = collection_druid # cache it for this method
+      if catkey
         logger.debug "Merging collection object #{coll_druid} into #{catkey}"
         RecordMerger.merge_and_index(coll_druid, catkey)
         @success_count += 1
-      rescue => e
-        logger.error "Failed to merge collection object #{coll_druid}: #{e.message}"
-         @error_count += 1
-      end
-    else
-      begin
+      else
         logger.debug "Indexing collection object #{coll_druid}"
         solr_client.add(sw_solr_doc(coll_druid)) unless coll_druid.nil?
         @success_count += 1
-        # update DOR object's workflow datastream??   for harvest?  for indexing?
-      rescue => e
-        logger.error "Failed to index collection object #{collection_druid}: #{e.message}"
-        @error_count += 1
       end
+      # update DOR object's workflow datastream??   for harvest?  for indexing?
+    rescue => e
+      logger.error "Failed to merge collection object #{coll_druid}: #{e.message}"
+      @error_count += 1
     end
   end
 
@@ -242,7 +237,8 @@ class Indexer < Harvestdor::Indexer
     ng_imd.xpath('identityMetadata/objectLabel').text
   end
   
-  #count the number of records in solr for this collection (and the collection record itself), to compare against the number the indexer thinks it indexed.
+  # count the number of records in solr for this collection (and the collection record itself)
+  #  and compare against the number the indexer thinks it indexed.
   def verify
     params = {:fl => 'id', :rows => 1000}
     coll_rec_id = catkey ? catkey : collection_druid

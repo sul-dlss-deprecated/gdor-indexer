@@ -46,8 +46,9 @@ class SolrDocBuilder
       doc_hash[:display_type] = display_type  # defined in public_xml_fields
       doc_hash[:img_info] = image_ids unless !image_ids
       doc_hash[:format] = format # defined in mods_fields
-      doc_hash.merge!(doc_hash_from_mods) if doc_hash_from_mods
-      @doc_hash=doc_hash
+      hash_from_mods = doc_hash_from_mods
+      doc_hash.merge!(hash_from_mods) if hash_from_mods 
+      @doc_hash = doc_hash
     end
     @doc_hash
   end
@@ -112,21 +113,39 @@ class SolrDocBuilder
       
       :all_search => @smods_rec.text  
     }
-    if is_positive_int? @smods_rec.pub_date_sort
-       doc_hash[:pub_year_tisim] =  @smods_rec.pub_date_sort
-      # put the year in the correct field, :creation_year_isi for example
+    
+    # more pub date fields
+    pub_date_sort = @smods_rec.pub_date_sort
+    if is_positive_int? pub_date_sort
+       doc_hash[:pub_year_tisim] =  pub_date_sort
+      # put the displayable year in the correct field, :creation_year_isi for example
       doc_hash[date_type_sym] =  @smods_rec.pub_date_sort  if date_type_sym
     end
+    
     # FIXME:  move this line out to indexer.index_collection_druid method?
     doc_hash[:collection_type] = 'Digital Collection' if collection?
     doc_hash
   end
   
-  # Check whether the string parses into an int, and if so, whether that int is >= 0,
-  # because we don't put non integer values or values <0 into the date slider
+  # @return array of Strings pertaining to absence of required fields
+  def validate
+    messages = []
+    messages << "#{@druid} missing druid" if doc_hash.blank? :druid
+    messages << "#{@druid} missing modsxml" if doc_hash.blank? :modsxml
+    messages << "#{@druid} missing access_facet" if doc_hash.blank? :access_facet
+    messages << "#{@druid} missing display_type" if display_type.kind_of?(String) && doc_hash.blank?(:display_type)
+    messages << "#{@druid} missing format" if doc_hash.blank? :format
+    messages << "#{@druid} missing title" if doc_hash.blank? :title_display
+    messages << "#{@druid} missing pub year for date slider" if doc_hash.blank? :pub_year_tisim
+    messages << "#{@druid} missing author" if doc_hash.blank? :author_person_display
+    messages << "#{@druid} missing language" if doc_hash.blank? :language
+    messages
+  end
+
+  # @return true if the string parses into an int, and if so, the int is >= 0
   def is_positive_int? str
     begin
-      if str.to_i>=0
+      if str.to_i >= 0
         return true
       else
         return false
@@ -135,7 +154,21 @@ class SolrDocBuilder
     end
     return false
   end
-  
+
+  # determines particular flavor of displayable publication year field 
+  # @return Solr field name as a symbol
+  def date_type_sym
+    vals = @smods_rec.term_values([:origin_info,:dateIssued])
+    if vals and vals.length > 0
+      return :publication_year_isi
+    end
+    vals = @smods_rec.term_values([:origin_info,:dateCreated])  
+    if vals and vals.length > 0
+      return :creation_year_isi
+    end
+    nil
+  end
+   
   # return the MODS for the druid as a Stanford::Mods::Record object
   # @return [Stanford::Mods::Record] created from the MODS xml for the druid
   def smods_rec
@@ -154,14 +187,6 @@ class SolrDocBuilder
     @public_xml ||= @harvestdor_client.public_xml @druid
   end
   
-  def validate
-    messages = []
-    messages << "#{@druid} missing format" if doc_hash[:format].nil? or doc_hash[:format].length == 0 
-    messages << "#{@druid} missing title" if doc_hash.blank? :title_display
-    messages << "#{@druid} missing author" if doc_hash.blank? :author_person_display
-    messages << "#{@druid} missing pub year for date slider" if doc_hash.blank? :pub_year_tisim
-    messages
-  end
 
 end # SolrDocBuilder class
 

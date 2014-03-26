@@ -2,18 +2,6 @@
 # Methods for Solr field values determined from MODS that aren't absolutely trivial mods or stanford-mods method calls 
 module GdorModsFields
   
-  def date_type_sym
-    vals = @smods_rec.term_values([:origin_info,:dateIssued])
-    if vals and vals.length > 0
-      return :publication_year_isi
-    end
-    vals = @smods_rec.term_values([:origin_info,:dateCreated])  
-    if vals and vals.length > 0
-      return :creation_year_isi
-    end
-    nil
-  end
-   
   # select one or more format values from the controlled vocabulary here:
   #   http://searchworks-solr-lb.stanford.edu:8983/solr/select?facet.field=format&rows=0&facet.sort=index
   # based on the dor_content_type
