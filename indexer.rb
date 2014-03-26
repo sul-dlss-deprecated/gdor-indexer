@@ -138,9 +138,9 @@ class Indexer < Harvestdor::Indexer
   def index_collection_druid
     begin
       coll_druid = collection_druid # cache it for this method
-      if catkey
-        logger.debug "Merging collection object #{coll_druid} into #{catkey}"
-        RecordMerger.merge_and_index(coll_druid, catkey)
+      if coll_catkey
+        logger.debug "Merging collection object #{coll_druid} into #{coll_catkey}"
+        RecordMerger.merge_and_index(coll_druid, coll_catkey)
         @success_count += 1
       else
         logger.debug "Indexing collection object #{coll_druid}"
@@ -180,8 +180,8 @@ class Indexer < Harvestdor::Indexer
       coll_druids.each { |coll_druid|  
         cache_coll_title coll_druid        
         cache_item_formats_for_collection coll_druid, doc_hash[:format]  
-        if catkey
-          doc_hash[:collection] << catkey
+        if coll_catkey
+          doc_hash[:collection] << coll_catkey
         else
           doc_hash[:collection] << coll_druid
         end
@@ -194,15 +194,15 @@ class Indexer < Harvestdor::Indexer
   
   # @return [boolean] true if the collection has a catkey
   def collection_is_mergable?
-    if catkey
-      logger.info "Collection #{collection_druid} is being merged with cat key #{catkey}"
+    if coll_catkey
+      logger.info "Collection #{collection_druid} is being merged with cat key #{coll_catkey}"
     end
     false
   end
   
-  # @return [String]The collection object catkey or nil if none exists
-  def catkey
-    @catkey ||= SolrDocBuilder.new(collection_druid, harvestdor_client, logger).catkey
+  # @return [String] The collection object catkey or nil if none exists
+  def coll_catkey
+    @coll_catkey ||= SolrDocBuilder.new(collection_druid, harvestdor_client, logger).catkey
   end
   
   # return String indicating the druid of a collection object, or nil if there is no collection druid
@@ -221,7 +221,7 @@ class Indexer < Harvestdor::Indexer
   #  and compare against the number the indexer thinks it indexed.
   def verify
     params = {:fl => 'id', :rows => 1000}
-    coll_rec_id = catkey ? catkey : collection_druid
+    coll_rec_id = coll_catkey ? coll_catkey : collection_druid
     params[:fq] = "collection:\"#{coll_rec_id}\""
     params[:start] ||= 0
     resp = solr_client.get 'select', :params => params
@@ -233,7 +233,6 @@ class Indexer < Harvestdor::Indexer
     params[:qt] = 'document'
     params[:id] = coll_rec_id
     resp = solr_client.get 'select', :params => params
-    puts resp.inspect
     resp['response']['docs'].each do |doc|
       if doc['url_fulltext'] and doc['url_fulltext'].to_s.include?('http://purl.stanford.edu/' + doc['id'])
         @found_in_solr_count += 1
