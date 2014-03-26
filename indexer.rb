@@ -161,10 +161,15 @@ class Indexer < Harvestdor::Indexer
   # @param [Hash] Hash representing the Solr document
   def sw_solr_doc druid
     sdb = SolrDocBuilder.new(druid, harvestdor_client, logger)
+# Item level merge
+# if we have a ckey, we need to do a merge doc, o.w. do below ...
+    
     doc_hash = sdb.doc_hash
+    
     sdb.validate.each do |msg|
       @validation_messages += msg + "\n"
     end
+
     doc_hash[:url_fulltext] = "#{Indexer.config.purl}/#{druid}"
 
     # cache collection level information and assign it
@@ -178,18 +183,7 @@ class Indexer < Harvestdor::Indexer
           @coll_druid_2_title_hash[coll_druid] = identity_md_obj_label(coll_druid)
         end
         
-        # cache the format(s) of this object with each of its collections, so when the collection recs 
-        # are being indexed, they get all of the formats of the members
-        item_formats = doc_hash[:format]
-        if item_formats
-          if item_formats.kind_of?(Array)
-            item_formats.each do |item_format|
-              add_to_coll_formats_from_items coll_druid, item_format
-            end
-          else
-            add_to_coll_formats_from_items coll_druid, item_formats
-          end
-        end
+        cache_item_formats_for_collection coll_druid, doc_hash[:format]
         
         if catkey
           doc_hash[:collection] << catkey
@@ -277,6 +271,27 @@ class Indexer < Harvestdor::Indexer
     mail.deliver!
   end
   
+  # cache the format(s) of this object with a collection, so when the collection rec
+  # is being indexed, it gets all of the formats of the members
+  def cache_item_formats_for_collection coll_druid, item_formats
+    Indexer.coll_formats_from_items[coll_druid] ||= []
+    if item_formats
+      if item_formats.kind_of?(Array)
+        item_formats.each do |item_format|
+          add_to_coll_formats_from_items coll_druid, item_format
+        end
+      else
+        add_to_coll_formats_from_items coll_druid, item_formats
+      end
+    end
+  end
+
+  # add a format to the coll_formats_from_items array if it isn't already there
+  # @param <Object> a single format as a String or an Array of Strings for multiple formats
+  def add_to_coll_formats_from_items coll_druid, format
+    Indexer.coll_formats_from_items[coll_druid] << format if !Indexer.coll_formats_from_items[coll_druid].include? format
+  end
+
   def solr_client
     @solr_client ||= RSolr.connect(Indexer.config.solr.to_hash)
   end
@@ -294,11 +309,4 @@ class Indexer < Harvestdor::Indexer
     @@coll_formats_from_items ||= {}
   end
   
-  # add a format to the coll_formats_from_items array if it isn't already there
-  # @param <Object> a single format as a String or an Array of Strings for multiple formats
-  def add_to_coll_formats_from_items coll_druid, format
-    Indexer.coll_formats_from_items[coll_druid] ||= []
-    Indexer.coll_formats_from_items[coll_druid] << format if !Indexer.coll_formats_from_items[coll_druid].include? format
-  end
-
 end
