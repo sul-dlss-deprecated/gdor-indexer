@@ -61,16 +61,6 @@ class SolrDocBuilder
     }
     false
   end
-  
-  # If MODS record has a top level typeOfResource element with value 'still image'
-  #  (<mods><typeOfResource>still image<typeOfResource>) then return true; false otherwise
-  # @return true if MODS indicates this is an image object
-  def image?
-    @smods_rec.typeOfResource.each { |n|  
-      return true if n.text == 'still image'
-    }
-    false
-  end
 
   # Create a Hash representing a Solr doc, with all MODS related fields populated.
   # @return [Hash] Hash representing the Solr document

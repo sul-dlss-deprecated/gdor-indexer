@@ -549,40 +549,6 @@ describe SolrDocBuilder do
     end
   end
 
-  context "image?" do
-    before(:each) do
-      @hdor_client = double()
-      @hdor_client.stub(:public_xml).with(@fake_druid).and_return(nil)
-    end
-    it "should return true if MODS has top level <typeOfResource>still image</typeOfResource>" do
-      m = "<mods #{@ns_decl}><typeOfResource>still image</typeOfResource></mods>"
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-      sdb.should be_an_image
-    end
-    it "should return false if MODS has no top level <typeOfResource> elements" do
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-      sdb.should_not be_an_image
-    end
-    it "should return false if MODS has top level <typeOfResource> elements with other values" do
-      m = "<mods #{@ns_decl}><typeOfResource>moving image</typeOfResource></mods>"
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-      sdb.should_not be_an_image
-    end
-    it "should return true if MODS has multiple top level <typeOfResource> elements and at least one is still image" do
-      m = "<mods #{@ns_decl}>
-      <typeOfResource>cartographic</typeOfResource>
-      <typeOfResource collection='yes'/>
-      <typeOfResource>still image</typeOfResource>
-      </mods>"
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-      sdb.should be_an_image
-    end
-  end
-
   context "using Harvestdor::Client" do
     before(:all) do
       config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "walters_integration_spec.yml")
