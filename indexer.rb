@@ -49,9 +49,9 @@ class Indexer < Harvestdor::Indexer
     
     logger.info("Started harvest_and_index at #{start_time}")
     if whitelist.empty?
-      druids.threach(3) { |druid| index druid }
+      druids.threach(3) { |druid| index_item druid }
     else
-      whitelist.threach(3) { |druid| index druid }
+      whitelist.threach(3) { |druid| index_item druid }
     end
     index_collection_druid
     total_time = elapsed_time(start_time)
@@ -117,17 +117,17 @@ class Indexer < Harvestdor::Indexer
 
   # create Solr doc for the druid and add it to Solr, unless it is on the blacklist.  
   #  NOTE: don't forget to send commit to Solr, either once at end (already in harvest_and_index), or for each add, or ...
-  def index druid
+  def index_item druid
     if blacklist.include?(druid)
       logger.info("Druid #{druid} is on the blacklist and will have no Solr doc created")
     else
       begin
-        logger.info "indexing #{druid}"
+        logger.info "indexing item #{druid}"
         solr_add(sw_solr_doc(druid), druid)
         @success_count += 1
       rescue => e
         @error_count += 1
-        logger.error "Failed to index #{druid}: #{e.message} #{e.backtrace}"
+        logger.error "Failed to index item #{druid}: #{e.message} #{e.backtrace}"
       end
     end
   end
