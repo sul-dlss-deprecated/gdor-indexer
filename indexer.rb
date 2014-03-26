@@ -178,13 +178,8 @@ class Indexer < Harvestdor::Indexer
       doc_hash[:collection] = []
       doc_hash[:collection_with_title] = []
       coll_druids.each { |coll_druid|  
-        # cache the collection title
-        if !coll_druid_2_title_hash.keys.include? coll_druid
-          @coll_druid_2_title_hash[coll_druid] = identity_md_obj_label(coll_druid)
-        end
-        
-        cache_item_formats_for_collection coll_druid, doc_hash[:format]
-        
+        cache_coll_title coll_druid        
+        cache_item_formats_for_collection coll_druid, doc_hash[:format]  
         if catkey
           doc_hash[:collection] << catkey
         else
@@ -222,15 +217,6 @@ class Indexer < Harvestdor::Indexer
     end
   end
 
-  # given a druid, get its objectLabel from its purl page identityMetadata
-  # @param [String] druid, e.g. ab123cd4567
-  # @return [String] the value of the <objectLabel> element in the identityMetadata for the object
-  def identity_md_obj_label druid
-    ng_imd = harvestdor_client.identity_metadata druid
-    # TODO: create nom-xml terminology for identityMetadata in harvestdor?
-    ng_imd.xpath('identityMetadata/objectLabel').text
-  end
-  
   # count the number of records in solr for this collection (and the collection record itself)
   #  and compare against the number the indexer thinks it indexed.
   def verify
@@ -269,6 +255,22 @@ class Indexer < Harvestdor::Indexer
       body    opts[:body]
     end
     mail.deliver!
+  end
+  
+  # cache the coll title so we don't have to look it up more than once
+  def cache_coll_title coll_druid
+    if !coll_druid_2_title_hash.keys.include? coll_druid
+      coll_druid_2_title_hash[coll_druid] = identity_md_obj_label(coll_druid)
+    end
+  end
+  
+  # given a druid, get its objectLabel from its purl page identityMetadata
+  # @param [String] druid, e.g. ab123cd4567
+  # @return [String] the value of the <objectLabel> element in the identityMetadata for the object
+  def identity_md_obj_label druid
+    ng_imd = harvestdor_client.identity_metadata druid
+    # TODO: create nom-xml terminology for identityMetadata in harvestdor?
+    ng_imd.xpath('identityMetadata/objectLabel').text
   end
   
   # cache the format(s) of this object with a collection, so when the collection rec
