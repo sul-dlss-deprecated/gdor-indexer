@@ -69,7 +69,22 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
         @sdb.logger.should_receive(:warn).with(/has no DOR content type/)
         @sdb.display_type
       end
-    end
+      
+      it "should be hydrus_collection for config :add_display_type of 'hydrus' and collection object" do
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+        Indexer.stub(:config).and_return({:add_display_type => 'hydrus'})
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+        sdb.stub(:collection?).and_return(true)
+        sdb.display_type.should eql("hydrus_collection")
+      end
+      it "should be hydrus_object for config :add_display_type of 'hydrus' and member object" do
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+        Indexer.stub(:config).and_return({:add_display_type => 'hydrus'})
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+        sdb.stub(:collection?).and_return(false)
+        sdb.display_type.should eql("hydrus_object")      
+      end
+    end # display_ytype
     
     context "image_ids" do
       before(:all) do

@@ -102,25 +102,6 @@ describe SolrDocBuilder do
       end
     end
     
-    context "display_type" do
-      it "should be hydrus_collection for hydrus collections" do
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
-        Indexer.stub(:config).and_return({:add_display_type => 'hydrus'})
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        sdb.stub(:collection?).and_return(true)
-        sdb.add_display_type.should eql("hydrus")
-        sdb.display_type.should eql("hydrus_collection")
-      end
-      it "should be hydrus_object for hydrus objects" do
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
-        Indexer.stub(:config).and_return({:add_display_type => 'hydrus'})
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        sdb.stub(:collection?).and_return(false)
-        sdb.add_display_type.should eql("hydrus")
-        sdb.display_type.should eql("hydrus_object")      
-      end
-    end
-
     context "<abstract> --> summary_search" do
       it "should be populated when the MODS has a top level <abstract> element" do
         m = "<mods #{@ns_decl}><abstract>blah blah</abstract></mods>"

@@ -547,16 +547,6 @@ describe 'gdor_mods_fields mixin for SolrDocBuilder class' do
     end
   end
   
-  context "add_display_type" do
-    it "should add a display_type from a config file" do
-      m = "<mods #{@ns_decl}><typeOfResource>still image</typeOfResouce></mods>"
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      Indexer.stub(:config).and_return({:add_display_type => 'hydrus'})
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-      sdb.add_display_type.should == 'hydrus'
-    end
-  end
-
   context "format" do
     it "should get format from call to stanford-mods searchworks format method " do
       m = "<mods #{@ns_decl}><typeOfResource>still image</typeOfResouce></mods>"

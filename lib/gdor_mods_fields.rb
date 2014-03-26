@@ -2,15 +2,6 @@
 # Methods for Solr field values determined from MODS that aren't absolutely trivial mods or stanford-mods method calls 
 module GdorModsFields
   
-  # add_display_type is a way of adding distinguishing display_type values to searchworks 
-  # so that we can use to distinguish different display needs for specific collections
-  # e.g., Hydrus objects are a special display case
-  # Based on a value of :add_display_type in a collection's config file
-  # @return String the string to add to the front of the display_type value
-  def add_display_type
-    Indexer.config[:add_display_type]
-  end
-
   def date_type_sym
     vals = @smods_rec.term_values([:origin_info,:dateIssued])
     if vals and vals.length > 0
@@ -46,7 +37,7 @@ module GdorModsFields
   end
   
   # get the formats for this solr_doc_builder's druid stored during the indexing process
-  #  note that the only formats stored are for collection druids
+  #  note that formats are only stored for collection druids
   def collection_formats
     vals = Indexer.format_hash[@druid]
     vals ? vals.uniq : nil

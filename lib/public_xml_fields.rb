@@ -2,14 +2,22 @@
 # Methods for Solr field values determined from the DOR object's purl page public xml 
 module PublicXmlFields
   
+  # value is used to tell SearchWorks UI app of specific display needs for objects
+  # a config file value for add_display_type can be used to prepend a string to 
+  #  xxx_collection or xxx_object 
+  # e.g., Hydrus objects are a special display case
+  # Based on a value of :add_display_type in a collection's config yml file
+  # 
   # information on DOR content types:
   #   https://consul.stanford.edu/display/chimera/DOR+content+types%2C+resource+types+and+interpretive+metadata
+  # @return String the string to pre-pend to the display_type value  (e.g. )
   # @return [String] 'collection' or DOR content type
   def display_type
-    if add_display_type && collection?
-      "#{add_display_type}_collection"
-    elsif add_display_type
-      "#{add_display_type}_object"
+    disp_type_prefix = Indexer.config[:add_display_type]
+    if disp_type_prefix && collection?
+      "#{disp_type_prefix}_collection"
+    elsif disp_type_prefix
+      "#{disp_type_prefix}_object"
     elsif collection?
       'collection'
     elsif dor_content_type
