@@ -562,21 +562,21 @@ describe 'gdor_mods_fields mixin for SolrDocBuilder class' do
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
       sdb.format.should == ['Image', 'Map / Globe']
     end
-    it "should include formats from the Indexer.format_hash when the druid matches" do
+    it "should include formats from the Indexer.coll_formats_from_items when the druid matches" do
       m = "<mods #{@ns_decl}><originInfo>
       <dateCreated>1904</dateCreated>
       </originInfo></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      Indexer.stub(:format_hash).and_return({@fake_druid=>['Image']})
+      Indexer.stub(:coll_formats_from_items).and_return({@fake_druid=>['Image']})
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
       sdb.format.should == ['Image']
     end
-    it "should not include formats from the Indexer.format_hash when the druid doesn't match" do
+    it "should not include formats from the Indexer.coll_formats_from_items when the druid doesn't match" do
       m = "<mods #{@ns_decl}><originInfo>
       <dateCreated>1904</dateCreated>
       </originInfo></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      Indexer.stub(:format_hash).and_return({'foo'=>['Image']})
+      Indexer.stub(:coll_formats_from_items).and_return({'foo'=>['Image']})
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
       sdb.format.should == []
     end
@@ -594,7 +594,7 @@ describe 'gdor_mods_fields mixin for SolrDocBuilder class' do
           <note>hi</note>
         </mods>"
         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        Indexer.stub(:format_hash).and_return({@fake_druid=>['Image', 'Video', 'Image']})
+        Indexer.stub(:coll_formats_from_items).and_return({@fake_druid=>['Image', 'Video', 'Image']})
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
         sdb.format.should == ['Image', 'Video']
       end

@@ -147,12 +147,12 @@ describe Indexer do
       end
     end # coll_druid_2_title_hash
 
-    context "#format_hash" do
+    context "#coll_formats_from_items" do
       before(:all) do
         @coll_druid_from_config = 'ww121ss5000'
       end
       before(:each) do
-        Indexer.format_hash[@coll_druid_from_config] = []
+        Indexer.coll_formats_from_items[@coll_druid_from_config] = []
       end
       it "gets single item format for single collection" do
         # setup
@@ -164,7 +164,7 @@ describe Indexer do
         @indexer.stub(:identity_md_obj_label).with(@coll_druid_from_config).and_return('coll title')
         # actual test
         @indexer.sw_solr_doc 'fake_item_druid'
-        Indexer.format_hash[@coll_druid_from_config].should == ['Image']
+        Indexer.coll_formats_from_items[@coll_druid_from_config].should == ['Image']
       end
       it "gets multiple formats from single item for single collection" do
         # setup
@@ -174,7 +174,7 @@ describe Indexer do
         Stanford::Mods::Record.any_instance.stub(:format).and_return(['Image', 'Video'])
         # actual test
         @indexer.sw_solr_doc 'fake_item_druid'
-        Indexer.format_hash[@coll_druid_from_config].should == ['Image', 'Video']
+        Indexer.coll_formats_from_items[@coll_druid_from_config].should == ['Image', 'Video']
       end
       it "gets multiple formats from multiple items for single collection" do
         # setup
@@ -187,9 +187,9 @@ describe Indexer do
         Stanford::Mods::Record.any_instance.stub(:format).and_return(['Video'])
         # actual test
         @indexer.sw_solr_doc 'fake_item_druid2'
-        Indexer.format_hash[@coll_druid_from_config].should == ['Image', 'Video']
+        Indexer.coll_formats_from_items[@coll_druid_from_config].should == ['Image', 'Video']
       end
-    end # format_hash
+    end # coll_formats_from_items
   end # sw_solr_doc
   
   it "solr_client should initialize the rsolr client using the options from the config" do

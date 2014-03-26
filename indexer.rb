@@ -167,7 +167,7 @@ class Indexer < Harvestdor::Indexer
     end
     doc_hash[:url_fulltext] = "#{Indexer.config.purl}/#{druid}"
 
-    # determine collection druids and their titles and add to solr doc
+    # cache collection level information and assign it
     coll_druids = sdb.collection_druids
     if coll_druids
       doc_hash[:collection] = []
@@ -180,14 +180,14 @@ class Indexer < Harvestdor::Indexer
         
         # cache the format(s) of this object with each of its collections, so when the collection recs 
         # are being indexed, they get all of the formats of the members
-        Indexer.format_hash[coll_druid] ||= []
-        if doc_hash[:format]
-          if doc_hash[:format].kind_of?(Array)
-            doc_hash[:format].each do |format|
-              Indexer.format_hash[coll_druid] << format
+        item_formats = doc_hash[:format]
+        if item_formats
+          if item_formats.kind_of?(Array)
+            item_formats.each do |item_format|
+              add_to_coll_formats_from_items coll_druid, item_format
             end
           else
-            Indexer.format_hash[coll_druid] << doc_hash[:format]
+            add_to_coll_formats_from_items coll_druid, item_formats
           end
         end
         
@@ -290,8 +290,15 @@ class Indexer < Harvestdor::Indexer
 
   # cache formats from each item so we have this info for indexing collection record 
   # @return [Hash<String, Array<String>>] collection druids as keys, array of item formats as values
-  def self.format_hash
-    @@format_hash ||= {}
+  def self.coll_formats_from_items
+    @@coll_formats_from_items ||= {}
+  end
+  
+  # add a format to the coll_formats_from_items array if it isn't already there
+  # @param <Object> a single format as a String or an Array of Strings for multiple formats
+  def add_to_coll_formats_from_items coll_druid, format
+    Indexer.coll_formats_from_items[coll_druid] ||= []
+    Indexer.coll_formats_from_items[coll_druid] << format if !Indexer.coll_formats_from_items[coll_druid].include? format
   end
 
 end

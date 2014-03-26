@@ -27,7 +27,7 @@ module GdorModsFields
   # get the formats for this solr_doc_builder's druid stored during the indexing process
   #  note that formats are only stored for collection druids
   def collection_formats
-    vals = Indexer.format_hash[@druid]
+    vals = Indexer.coll_formats_from_items[@druid]
     vals ? vals.uniq : nil
   end
 
