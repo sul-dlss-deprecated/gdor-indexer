@@ -168,7 +168,21 @@ class SolrDocBuilder
     end
     nil
   end
-   
+  
+  # @return [String] value with the numeric catkey in it, or nil if none exists
+  # sought in MODS top level:
+  # 
+  # <recordInfo>
+  #	  <recordIdentifier source="SIRSI">a6780453</recordIdentifier>
+  # </recordInfo>
+  def catkey
+    rec_id = @smods_rec.record_info.recordIdentifier
+    if rec_id && !rec_id.empty? && rec_id.first.source == 'SIRSI'
+      return rec_id.first.text.gsub('a','') # need to ensure catkey is numeric only
+    end
+    nil
+  end
+
   # return the MODS for the druid as a Stanford::Mods::Record object
   # @return [Stanford::Mods::Record] created from the MODS xml for the druid
   def smods_rec
@@ -187,7 +201,6 @@ class SolrDocBuilder
     @public_xml ||= @harvestdor_client.public_xml @druid
   end
   
-
 end # SolrDocBuilder class
 
 class Hash

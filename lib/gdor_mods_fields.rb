@@ -46,18 +46,4 @@ module GdorModsFields
     nil
   end
 
-  # @return [String] value with the numeric catkey in it, or nil if none exists
-  # sought in MODS top level:
-  # 
-  # <recordInfo>
-  #	  <recordIdentifier source="SIRSI">a6780453</recordIdentifier>
-  # </recordInfo>
-  def catkey
-    rec_id = @smods_rec.record_info.recordIdentifier
-    if rec_id && !rec_id.empty? && rec_id.first.source == 'SIRSI'
-      return rec_id.first.text.gsub('a','') # need to ensure catkey is numeric only
-    end
-    nil
-  end
-  
 end

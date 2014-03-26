@@ -11,7 +11,7 @@ describe SolrDocBuilder do
     @strio = StringIO.new
   end
 
-  # NOTE:  
+  # NOTE:
   # "Doubles, stubs, and message expectations are all cleaned out after each example."
   # per https://www.relishapp.com/rspec/rspec-mocks/docs/scope
 
@@ -530,7 +530,7 @@ describe SolrDocBuilder do
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
       sdb.should be_a_collection
     end
-  end
+  end  # collection?
 
   context "using Harvestdor::Client" do
     before(:all) do
@@ -539,6 +539,7 @@ describe SolrDocBuilder do
       @indexer = Indexer.new(config_yml_path, solr_yml_path)
       @real_hdor_client = @indexer.send(:harvestdor_client)
     end
+    
     context "smods_rec method (called in initialize method)" do
       it "should return Stanford::Mods::Record object" do
         @real_hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
@@ -568,11 +569,45 @@ describe SolrDocBuilder do
       end
     end
 
-    context "getting a collection's goodies" do
-      it "does something" do
-        pending "to be implemented"
+    context 'catkey' do
+      before(:each) do
+        @hdor_client = double()
+        @hdor_client.stub(:public_xml).with(@fake_druid).and_return(nil)
       end
-    end
+      it 'should be nil if there is no catkey' do
+        m = "<mods #{@ns_decl}><recordInfo>
+          <descriptionStandard>dacs</descriptionStandard>
+        </recordInfo></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+        sdb.catkey.should == nil
+      end
+      it "populated when source attribute is SIRSI" do
+        m = "<mods #{@ns_decl}><recordInfo>
+          <recordIdentifier source=\"SIRSI\">a6780453</recordIdentifier>
+        </recordInfo></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+        sdb.catkey.should_not == nil
+      end
+      it "not populated when source attribute is not SIRSI" do
+        m = "<mods #{@ns_decl}><recordInfo>
+          <recordIdentifier source=\"FOO\">a6780453</recordIdentifier>
+        </recordInfo></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+        sdb.catkey.should == nil
+      end
+      it "should remove the a at the beginning of the catkey" do
+        m = "<mods #{@ns_decl}><recordInfo>
+          <recordIdentifier source=\"SIRSI\">a6780453</recordIdentifier>
+        </recordInfo></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+        sdb.catkey.should == '6780453'
+      end
+    end # catkey
+
   end # context using Harvestdor::Client
 
 end
