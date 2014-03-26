@@ -137,14 +137,13 @@ class Indexer < Harvestdor::Indexer
   # @param [String] druid 
   def index_collection_druid
     begin
-      coll_druid = collection_druid # cache it for this method
       if coll_catkey
-        logger.debug "Merging collection object #{coll_druid} into #{coll_catkey}"
-        RecordMerger.merge_and_index(coll_druid, coll_catkey)
+        logger.debug "Merging collection object #{collection_druid} into #{coll_catkey}"
+        RecordMerger.merge_and_index(collection_druid, coll_catkey)
         @success_count += 1
       else
-        logger.debug "Indexing collection object #{coll_druid}"
-        solr_client.add(sw_solr_doc(coll_druid)) unless coll_druid.nil?
+        logger.debug "Indexing collection object #{collection_druid}"
+        solr_client.add(sw_solr_doc(collection_druid)) unless collection_druid.nil?
         @success_count += 1
       end
       # update DOR object's workflow datastream??   for harvest?  for indexing?
@@ -192,28 +191,20 @@ class Indexer < Harvestdor::Indexer
     doc_hash
   end
   
-  # @return [boolean] true if the collection has a catkey
-  def collection_is_mergable?
-    if coll_catkey
-      logger.info "Collection #{collection_druid} is being merged with cat key #{coll_catkey}"
-    end
-    false
-  end
-  
   # @return [String] The collection object catkey or nil if none exists
   def coll_catkey
     @coll_catkey ||= SolrDocBuilder.new(collection_druid, harvestdor_client, logger).catkey
   end
   
   # return String indicating the druid of a collection object, or nil if there is no collection druid
-  # @return [Array<String>] or enumeration over it, if block is given.  (strings are druids, e.g. ab123cd1234)
+  # @return [String] The collection object druid or nil if none exists  (e.g. ab123cd1234)
   def collection_druid
-    begin
+    @collection_druid ||= begin
+      druid = nil
       if Indexer.config[:default_set].include? "is_member_of_collection_"
-        return Indexer.config[:default_set].gsub("is_member_of_collection_",'')
-      else
-        return nil
+        druid = Indexer.config[:default_set].gsub("is_member_of_collection_",'')
       end
+      druid
     end
   end
 
@@ -293,6 +284,15 @@ class Indexer < Harvestdor::Indexer
     Indexer.coll_formats_from_items[coll_druid] << format if !Indexer.coll_formats_from_items[coll_druid].include? format
   end
 
+  # called by indexing script (in bin directory)
+  # @return [boolean] true if the collection has a catkey
+  def collection_is_mergable?
+    if coll_catkey
+      logger.info "Collection #{collection_druid} is being merged with cat key #{coll_catkey}"
+    end
+    false
+  end
+  
   def solr_client
     @solr_client ||= RSolr.connect(Indexer.config.solr.to_hash)
   end

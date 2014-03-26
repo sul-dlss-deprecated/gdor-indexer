@@ -168,7 +168,7 @@ end
   puts "Logging output to #{Indexer.config[:log_dir]}/#{Indexer.config[:log_name]}"
   time do
     if @indexer.collection_is_mergable?
-      puts 'A collection merge will happen!'
+      puts 'A collection record merge will happen!'
     end
     @indexer.harvest_and_index @opts[:nocommit]
     
