@@ -638,4 +638,39 @@ describe 'mods_fields mixin for SolrDocBuilder class' do
     end
   end # context pub date groups
   
+  context 'catkey' do
+    it 'should be nil if there is no catkey' do
+      m = "<mods #{@ns_decl}><recordInfo>
+        <descriptionStandard>dacs</descriptionStandard>
+      </recordInfo></mods>"
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+      sdb.catkey.should == nil
+    end
+    it "populated when source attribute is SIRSI" do
+      m = "<mods #{@ns_decl}><recordInfo>
+        <recordIdentifier source=\"SIRSI\">a6780453</recordIdentifier>
+      </recordInfo></mods>"
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+      sdb.catkey.should_not == nil
+    end
+    it "not populated when source attribute is not SIRSI" do
+      m = "<mods #{@ns_decl}><recordInfo>
+        <recordIdentifier source=\"FOO\">a6780453</recordIdentifier>
+      </recordInfo></mods>"
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+      sdb.catkey.should == nil
+    end
+    it "should remove the a at the beginning of the catkey" do
+      m = "<mods #{@ns_decl}><recordInfo>
+        <recordIdentifier source=\"SIRSI\">a6780453</recordIdentifier>
+      </recordInfo></mods>"
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+      sdb.catkey.should == '6780453'
+    end
+  end # catkey
+  
 end
