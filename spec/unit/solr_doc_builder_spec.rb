@@ -43,13 +43,13 @@ describe SolrDocBuilder do
       messages=solr_doc.validate
       messages.length.should > 0
     end
-    it "id field should be set to druid" do
+    it "id field should be set to druid for non-merged record" do
       @doc_hash[:id].should == @fake_druid
     end
     it "should have a druid field" do
       @doc_hash[:druid].should == @fake_druid
     end
-    it "should have the full MODS in the modsxml field" do
+    it "should have the full MODS in the modsxml field for non-merged record" do
       # this fails with equivalent-xml 0.4.1 or 0.4.2, but passes with 0.4.0
       @doc_hash[:modsxml].should be_equivalent_to @mods_xml
     end 
@@ -65,7 +65,7 @@ describe SolrDocBuilder do
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
       sdb.should_receive(:display_type)
       sdb.should_receive(:image_ids)
-      sdb.should_receive(:format)
+      sdb.should_receive(:doc_hash_from_mods) # avoid expensive parsing unnec for this test
       sdb.doc_hash
     end
     context "img_info" do
@@ -74,6 +74,7 @@ describe SolrDocBuilder do
         <resource type='image'><file id='foo' mimetype='image/jp2'/></resource>
         <resource type='image'><file id='bar' mimetype='image/jp2'/></resource></contentMetadata>")
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
+        sdb.should_receive(:doc_hash_from_mods) # avoid expensive parsing unnec for this test
         sdb.stub(:content_md).and_return(ng_xml.root)
         sdb.doc_hash[:img_info].should == ['foo', 'bar']
       end
