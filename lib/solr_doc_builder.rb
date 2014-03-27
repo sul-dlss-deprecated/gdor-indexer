@@ -35,20 +35,17 @@ class SolrDocBuilder
   # @return [Hash] Hash representing the Solr document
   def doc_hash
     if not @doc_hash
-      doc_hash = {
+      @doc_hash = {
         :id => @druid, 
         :druid => @druid, 
         :modsxml => "#{@smods_rec.to_xml}",
       }
-    
-      doc_hash[:access_facet] = 'Online'
-      # from public_xml_fields
-      doc_hash[:display_type] = display_type  # defined in public_xml_fields
-      doc_hash[:img_info] = image_ids unless !image_ids
-      doc_hash[:format] = format # defined in mods_fields
+      @doc_hash[:access_facet] = 'Online'
+      @doc_hash[:display_type] = display_type  # defined in public_xml_fields
+      @doc_hash[:img_info] = image_ids unless !image_ids  # defined in public_xml_fields
+      @doc_hash[:format] = format # defined in gdor_mods_fields
       hash_from_mods = doc_hash_from_mods
-      doc_hash.merge!(hash_from_mods) if hash_from_mods 
-      @doc_hash = doc_hash
+      @doc_hash.merge!(hash_from_mods) if hash_from_mods 
     end
     @doc_hash
   end
