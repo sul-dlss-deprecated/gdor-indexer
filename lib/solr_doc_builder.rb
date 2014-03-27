@@ -169,18 +169,34 @@ class SolrDocBuilder
     nil
   end
   
-  # @return [String] value with the numeric catkey in it, or nil if none exists
-  # sought in MODS top level:
-  # 
-  # <recordInfo>
-  #	  <recordIdentifier source="SIRSI">a6780453</recordIdentifier>
-  # </recordInfo>
+  # @return [String] value with SIRSI/Symphony numeric catkey in it, or nil if none exists
+  # first we look for 
+  #  identityMetadata/otherId[@name='catkey']
+  # if not found, we look for 
+  #  identityMetadata/otherId[@name='barcode']
+  #   if found, we look for catkey in MODS
+  #     mods/recordInfo/recordIdentifier[@source="SIRSI"
+  #     and if found, remove the leading a
+  # otherwise, nil
   def catkey
-    rec_id = @smods_rec.record_info.recordIdentifier
-    if rec_id && !rec_id.empty? && rec_id.first.source == 'SIRSI'
-      return rec_id.first.text.gsub('a','') # need to ensure catkey is numeric only
+    @catkey ||= begin
+      catkey = nil
+      node = public_xml.xpath("/publicObject/identityMetadata/otherId[@name='catkey']") if public_xml
+      catkey = node.first.content if node && node.first
+      if !catkey
+        # if there's a barcode in the identity metadata then look for a ckey in the MODS
+        node = public_xml.xpath("/publicObject/identityMetadata/otherId[@name='barcode']")
+        if node.first
+          rec_id = @smods_rec.record_info.recordIdentifier
+          if rec_id && !rec_id.empty? && rec_id.first.source == 'SIRSI'
+            catkey = rec_id.first.text.gsub('a','') # need to ensure catkey is numeric only
+          else
+            @logger.info("#{druid} has barcode #{node.first.content} in identityMetadata but no SIRSI catkey in mods")
+          end
+        end
+      end
+      catkey
     end
-    nil
   end
 
   # return the MODS for the druid as a Stanford::Mods::Record object

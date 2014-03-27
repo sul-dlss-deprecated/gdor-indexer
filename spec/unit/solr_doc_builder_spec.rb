@@ -570,41 +570,90 @@ describe SolrDocBuilder do
     end
 
     context 'catkey' do
+      before(:all) do
+        @identity_md_start = "<publicObject><identityMetadata objectId='#{@fake_druid}'>"
+        @identity_md_end = "</identityMetadata></publicObject>"
+        @empty_id_md_ng = Nokogiri::XML("#{@identity_md_start}#{@identity_md_end}")
+        @barcode_id_md_ng = Nokogiri::XML("#{@identity_md_start}<otherId name=\"barcode\">666</otherId>#{@identity_md_end}")
+      end
       before(:each) do
         @hdor_client = double()
         @hdor_client.stub(:public_xml).with(@fake_druid).and_return(nil)
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+        @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
       end
-      it 'should be nil if there is no catkey' do
-        m = "<mods #{@ns_decl}><recordInfo>
-          <descriptionStandard>dacs</descriptionStandard>
-        </recordInfo></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        sdb.catkey.should == nil
+      
+      it "should be nil if there is no indication of catkey in identityMetadata" do
+        @sdb.stub(:public_xml).and_return(@empty_id_md_ng.root)
+        @sdb.catkey.should == nil
       end
-      it "populated when source attribute is SIRSI" do
-        m = "<mods #{@ns_decl}><recordInfo>
-          <recordIdentifier source=\"SIRSI\">a6780453</recordIdentifier>
-        </recordInfo></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        sdb.catkey.should_not == nil
+      it "should take a catkey in identityMetadata/otherId with name attribute of catkey" do
+        ng_xml = Nokogiri::XML("#{@identity_md_start}<otherId name=\"catkey\">12345</otherId>#{@identity_md_end}")
+        @sdb.stub(:public_xml).and_return(ng_xml.root)
+        @sdb.catkey.should == '12345'
       end
-      it "not populated when source attribute is not SIRSI" do
-        m = "<mods #{@ns_decl}><recordInfo>
-          <recordIdentifier source=\"FOO\">a6780453</recordIdentifier>
-        </recordInfo></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        sdb.catkey.should == nil
-      end
-      it "should remove the a at the beginning of the catkey" do
+      it "should be nil if there is no indication of catkey in identityMetadata even if there is a catkey in the mods" do
         m = "<mods #{@ns_decl}><recordInfo>
           <recordIdentifier source=\"SIRSI\">a6780453</recordIdentifier>
         </recordInfo></mods>"
         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        sdb.catkey.should == '6780453'
+        sdb.stub(:public_xml).and_return(@empty_id_md_ng.root)
+        sdb.catkey.should == nil
+      end
+      it "should log an error when there is identityMetadata/otherId with name attribute of barcode but there is no catkey in mods" do
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML("<mods #{@ns_decl}> </mods>"))
+        logger = Logger.new(@strio)
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, logger)
+        sdb.stub(:public_xml).and_return(@barcode_id_md_ng.root)
+        logger.should_receive(:info).with(/#{@fake_druid} has barcode .* in identityMetadata but no SIRSI catkey in mods/)
+        sdb.catkey
+      end
+      context "catkey from mods" do
+        it "should look for catkey in mods if identityMetadata/otherId with name attribute of barcode is found" do
+          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML("<mods #{@ns_decl}> </mods>"))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+          sdb.stub(:public_xml).and_return(@barcode_id_md_ng.root)
+          smr = sdb.smods_rec
+          smr.should_receive(:record_info).and_call_original # this is as close as I can figure to @smods_rec.record_info.recordIdentifier
+          sdb.catkey
+        end
+        it 'should be nil if there is no catkey in the mods' do
+          m = "<mods #{@ns_decl}><recordInfo>
+            <descriptionStandard>dacs</descriptionStandard>
+          </recordInfo></mods>"
+          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+          sdb.stub(:public_xml).and_return(@barcode_id_md_ng.root)
+          sdb.catkey.should == nil
+        end
+        it "populated when source attribute is SIRSI" do
+          m = "<mods #{@ns_decl}><recordInfo>
+            <recordIdentifier source=\"SIRSI\">a6780453</recordIdentifier>
+          </recordInfo></mods>"
+          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+          sdb.stub(:public_xml).and_return(@barcode_id_md_ng.root)
+          sdb.catkey.should_not == nil
+        end
+        it "not populated when source attribute is not SIRSI" do
+          m = "<mods #{@ns_decl}><recordInfo>
+            <recordIdentifier source=\"FOO\">a6780453</recordIdentifier>
+          </recordInfo></mods>"
+          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+          sdb.stub(:public_xml).and_return(@barcode_id_md_ng.root)
+          sdb.catkey.should == nil
+        end
+        it "should remove the a at the beginning of the catkey" do
+          m = "<mods #{@ns_decl}><recordInfo>
+            <recordIdentifier source=\"SIRSI\">a6780453</recordIdentifier>
+          </recordInfo></mods>"
+          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+          sdb.stub(:public_xml).and_return(@barcode_id_md_ng.root)
+          sdb.catkey.should == '6780453'
+        end
       end
     end # catkey
 
