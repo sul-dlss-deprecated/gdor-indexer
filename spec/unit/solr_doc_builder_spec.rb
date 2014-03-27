@@ -79,6 +79,26 @@ describe SolrDocBuilder do
         sdb.doc_hash[:img_info].should == ['foo', 'bar']
       end
     end
+    context "collection_type" do
+      before(:each) do
+        @hdor_client = double()
+        @hdor_client.stub(:public_xml).with(@fake_druid).and_return(nil)
+      end
+      it "should be 'Digital Collection' if MODS has <typeOfResource collection='yes'/>" do
+        coll_mods_xml = "<mods #{@ns_decl}><typeOfResource collection='yes'/><note>hi</note></mods>"
+        hc = double
+        hc.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(coll_mods_xml))
+        hc.stub(:public_xml).with(@fake_druid).and_return(@ng_pub_xml)
+        sdb = SolrDocBuilder.new(@fake_druid, hc, Logger.new(@strio))
+        sdb.doc_hash[:collection_type].should == 'Digital Collection'
+      end
+      it "should not be present if if MODS doesn't have <typeOfResource collection='yes'/>" do
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+        @hdor_client.stub(:public_xml).with(@fake_druid).and_return(@ng_pub_xml)
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+        sdb.doc_hash[:collection_type].should == nil
+      end
+    end    
   end # doc hash
 
   context "doc_hash_from_mods" do
@@ -89,22 +109,6 @@ describe SolrDocBuilder do
 
     # see https://consul.stanford.edu/display/NGDE/Required+and+Recommended+Solr+Fields+for+SearchWorks+documents
 
-    context "collection_type" do
-      it "should be 'Digital Collection' if MODS has <typeOfResource collection='yes'/>" do
-        coll_mods_xml = "<mods #{@ns_decl}><typeOfResource collection='yes'/><note>hi</note></mods>"
-        hc = double
-        hc.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(coll_mods_xml))
-        hc.stub(:public_xml).with(@fake_druid).and_return(nil)
-        sdb = SolrDocBuilder.new(@fake_druid, hc, Logger.new(@strio))
-        sdb.doc_hash_from_mods[:collection_type].should == 'Digital Collection'
-      end
-      it "should not be present if if MODS doesn't have <typeOfResource collection='yes'/>" do
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        sdb.doc_hash_from_mods[:collection_type].should == nil
-      end
-    end
-    
     context "<abstract> --> summary_search" do
       it "should be populated when the MODS has a top level <abstract> element" do
         m = "<mods #{@ns_decl}><abstract>blah blah</abstract></mods>"

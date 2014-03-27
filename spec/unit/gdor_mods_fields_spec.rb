@@ -16,7 +16,7 @@ describe 'gdor_mods_fields mixin for SolrDocBuilder class' do
     Indexer.stub(:config).and_return({:max_pub_date => 2013, :min_pub_date => 1})
   end
 
-  context "sw subject methods" do
+  context "sw subject integration tests" do
     before(:all) do
       @genre = 'genre top level'
       @cart_coord = '6 00 S, 71 30 E'
@@ -409,146 +409,175 @@ describe 'gdor_mods_fields mixin for SolrDocBuilder class' do
         sdb.smods_rec.pub_dates.should == ['1906','1904','1904']
       end
     end
-  end # context sw subject methods 
+  end # context sw subject integration tests 
   
-  context "pub_date" do
-    it "should choose the first date" do
-      m = "<mods #{@ns_decl}><originInfo>
-      <dateCreated>1904</dateCreated>
-      </originInfo></mods>"
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-      sdb.smods_rec.pub_date.should == '1904'
-    end
-    it "should correctly parse a ranged date" do
-      m = "<mods #{@ns_decl}><originInfo>
-      <dateCreated>Text dated June 4, 1594; miniatures added by 1596</dateCreated>
-      </originInfo></mods>"
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-      sdb.smods_rec.pub_date.should == '1594'
-    end
-    it "should parse a date" do
-      m = "<mods #{@ns_decl}><originInfo>
-      <dateCreated>Aug. 3rd, 1886</dateCreated>
-      </originInfo></mods>"
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-      sdb.pub_date.should == '1886'
-    end
-    it "should remove question marks and brackets" do
-      m = "<mods #{@ns_decl}><originInfo>
-      <dateCreated>Aug. 3rd, [18]86?</dateCreated>
-      </originInfo></mods>"
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-      sdb.pub_date.should == '1886'
-    end
-    it 'should handle an s after the decade' do
-      m = "<mods #{@ns_decl}><originInfo>
-      <dateCreated>early 1890s</dateCreated>
-      </originInfo></mods>"
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-      sdb.pub_date.should == '1890'
-    end
-    it "should ignore a date if it falls outside the constraints" do
-      m = "<mods #{@ns_decl}><originInfo>
-      <dateCreated>1904</dateCreated>
-      </originInfo></mods>"
-      Indexer.stub(:config).and_return({:max_pub_date => 1000, :min_pub_date => 1})
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-      sdb.pub_date.should == nil
-    end
-    it 'should choose a date ending with CE if there are multiple dates' do
-     m = "<mods #{@ns_decl}><originInfo><dateIssued>7192 AM (li-Adam) / 1684 CE</dateIssued><issuance>monographic</issuance></originInfo>"
-     @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-     sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-     sdb.pub_date.should == '1684'
-    end
-    it 'should handle hyphenated range dates' do
-      m = "<mods #{@ns_decl}><originInfo><dateIssued>1282 AH / 1865-6 CE</dateIssued><issuance>monographic</issuance></originInfo>"
+  context "publication date fields" do
+    context "pub_date" do
+      it "should choose the first date" do
+        m = "<mods #{@ns_decl}><originInfo>
+        <dateCreated>1904</dateCreated>
+        </originInfo></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+        sdb.smods_rec.pub_date.should == '1904'
+      end
+      it "should correctly parse a ranged date" do
+        m = "<mods #{@ns_decl}><originInfo>
+        <dateCreated>Text dated June 4, 1594; miniatures added by 1596</dateCreated>
+        </originInfo></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+        sdb.smods_rec.pub_date.should == '1594'
+      end
+      it "should parse a date" do
+        m = "<mods #{@ns_decl}><originInfo>
+        <dateCreated>Aug. 3rd, 1886</dateCreated>
+        </originInfo></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+        sdb.pub_date.should == '1886'
+      end
+      it "should remove question marks and brackets" do
+        m = "<mods #{@ns_decl}><originInfo>
+        <dateCreated>Aug. 3rd, [18]86?</dateCreated>
+        </originInfo></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+        sdb.pub_date.should == '1886'
+      end
+      it 'should handle an s after the decade' do
+        m = "<mods #{@ns_decl}><originInfo>
+        <dateCreated>early 1890s</dateCreated>
+        </originInfo></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+        sdb.pub_date.should == '1890'
+      end
+      it "should ignore a date if it falls outside the constraints" do
+        m = "<mods #{@ns_decl}><originInfo>
+        <dateCreated>1904</dateCreated>
+        </originInfo></mods>"
+        Indexer.stub(:config).and_return({:max_pub_date => 1000, :min_pub_date => 1})
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+        sdb.pub_date.should == nil
+      end
+      it 'should choose a date ending with CE if there are multiple dates' do
+       m = "<mods #{@ns_decl}><originInfo><dateIssued>7192 AM (li-Adam) / 1684 CE</dateIssued><issuance>monographic</issuance></originInfo>"
        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-       sdb.pub_date.should == '1865'
+       sdb.pub_date.should == '1684'
+      end
+      it 'should handle hyphenated range dates' do
+        m = "<mods #{@ns_decl}><originInfo><dateIssued>1282 AH / 1865-6 CE</dateIssued><issuance>monographic</issuance></originInfo>"
+         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+         sdb.pub_date.should == '1865'
+      end
+      it 'should handle century based dates' do
+        m = "<mods #{@ns_decl}><originInfo><dateIssued>13th century AH / 19th CE</dateIssued><issuance>monographic</issuance></originInfo>"
+         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+         sdb.smods_rec.pub_date_facet.should == '19th century'
+         sdb.smods_rec.pub_date_sort.should =='1800'
+         sdb.smods_rec.pub_date.should == '18--'
+      end
+      it 'should handle multiple CE dates' do
+        m = "<mods #{@ns_decl}><originInfo><dateIssued>6 Dhu al-Hijjah 923 AH / 1517 CE -- 7 Rabi I 924 AH / 1518 CE</dateIssued><issuance>monographic</issuance></originInfo>"
+         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+         sdb.smods_rec.pub_date.should == '1517'
+         sdb.smods_rec.pub_date_sort.should =='1517'
+         sdb.smods_rec.pub_date_facet.should == '1517'
+      end
+      it 'should handle this case from walters' do
+        m = "<mods #{@ns_decl}><originInfo><dateIssued>Late 14th or early 15th century CE</dateIssued><issuance>monographic</issuance></originInfo>"
+         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+         sdb.smods_rec.pub_date.should == '14--'
+         sdb.smods_rec.pub_date_sort.should =='1400'
+         sdb.smods_rec.pub_date_facet.should == '15th century'
+      end
+      it 'should work on 3 digit dates' do
+        m = "<mods #{@ns_decl}><originInfo><dateIssued>966 CE</dateIssued><issuance>monographic</issuance></originInfo>"
+         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+         sdb.smods_rec.pub_date.should == '966'
+         sdb.smods_rec.pub_date_sort.should =='0966'
+         sdb.smods_rec.pub_date_facet.should == '966'
+      end
+      it 'should work on 3 digit dates' do
+        m = "<mods #{@ns_decl}><originInfo><dateIssued>3rd century AH / 9th CE</dateIssued><issuance>monographic</issuance></originInfo>"
+         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+         sdb.smods_rec.pub_date.should == '8--'
+         sdb.smods_rec.pub_date_sort.should =='0800'
+         sdb.smods_rec.pub_date_facet.should == '9th century'
+      end
+      it 'should work on 3 digit BC dates' do
+        m = "<mods #{@ns_decl}><originInfo><dateCreated>300 B.C.</dateCreated></originInfo>"
+         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+         sdb.smods_rec.pub_year.should == '-700'
+         sdb.smods_rec.pub_date.should == '-700'
+         sdb.smods_rec.pub_date_sort.should =='-700'
+         sdb.smods_rec.pub_date_facet.should == '300 B.C.'
+      end
+    end #context pub_dates
+
+    context 'pub_date_sort integration tests' do
+      before :each do
+        m = "<mods #{@ns_decl}><originInfo>
+        <dateCreated>Aug. 3rd, 1886</dateCreated>
+        </originInfo></mods>"
+         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+         @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+      end
+      it 'should work on normal dates' do
+        @sdb.smods_rec.stub(:pub_date).and_return('1945')
+        @sdb.smods_rec.pub_date_sort.should == '1945'
+      end
+      it 'should work on 3 digit dates' do
+        @sdb.smods_rec.stub(:pub_date).and_return('945')
+        @sdb.smods_rec.pub_date_sort.should == '0945'
+      end
+      it 'should work on century dates' do
+        @sdb.smods_rec.stub(:pub_date).and_return('16--')
+        @sdb.smods_rec.pub_date_sort.should == '1600'
+      end
+      it 'should work on 3 digit century dates' do
+        @sdb.smods_rec.stub(:pub_date).and_return('9--')
+        @sdb.smods_rec.pub_date_sort.should == '0900'
+      end
     end
-    it 'should handle century based dates' do
-      m = "<mods #{@ns_decl}><originInfo><dateIssued>13th century AH / 19th CE</dateIssued><issuance>monographic</issuance></originInfo>"
-       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-       sdb.smods_rec.pub_date_facet.should == '19th century'
-       sdb.smods_rec.pub_date_sort.should =='1800'
-       sdb.smods_rec.pub_date.should == '18--'
-    end
-    it 'should handle multiple CE dates' do
-      m = "<mods #{@ns_decl}><originInfo><dateIssued>6 Dhu al-Hijjah 923 AH / 1517 CE -- 7 Rabi I 924 AH / 1518 CE</dateIssued><issuance>monographic</issuance></originInfo>"
-       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-       sdb.smods_rec.pub_date.should == '1517'
-       sdb.smods_rec.pub_date_sort.should =='1517'
-       sdb.smods_rec.pub_date_facet.should == '1517'
-    end
-    it 'should handle this case from walters' do
-      m = "<mods #{@ns_decl}><originInfo><dateIssued>Late 14th or early 15th century CE</dateIssued><issuance>monographic</issuance></originInfo>"
-       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-       sdb.smods_rec.pub_date.should == '14--'
-       sdb.smods_rec.pub_date_sort.should =='1400'
-       sdb.smods_rec.pub_date_facet.should == '15th century'
-    end
-    it 'should work on 3 digit dates' do
-      m = "<mods #{@ns_decl}><originInfo><dateIssued>966 CE</dateIssued><issuance>monographic</issuance></originInfo>"
-       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-       sdb.smods_rec.pub_date.should == '966'
-       sdb.smods_rec.pub_date_sort.should =='0966'
-       sdb.smods_rec.pub_date_facet.should == '966'
-    end
-    it 'should work on 3 digit dates' do
-      m = "<mods #{@ns_decl}><originInfo><dateIssued>3rd century AH / 9th CE</dateIssued><issuance>monographic</issuance></originInfo>"
-       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-       sdb.smods_rec.pub_date.should == '8--'
-       sdb.smods_rec.pub_date_sort.should =='0800'
-       sdb.smods_rec.pub_date_facet.should == '9th century'
-    end
-    it 'should work on 3 digit BC dates' do
-      m = "<mods #{@ns_decl}><originInfo><dateCreated>300 B.C.</dateCreated></originInfo>"
-       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-       sdb.smods_rec.pub_year.should == '-700'
-       sdb.smods_rec.pub_date.should == '-700'
-       sdb.smods_rec.pub_date_sort.should =='-700'
-       sdb.smods_rec.pub_date_facet.should == '300 B.C.'
-    end
-  end #context pub_dates
-  
-  context 'pub_date_sort' do
-    before :each do
-      m = "<mods #{@ns_decl}><originInfo>
-      <dateCreated>Aug. 3rd, 1886</dateCreated>
-      </originInfo></mods>"
-       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-       @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-    end
-    it 'should work on normal dates' do
-      @sdb.smods_rec.stub(:pub_date).and_return('1945')
-      @sdb.smods_rec.pub_date_sort.should == '1945'
-    end
-    it 'should work on 3 digit dates' do
-      @sdb.smods_rec.stub(:pub_date).and_return('945')
-      @sdb.smods_rec.pub_date_sort.should == '0945'
-    end
-    it 'should work on century dates' do
-      @sdb.smods_rec.stub(:pub_date).and_return('16--')
-      @sdb.smods_rec.pub_date_sort.should == '1600'
-    end
-    it 'should work on 3 digit century dates' do
-      @sdb.smods_rec.stub(:pub_date).and_return('9--')
-      @sdb.smods_rec.pub_date_sort.should == '0900'
-    end
-  end
+
+    context "pub_date_groups integration tests" do
+      it 'should generate the groups' do
+        m = "<mods #{@ns_decl}><originInfo>
+        <dateCreated>1904</dateCreated>
+        </originInfo></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+        sdb.smods_rec.pub_date_groups(1904).should == ['More than 50 years ago']
+      end
+      it 'should work for a modern date too' do
+        m = "<mods #{@ns_decl}><originInfo>
+        <dateCreated>1904</dateCreated>
+        </originInfo></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+        sdb.smods_rec.pub_date_groups(2013).should == ["This year"]
+      end
+      it 'should work ok given a nil date' do
+        m = "<mods #{@ns_decl}><originInfo>
+        <dateCreated>1904</dateCreated>
+        </originInfo></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+        sdb.smods_rec.pub_date_groups(nil).should == nil
+      end
+    end # context pub date groups    
+  end # publication date fields
   
   context "format" do
     it "should get format from call to stanford-mods searchworks format method " do
@@ -603,32 +632,5 @@ describe 'gdor_mods_fields mixin for SolrDocBuilder class' do
       end
     end # collection_formats
   end # context format
-  
-  context "pub_date_groups" do
-    it 'should generate the groups' do
-      m = "<mods #{@ns_decl}><originInfo>
-      <dateCreated>1904</dateCreated>
-      </originInfo></mods>"
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-      sdb.smods_rec.pub_date_groups(1904).should == ['More than 50 years ago']
-    end
-    it 'should work for a modern date too' do
-      m = "<mods #{@ns_decl}><originInfo>
-      <dateCreated>1904</dateCreated>
-      </originInfo></mods>"
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-      sdb.smods_rec.pub_date_groups(2013).should == ["This year"]
-    end
-    it 'should work ok given a nil date' do
-      m = "<mods #{@ns_decl}><originInfo>
-      <dateCreated>1904</dateCreated>
-      </originInfo></mods>"
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-      sdb.smods_rec.pub_date_groups(nil).should == nil
-    end
-  end # context pub date groups
-  
+
 end
