@@ -191,7 +191,7 @@ class SolrDocBuilder
           if rec_id && !rec_id.empty? && rec_id.first.source == 'SIRSI'
             catkey = rec_id.first.text.gsub('a','') # need to ensure catkey is numeric only
           else
-            @logger.info("#{druid} has barcode #{node.first.content} in identityMetadata but no SIRSI catkey in mods")
+            @logger.error("#{druid} has barcode #{node.first.content} in identityMetadata but no SIRSI catkey in mods")
           end
         end
       end

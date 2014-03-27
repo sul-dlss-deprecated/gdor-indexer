@@ -606,7 +606,7 @@ describe SolrDocBuilder do
         logger = Logger.new(@strio)
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, logger)
         sdb.stub(:public_xml).and_return(@barcode_id_md_ng.root)
-        logger.should_receive(:info).with(/#{@fake_druid} has barcode .* in identityMetadata but no SIRSI catkey in mods/)
+        logger.should_receive(:error).with(/#{@fake_druid} has barcode .* in identityMetadata but no SIRSI catkey in mods/)
         sdb.catkey
       end
       context "catkey from mods" do
