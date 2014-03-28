@@ -42,7 +42,7 @@ describe Indexer do
   
   context "harvest and index collection record" do
     it "gets the collection druid" do
-      @indexer.collection_druid.should eql("ww121ss5000")
+      @indexer.coll_druid_from_config.should eql("ww121ss5000")
     end
     it "indexes the collection druid" do
       @indexer.solr_client.should_receive(:add)

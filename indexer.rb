@@ -138,12 +138,13 @@ class Indexer < Harvestdor::Indexer
   def index_collection_druid
     begin
       if coll_catkey
-        logger.debug "Merging collection object #{collection_druid} into #{coll_catkey}"
-        RecordMerger.merge_and_index(collection_druid, coll_catkey)
+        logger.debug "Merging collection object #{coll_druid_from_config} into #{coll_catkey}"
+        RecordMerger.merge_and_index(coll_druid_from_config, coll_catkey)
         @success_count += 1
       else
-        logger.debug "Indexing collection object #{collection_druid}"
-        solr_add(sw_solr_doc(collection_druid), collection_druid) unless collection_druid.nil?
+        logger.debug "Indexing collection object #{coll_druid_from_config}"
+        doc_hash = sw_solr_doc(coll_druid_from_config)
+        solr_add(doc_hash, coll_druid_from_config) unless coll_druid_from_config.nil?
         @success_count += 1
       end
       # update DOR object's workflow datastream??   for harvest?  for indexing?
@@ -165,7 +166,7 @@ class Indexer < Harvestdor::Indexer
     doc_hash[:url_fulltext] = "#{Indexer.config.purl}/#{druid}"
     
     # add coll data to this solr doc and/or cache collection level information
-    coll_druids = sdb.collection_druids
+    coll_druids = sdb.collection_druids # in public_xml fields, from rels_ext
     if coll_druids
       doc_hash[:collection] = []
       doc_hash[:collection_with_title] = []
@@ -191,13 +192,13 @@ class Indexer < Harvestdor::Indexer
   
   # @return [String] The collection object catkey or nil if none exists
   def coll_catkey
-    @coll_catkey ||= SolrDocBuilder.new(collection_druid, harvestdor_client, logger).catkey
+    @coll_catkey ||= SolrDocBuilder.new(coll_druid_from_config, harvestdor_client, logger).catkey
   end
   
   # return String indicating the druid of a collection object, or nil if there is no collection druid
   # @return [String] The collection object druid or nil if none exists  (e.g. ab123cd1234)
-  def collection_druid
-    @collection_druid ||= begin
+  def coll_druid_from_config
+    @coll_druid_from_config ||= begin
       druid = nil
       if Indexer.config[:default_set].include? "is_member_of_collection_"
         druid = Indexer.config[:default_set].gsub("is_member_of_collection_",'')
@@ -210,7 +211,7 @@ class Indexer < Harvestdor::Indexer
   #  and check for a purl in the collection record
   def count_recs_in_solr
     params = {:fl => 'id', :rows => 1000}
-    coll_rec_id = coll_catkey ? coll_catkey : collection_druid
+    coll_rec_id = coll_catkey ? coll_catkey : coll_druid_from_config
     params[:fq] = "collection:\"#{coll_rec_id}\""
     params[:start] ||= 0
     resp = solr_client.get 'select', :params => params
@@ -252,6 +253,7 @@ class Indexer < Harvestdor::Indexer
     end
   end
   
+# FIXME:  move to public_xml_fields???  
   # given a druid, get its objectLabel from its purl page identityMetadata
   # @param [String] druid, e.g. ab123cd4567
   # @return [String] the value of the <objectLabel> element in the identityMetadata for the object
@@ -286,15 +288,11 @@ class Indexer < Harvestdor::Indexer
   # @return [boolean] true if the collection has a catkey
   def collection_is_mergable?
     if coll_catkey
-      logger.info "Collection #{collection_druid} is being merged with cat key #{coll_catkey}"
+      logger.info "Collection #{coll_druid_from_config} is being merged with cat key #{coll_catkey}"
     end
     false
   end
   
-  def solr_client
-    @solr_client ||= RSolr.connect(Indexer.config.solr.to_hash)
-  end
-
   # cache collection titles so each item doesn't need to look it up -- we only look it up once per harvest.
   # collection title is from the objectLabel from the collection record's identityMetadata
   # @return [Hash<String, String>] collection druids as keys, and collection title as value
@@ -308,4 +306,8 @@ class Indexer < Harvestdor::Indexer
     @@coll_formats_from_items ||= {}
   end
   
+  def solr_client
+    @solr_client ||= RSolr.connect(Indexer.config.solr.to_hash)
+  end
+
 end
