@@ -215,14 +215,14 @@ describe Indexer do
     end
   end
   
-  context "verify" do
+  context "count_recs_in_solr" do
     before :each do 
       @collection_response = {'response' => {'numFound'=>'1','docs'=>[{'id'=>'dm212rn7381', 'url_fulltext' => ['http://purl.stanford.edu/dm212rn7381']}]}}
       @bad_collection_response = {'response' => {'numFound'=>'1','docs'=>[{'id'=>'dm212rn7381'}]}}
       @item_response = {'response' => {'numFound'=>'265','docs'=>[{'id'=>'dm212rn7381'}]}}
     end
 
-    it 'should verify the items and the collection object in the solr index after indexing' do
+    it 'should count the items and the collection object in the solr index after indexing' do
       @indexer.solr_client.stub(:get) do |wt, params|
         if params[:params][:fl].include?('url_full')
           @collection_response
@@ -230,7 +230,7 @@ describe Indexer do
           @item_response
         end
       end
-      @indexer.verify.should == 266
+      @indexer.count_recs_in_solr.should == 266
     end
     it 'should verify the collection object has a purl' do
       @indexer.solr_client.stub(:get) do |wt, params|
@@ -239,9 +239,9 @@ describe Indexer do
         else
           @item_response
         end
-        @indexer.verify.should == 265
+        @indexer.count_recs_in_solr.should == 265
       end
     end
-  end # verify
+  end # count_recs_in_solr
 
 end

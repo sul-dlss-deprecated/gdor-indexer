@@ -65,7 +65,7 @@ class Indexer < Harvestdor::Indexer
     else
       puts "Skipping commit because :nocommit flag was passed"
     end
-    verify
+    count_recs_in_solr
     logger.info("Avg solr commit time per object (successful): #{@total_time_to_solr/@success_count} seconds") unless (@total_time_to_solr == 0 || @success_count == 0)
     logger.info("Avg solr commit time per object (all): #{@total_time_to_solr/total_objects} seconds") unless (@total_time_to_solr == 0 || @error_count == 0 || total_objects == 0)
     logger.info("Avg parse time per object (successful): #{@total_time_to_parse/@success_count} seconds") unless (@total_time_to_parse == 0 || @success_count == 0)
@@ -207,8 +207,8 @@ class Indexer < Harvestdor::Indexer
   end
 
   # count the number of records in solr for this collection (and the collection record itself)
-  #  and compare against the number the indexer thinks it indexed.
-  def verify
+  #  and check for a purl in the collection record
+  def count_recs_in_solr
     params = {:fl => 'id', :rows => 1000}
     coll_rec_id = coll_catkey ? coll_catkey : collection_druid
     params[:fq] = "collection:\"#{coll_rec_id}\""
