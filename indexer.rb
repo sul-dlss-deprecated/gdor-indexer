@@ -160,18 +160,11 @@ class Indexer < Harvestdor::Indexer
   # @param [Hash] Hash representing the Solr document
   def sw_solr_doc druid
     sdb = SolrDocBuilder.new(druid, harvestdor_client, logger)
-# Item level merge
-# if we have a ckey, we need to do a merge doc, o.w. do below ...
     
     doc_hash = sdb.doc_hash
-    
-    sdb.validate.each do |msg|
-      @validation_messages += msg + "\n"
-    end
-
     doc_hash[:url_fulltext] = "#{Indexer.config.purl}/#{druid}"
-
-    # cache collection level information and add coll data to this solr doc
+    
+    # add coll data to this solr doc and/or cache collection level information
     coll_druids = sdb.collection_druids
     if coll_druids
       doc_hash[:collection] = []
@@ -188,6 +181,11 @@ class Indexer < Harvestdor::Indexer
         doc_hash[:collection_with_title] << "#{coll_druid}-|-#{coll_druid_2_title_hash[coll_druid]}"
       } # each coll_druid
     end
+
+    sdb.validate.each do |msg|
+      @validation_messages += msg + "\n"
+    end
+
     doc_hash
   end
   
