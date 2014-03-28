@@ -85,6 +85,15 @@ module GdorModsFields
       []
     end
   end
+
+protected
+
+  # get the formats for this solr_doc_builder's druid stored during the indexing process
+  #  note that formats are only stored for collection druids
+  def collection_formats
+    vals = Indexer.coll_formats_from_items[@druid]
+    vals ? vals.uniq : nil
+  end
   
   # currently only called to populate :pub_date_group_facet (from doc_hash_from_mods)
   def pub_date
@@ -100,13 +109,6 @@ module GdorModsFields
       @logger.info("#{@druid} skipping date out of range "+val)
     end
     nil
-  end
-
-  # get the formats for this solr_doc_builder's druid stored during the indexing process
-  #  note that formats are only stored for collection druids
-  def collection_formats
-    vals = Indexer.coll_formats_from_items[@druid]
-    vals ? vals.uniq : nil
   end
 
   # @return true if the string parses into an int, and if so, the int is >= 0
@@ -135,6 +137,5 @@ module GdorModsFields
     end
     nil
   end
-  
 
 end

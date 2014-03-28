@@ -44,7 +44,7 @@ class SolrDocBuilder
       @doc_hash[:display_type] = display_type  # defined in public_xml_fields
       @doc_hash[:img_info] = image_ids unless !image_ids  # defined in public_xml_fields
       @doc_hash[:format] = format # defined in gdor_mods_fields
-      hash_from_mods = doc_hash_from_mods
+      hash_from_mods = doc_hash_from_mods # defined in gdor_mods_fields
       @doc_hash.merge!(hash_from_mods) if hash_from_mods 
       @doc_hash[:collection_type] = 'Digital Collection' if collection?
     end
