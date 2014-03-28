@@ -143,7 +143,7 @@ class Indexer < Harvestdor::Indexer
         @success_count += 1
       else
         logger.debug "Indexing collection object #{collection_druid}"
-        solr_client.add(sw_solr_doc(collection_druid)) unless collection_druid.nil?
+        solr_add(sw_solr_doc(collection_druid), collection_druid) unless collection_druid.nil?
         @success_count += 1
       end
       # update DOR object's workflow datastream??   for harvest?  for indexing?
