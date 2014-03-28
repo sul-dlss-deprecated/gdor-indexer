@@ -45,12 +45,12 @@ module GdorModsFields
       # publication fields
       :pub_search =>  @smods_rec.place,
       :pub_date_sort =>  @smods_rec.pub_date_sort,
-      :pub_date_group_facet =>  @smods_rec.pub_date_groups(pub_date), 
-      :pub_date =>  @smods_rec.pub_date_facet,
       :imprint_display =>  @smods_rec.pub_date_display,
-      :pub_date_display =>  @smods_rec.pub_date_display,
+      :pub_date =>  @smods_rec.pub_date_facet,
+      :pub_date_group_facet =>  @smods_rec.pub_date_groups(pub_date), # pub_date_group_facet is deprecated
+      :pub_date_display =>  @smods_rec.pub_date_display, # pub_date_display may be deprecated
       
-      :all_search => @smods_rec.text  
+      :all_search => @smods_rec.text.gsub(/\s+/, ' ') 
     }
     
     # more pub date fields
@@ -86,6 +86,7 @@ module GdorModsFields
     end
   end
   
+  # currently only called to populate :pub_date_group_facet (from doc_hash_from_mods)
   def pub_date
     val = @smods_rec.pub_year
     if val
