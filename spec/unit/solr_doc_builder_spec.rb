@@ -27,22 +27,6 @@ describe SolrDocBuilder do
       @hdor_client.stub(:public_xml).with(@fake_druid).and_return(@ng_pub_xml)
       @doc_hash = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash
     end
-    it 'should have no validation messages for a complete record' do
-      solr_doc = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-      hash = solr_doc.doc_hash
-      hash[:title_display] = 'title'
-      hash[:pub_year_tisim] = 'some year'
-      hash[:author_person_display] = 'author'
-      hash[:format] = 'Image'
-      hash[:language] = 'English'
-      messages = solr_doc.validate
-      messages.length.should == 0
-    end
-    it 'should have validation messages for an incomplete record' do
-      solr_doc=SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-      messages=solr_doc.validate
-      messages.length.should > 0
-    end
     it "id field should be set to druid for non-merged record" do
       @doc_hash[:id].should == @fake_druid
     end
@@ -53,11 +37,6 @@ describe SolrDocBuilder do
       # this fails with equivalent-xml 0.4.1 or 0.4.2, but passes with 0.4.0
       @doc_hash[:modsxml].should be_equivalent_to @mods_xml
     end 
-    it "should call doc_hash_from_mods to populate hash fields from MODS" do
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-      sdb.should_receive(:doc_hash_from_mods)
-      sdb.doc_hash
-    end
     it "should have an access_facet value of 'Online'" do
       @doc_hash[:access_facet].should == 'Online'
     end
@@ -79,6 +58,11 @@ describe SolrDocBuilder do
         sdb.doc_hash[:img_info].should == ['foo', 'bar']
       end
     end
+    it "should call doc_hash_from_mods to populate hash fields from MODS" do
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+      sdb.should_receive(:doc_hash_from_mods)
+      sdb.doc_hash
+    end
     context "collection_type" do
       before(:each) do
         @hdor_client = double()
@@ -98,404 +82,26 @@ describe SolrDocBuilder do
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
         sdb.doc_hash[:collection_type].should == nil
       end
-    end    
+    end
+    context "validation method" do
+      it 'should have no validation messages for a complete record' do
+        solr_doc = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+        hash = solr_doc.doc_hash
+        hash[:title_display] = 'title'
+        hash[:pub_year_tisim] = 'some year'
+        hash[:author_person_display] = 'author'
+        hash[:format] = 'Image'
+        hash[:language] = 'English'
+        messages = solr_doc.validate
+        messages.length.should == 0
+      end
+      it 'should have validation messages for an incomplete record' do
+        solr_doc=SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+        messages=solr_doc.validate
+        messages.length.should > 0
+      end
+    end  
   end # doc hash
-
-  context "doc_hash_from_mods" do
-    before(:each) do
-      @hdor_client = double()
-      @hdor_client.stub(:public_xml).with(@fake_druid).and_return(nil)
-    end
-
-    # see https://consul.stanford.edu/display/NGDE/Required+and+Recommended+Solr+Fields+for+SearchWorks+documents
-
-    context "<abstract> --> summary_search" do
-      it "should be populated when the MODS has a top level <abstract> element" do
-        m = "<mods #{@ns_decl}><abstract>blah blah</abstract></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-        sdb.doc_hash_from_mods[:summary_search].should == ['blah blah']
-      end
-      it "should have a value for each abstract element" do
-        m = "<mods #{@ns_decl}>
-        <abstract>one</abstract>
-        <abstract>two</abstract>
-        </mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-        sdb.doc_hash_from_mods[:summary_search].should == ['one', 'two']
-      end
-      it "should not be present when there is no top level <abstract> element" do
-        m = "<mods #{@ns_decl}><relatedItem><abstract>blah blah</abstract></relatedItem></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        sdb.doc_hash_from_mods[:summary_search].should == nil
-      end
-      it "should not be present if there are only empty abstract elements in the MODS" do
-        m = "<mods #{@ns_decl}><abstract/><note>notit</note></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-        sdb.doc_hash_from_mods[:summary_search].should ==  nil
-      end
-      it "summary_display should not be populated - it is a copy field" do
-        m = "<mods #{@ns_decl}><abstract>blah blah</abstract></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-        sdb.doc_hash_from_mods[:summary_display].should == nil
-      end
-    end # summary_search / <abstract>
-
-    it "language: should call sw_language_facet in stanford-mods gem to populate language field" do
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-      smr = sdb.smods_rec
-      smr.should_receive(:sw_language_facet)
-      sdb.doc_hash_from_mods
-    end
-
-    context "<physicalDescription><extent> --> physical" do
-      it "should be populated when the MODS has mods/physicalDescription/extent element" do
-        m = "<mods #{@ns_decl}><physicalDescription><extent>blah blah</extent></physicalDescription></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-        sdb.doc_hash_from_mods[:physical].should == ['blah blah']
-      end
-      it "should have a value for each extent element" do
-        m = "<mods #{@ns_decl}>
-        <physicalDescription>
-        <extent>one</extent>
-        <extent>two</extent>
-        </physicalDescription>
-        <physicalDescription><extent>three</extent></physicalDescription>
-        </mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-        sdb.doc_hash_from_mods[:physical].should == ['one', 'two', 'three']
-      end
-      it "should not be present when there is no top level <physicalDescription> element" do
-        m = "<mods #{@ns_decl}><relatedItem><physicalDescription><extent>foo</extent></physicalDescription></relatedItem></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        sdb.doc_hash_from_mods[:physical].should == nil
-      end
-      it "should not be present if there are only empty physicalDescription or extent elements in the MODS" do
-        m = "<mods #{@ns_decl}><physicalDescription/><physicalDescription><extent/></physicalDescription><note>notit</note></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-        sdb.doc_hash_from_mods[:physical].should ==  nil
-      end      
-    end # physical field from physicalDescription/extent
-
-    context " /mods/relatedItem/location/url --> url_suppl " do
-      it "should be populated when the MODS has mods/relatedItem/location/url " do
-        m = "<mods #{@ns_decl}><relatedItem><location><url>url.org</url></location></relatedItem></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-        sdb.doc_hash_from_mods[:url_suppl].should == ['url.org']
-      end
-      it "should have a value for each mods/relatedItem/location/url element" do
-        m = "<mods #{@ns_decl}>
-        <relatedItem>
-        <location><url>one</url></location>
-        <location>
-        <url>two</url>
-        <url>three</url>
-        </location>
-        </relatedItem>
-        <relatedItem><location><url>four</url></location></relatedItem>
-        </mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-        sdb.doc_hash_from_mods[:url_suppl].should == ['one', 'two', 'three', 'four']
-      end
-      it "should not be populated from /mods/location/url element" do
-        m = "<mods #{@ns_decl}><location><url>hi</url></location></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        sdb.doc_hash_from_mods[:url_suppl].should == nil
-      end
-      it "should not be present if there are only empty relatedItem/location/url elements in the MODS" do
-        m = "<mods #{@ns_decl}>
-        <relatedItem><location><url/></location></relatedItem>
-        <relatedItem><location/></relatedItem>
-        <relatedItem/><note>notit</note></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-        sdb.doc_hash_from_mods[:url_suppl].should ==  nil
-      end      
-    end
-
-    context "<tableOfContents> --> toc_search" do
-      it "should have a value for each tableOfContents element" do
-        m = "<mods #{@ns_decl}>
-        <tableOfContents>one</tableOfContents>
-        <tableOfContents>two</tableOfContents>
-        </mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-        sdb.doc_hash_from_mods[:toc_search].should == ['one', 'two']
-      end
-      it "should not be present when there is no top level <tableOfContents> element" do
-        m = "<mods #{@ns_decl}><relatedItem><tableOfContents>foo</tableOfContents></relatedItem></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        sdb.doc_hash_from_mods[:toc_search].should == nil
-      end
-      it "should not be present if there are only empty tableOfContents elements in the MODS" do
-        m = "<mods #{@ns_decl}><tableOfContents/><note>notit</note></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-        sdb.doc_hash_from_mods[:toc_search].should ==  nil
-      end      
-    end
-
-    context "title fields" do
-      before(:all) do
-        title_mods = "<mods #{@ns_decl}>
-        <titleInfo><title>Jerk</title><nonSort>The</nonSort><subTitle>is whom?</subTitle></titleInfo>
-        <titleInfo><title>Joke</title></titleInfo>
-        <titleInfo type='alternative'><title>Alternative</title></titleInfo>
-        </mods>"
-        @ng_title_mods = Nokogiri::XML(title_mods)
-      end
-      before(:each) do
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_title_mods)
-        @title_doc_hash = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash_from_mods
-      end
-      it "should call the appropriate methods in the stanford-mods gem to populate the fields" do
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        smr = sdb.smods_rec
-        smr.should_receive(:sw_short_title).at_least(:once)
-        smr.should_receive(:sw_full_title).at_least(:once)
-        smr.should_receive(:sw_addl_titles)
-        smr.should_receive(:sw_sort_title)
-        sdb.doc_hash_from_mods
-      end
-      context "search fields" do
-        it "title_245a_search" do
-          @title_doc_hash[:title_245a_search].should == "The Jerk"
-        end
-        it "title_245_search" do
-          @title_doc_hash[:title_245_search].should == "The Jerk is whom?"
-        end
-        it "title_variant_search" do
-          @title_doc_hash[:title_variant_search].should == ["Joke", "Alternative"]
-        end
-        it "title_related_search should not be populated from MODS" do
-          @title_doc_hash[:title_related_search].should == nil
-        end
-      end
-      context "display fields" do
-        it "title_display" do
-          @title_doc_hash[:title_display].should == "The Jerk is whom?"
-        end
-        it "title_245a_display" do
-          @title_doc_hash[:title_245a_display].should == "The Jerk"
-        end
-        it "title_245c_display should not be populated from MODS" do
-          @title_doc_hash[:title_245c_display].should == nil
-        end
-        it "title_full_display" do
-          @title_doc_hash[:title_full_display].should == "The Jerk is whom?"
-        end
-        it 'should remove trailing commas in full titles' do
-          title_mods = "<mods #{@ns_decl}>
-          <titleInfo><title>Jerk</title><nonSort>The</nonSort><subTitle>is whom,</subTitle></titleInfo>
-          <titleInfo><title>Joke</title></titleInfo>
-          <titleInfo type='alternative'><title>Alternative</title></titleInfo>
-          </mods>"
-          @ng_title_mods = Nokogiri::XML(title_mods)
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_title_mods)
-          @title_doc_hash = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash_from_mods
-          @title_doc_hash
-          @title_doc_hash[:title_full_display].should == "The Jerk is whom"
-        end
-        it "title_variant_display should not be populated - it is a copy field" do
-          @title_doc_hash[:title_variant_display].should == nil
-        end
-      end
-      it "title_sort" do
-        @title_doc_hash[:title_sort].should == "Jerk is whom"
-      end
-    end # title fields  
-
-    context "author fields" do
-      before(:all) do
-        name_mods = "<mods #{@ns_decl}>
-        <name type='personal'>
-        <namePart type='given'>John</namePart>
-        <namePart type='family'>Huston</namePart>
-        <role><roleTerm type='code' authority='marcrelator'>drt</roleTerm></role>
-        <displayForm>q</displayForm>
-        </name>
-        <name type='personal'><namePart>Crusty The Clown</namePart></name>
-        <name type='corporate'><namePart>Watchful Eye</namePart></name>
-        <name type='corporate'>
-        <namePart>Exciting Prints</namePart>
-        <role><roleTerm type='text'>lithographer</roleTerm></role>
-        </name>
-        <name type='conference'><namePart>conference</namePart></name>
-        </mods>"
-        @ng_name_mods = Nokogiri::XML(name_mods)
-      end
-      before(:each) do
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_name_mods)
-        @author_doc_hash = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash_from_mods
-      end
-      it "should call the appropriate methods in the stanford-mods gem to populate the fields" do
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        smr = sdb.smods_rec
-        smr.should_receive(:sw_main_author)
-        smr.should_receive(:sw_addl_authors)
-        smr.should_receive(:sw_person_authors).exactly(3).times
-        smr.should_receive(:sw_impersonal_authors)
-        smr.should_receive(:sw_corporate_authors)
-        smr.should_receive(:sw_meeting_authors)
-        smr.should_receive(:sw_sort_author)
-        sdb.doc_hash_from_mods
-      end
-      context "search fields" do
-        it "author_1xx_search" do
-          @author_doc_hash[:author_1xx_search].should == "Crusty The Clown"
-        end
-        it "author_7xx_search" do
-          pending "Should this return all authors? or only 7xx authors?"
-          @author_doc_hash[:author_7xx_search].should == ["q", "Watchful Eye", "Exciting Prints", "conference"]
-        end
-        it "author_8xx_search should not be populated from MODS" do
-          @author_doc_hash[:author_8xx_search].should == nil
-        end
-      end
-      context "facet fields" do
-        it "author_person_facet" do
-          @author_doc_hash[:author_person_facet].should == ["q", "Crusty The Clown"]
-        end
-        it "author_other_facet" do
-          @author_doc_hash[:author_other_facet].should == ["Watchful Eye", "Exciting Prints", "conference"]
-        end
-      end
-      context "display fields" do
-        it "author_person_display" do
-          @author_doc_hash[:author_person_display].should == ["q", "Crusty The Clown"]
-        end
-        it "author_person_full_display" do
-          @author_doc_hash[:author_person_full_display].should == ["q", "Crusty The Clown"]
-        end
-        it "author_corp_display" do
-          @author_doc_hash[:author_corp_display].should == ["Watchful Eye", "Exciting Prints"]
-        end
-        it "author_meeting_display" do
-          @author_doc_hash[:author_meeting_display].should == ["conference"]
-        end
-      end
-      it "author_sort" do
-        @author_doc_hash[:author_sort].should == "Crusty The Clown"
-      end
-    end # author fields
-
-    context "subject fields" do
-      before(:all) do
-        @genre = 'genre top level'
-        @cart_coord = '6 00 S, 71 30 E'
-        @s_genre = 'genre in subject'
-        @geo = 'Somewhere'
-        @geo_code = 'us'
-        @hier_geo_country = 'France'
-        @s_name = 'name in subject'
-        @occupation = 'worker bee'
-        @temporal = 'temporal'
-        @s_title = 'title in subject'
-        @topic = 'topic'
-        m = "<mods #{@ns_decl}>
-        <genre>#{@genre}</genre>
-        <subject><cartographics><coordinates>#{@cart_coord}</coordinates></cartographics></subject>
-        <subject><genre>#{@s_genre}</genre></subject>
-        <subject><geographic>#{@geo}</geographic></subject>
-        <subject><geographicCode authority='iso3166'>#{@geo_code}</geographicCode></subject>
-        <subject><hierarchicalGeographic><country>#{@hier_geo_country}</country></hierarchicalGeographic></subject>
-        <subject><name><namePart>#{@s_name}</namePart></name></subject>
-        <subject><occupation>#{@occupation}</occupation></subject>
-        <subject><temporal>#{@temporal}</temporal></subject>
-        <subject><titleInfo><title>#{@s_title}</title></titleInfo></subject>
-        <subject><topic>#{@topic}</topic></subject>      
-        </mods>"
-        @ng_subject_mods = Nokogiri::XML(m)
-      end
-      before(:each) do
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_subject_mods)
-        @subject_doc_hash = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash_from_mods
-      end
-      it "should call the appropriate methods in mods_fields mixin to populate the Solr fields" do
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        sdb.smods_rec.should_receive(:topic_search)
-        sdb.smods_rec.should_receive(:geographic_search)
-        sdb.smods_rec.should_receive(:subject_other_search)
-        sdb.smods_rec.should_receive(:subject_other_subvy_search)
-        sdb.smods_rec.should_receive(:subject_all_search)
-        sdb.smods_rec.should_receive(:topic_facet)
-        sdb.smods_rec.should_receive(:geographic_facet)
-        sdb.smods_rec.should_receive(:era_facet)
-        sdb.doc_hash_from_mods
-      end
-      it "topic_search" do
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_subject_mods)
-        @subject_doc_hash = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash_from_mods
-        @subject_doc_hash[:topic_search].should == [@genre, @topic]
-      end
-      it "geographic_search" do
-        @subject_doc_hash[:geographic_search].should == [@geo, @hier_geo_country]
-      end
-      it "subject_other_search" do
-        @subject_doc_hash[:subject_other_search].should == [@occupation, @s_name, @s_title]
-      end
-      it "subject_other_subvy_search" do
-        @subject_doc_hash[:subject_other_subvy_search].should == [@temporal, @s_genre]
-      end
-      it "subject_all_search" do
-        @subject_doc_hash[:subject_all_search].should include(@genre)
-        @subject_doc_hash[:subject_all_search].should include(@topic)
-        @subject_doc_hash[:subject_all_search].should include(@geo)
-        @subject_doc_hash[:subject_all_search].should include(@hier_geo_country)
-        @subject_doc_hash[:subject_all_search].should include(@occupation)
-        @subject_doc_hash[:subject_all_search].should include(@s_name)
-        @subject_doc_hash[:subject_all_search].should include(@s_title)
-        @subject_doc_hash[:subject_all_search].should include(@temporal)
-        @subject_doc_hash[:subject_all_search].should include(@s_genre)
-      end
-      it "topic_facet" do
-        @subject_doc_hash[:topic_facet].should include(@topic)
-        @subject_doc_hash[:topic_facet].should include(@s_name)
-        @subject_doc_hash[:topic_facet].should include(@occupation)
-        @subject_doc_hash[:topic_facet].should include(@s_title)
-      end
-      it "geographic_facet" do
-        @subject_doc_hash[:geographic_facet].should include(@geo)
-      end
-      it "era_facet" do
-        @subject_doc_hash[:era_facet].should include(@temporal)
-      end
-    end # subject fields
-    context 'date fields' do
-      it 'should populate all date fields' do
-        m = "<mods #{@ns_decl}><originInfo><dateIssued>13th century AH / 19th CE</dateIssued><issuance>monographic</issuance></originInfo>"
-         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash_from_mods
-         sdb[:pub_date].should == '19th century'
-         sdb[:pub_date_sort].should == '1800'
-         sdb[:pub_date_group_facet].should == ["More than 50 years ago"]
-         sdb[:pub_date_display].should == '13th century AH / 19th CE'
-         sdb[:publication_year_isi].should == '1800'
-         sdb[:imprint_display].should == '13th century AH / 19th CE'
-         sdb[:pub_year_tisim].should == '1800'
-      end
-      it 'should not populate the date slider for BC dates' do
-        m = "<mods #{@ns_decl}><originInfo><dateIssued>199 B.C.</dateIssued><issuance>monographic</issuance></originInfo>"
-         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash_from_mods
-         sdb.has_key?(:pub_year_tisim).should == false
-      end
-    end
-  end # doc_hash_from_mods
 
   context "collection?" do
     before(:each) do
@@ -537,6 +143,94 @@ describe SolrDocBuilder do
     end
   end  # collection?
 
+  context 'catkey' do
+    before(:all) do
+      @identity_md_start = "<publicObject><identityMetadata objectId='#{@fake_druid}'>"
+      @identity_md_end = "</identityMetadata></publicObject>"
+      @empty_id_md_ng = Nokogiri::XML("#{@identity_md_start}#{@identity_md_end}")
+      @barcode_id_md_ng = Nokogiri::XML("#{@identity_md_start}<otherId name=\"barcode\">666</otherId>#{@identity_md_end}")
+    end
+    before(:each) do
+      @hdor_client = double()
+      @hdor_client.stub(:public_xml).with(@fake_druid).and_return(nil)
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+      @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+    end
+    
+    it "should be nil if there is no indication of catkey in identityMetadata" do
+      @sdb.stub(:public_xml).and_return(@empty_id_md_ng.root)
+      @sdb.catkey.should == nil
+    end
+    it "should take a catkey in identityMetadata/otherId with name attribute of catkey" do
+      ng_xml = Nokogiri::XML("#{@identity_md_start}<otherId name=\"catkey\">12345</otherId>#{@identity_md_end}")
+      @sdb.stub(:public_xml).and_return(ng_xml.root)
+      @sdb.catkey.should == '12345'
+    end
+    it "should be nil if there is no indication of catkey in identityMetadata even if there is a catkey in the mods" do
+      m = "<mods #{@ns_decl}><recordInfo>
+        <recordIdentifier source=\"SIRSI\">a6780453</recordIdentifier>
+      </recordInfo></mods>"
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+      sdb.stub(:public_xml).and_return(@empty_id_md_ng.root)
+      sdb.catkey.should == nil
+    end
+    it "should log an error when there is identityMetadata/otherId with name attribute of barcode but there is no catkey in mods" do
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML("<mods #{@ns_decl}> </mods>"))
+      logger = Logger.new(@strio)
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, logger)
+      sdb.stub(:public_xml).and_return(@barcode_id_md_ng.root)
+      logger.should_receive(:error).with(/#{@fake_druid} has barcode .* in identityMetadata but no SIRSI catkey in mods/)
+      sdb.catkey
+    end
+    context "catkey from mods" do
+      it "should look for catkey in mods if identityMetadata/otherId with name attribute of barcode is found" do
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML("<mods #{@ns_decl}> </mods>"))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+        sdb.stub(:public_xml).and_return(@barcode_id_md_ng.root)
+        smr = sdb.smods_rec
+        smr.should_receive(:record_info).and_call_original # this is as close as I can figure to @smods_rec.record_info.recordIdentifier
+        sdb.catkey
+      end
+      it 'should be nil if there is no catkey in the mods' do
+        m = "<mods #{@ns_decl}><recordInfo>
+          <descriptionStandard>dacs</descriptionStandard>
+        </recordInfo></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+        sdb.stub(:public_xml).and_return(@barcode_id_md_ng.root)
+        sdb.catkey.should == nil
+      end
+      it "populated when source attribute is SIRSI" do
+        m = "<mods #{@ns_decl}><recordInfo>
+          <recordIdentifier source=\"SIRSI\">a6780453</recordIdentifier>
+        </recordInfo></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+        sdb.stub(:public_xml).and_return(@barcode_id_md_ng.root)
+        sdb.catkey.should_not == nil
+      end
+      it "not populated when source attribute is not SIRSI" do
+        m = "<mods #{@ns_decl}><recordInfo>
+          <recordIdentifier source=\"FOO\">a6780453</recordIdentifier>
+        </recordInfo></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+        sdb.stub(:public_xml).and_return(@barcode_id_md_ng.root)
+        sdb.catkey.should == nil
+      end
+      it "should remove the a at the beginning of the catkey" do
+        m = "<mods #{@ns_decl}><recordInfo>
+          <recordIdentifier source=\"SIRSI\">a6780453</recordIdentifier>
+        </recordInfo></mods>"
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+        sdb.stub(:public_xml).and_return(@barcode_id_md_ng.root)
+        sdb.catkey.should == '6780453'
+      end
+    end
+  end # catkey
+
   context "using Harvestdor::Client" do
     before(:all) do
       config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "walters_integration_spec.yml")
@@ -573,95 +267,6 @@ describe SolrDocBuilder do
         expect { SolrDocBuilder.new(@fake_druid, @real_hdor_client, nil) }.to raise_error(Harvestdor::Errors::MissingPurlPage)
       end
     end
-
-    context 'catkey' do
-      before(:all) do
-        @identity_md_start = "<publicObject><identityMetadata objectId='#{@fake_druid}'>"
-        @identity_md_end = "</identityMetadata></publicObject>"
-        @empty_id_md_ng = Nokogiri::XML("#{@identity_md_start}#{@identity_md_end}")
-        @barcode_id_md_ng = Nokogiri::XML("#{@identity_md_start}<otherId name=\"barcode\">666</otherId>#{@identity_md_end}")
-      end
-      before(:each) do
-        @hdor_client = double()
-        @hdor_client.stub(:public_xml).with(@fake_druid).and_return(nil)
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
-        @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-      end
-      
-      it "should be nil if there is no indication of catkey in identityMetadata" do
-        @sdb.stub(:public_xml).and_return(@empty_id_md_ng.root)
-        @sdb.catkey.should == nil
-      end
-      it "should take a catkey in identityMetadata/otherId with name attribute of catkey" do
-        ng_xml = Nokogiri::XML("#{@identity_md_start}<otherId name=\"catkey\">12345</otherId>#{@identity_md_end}")
-        @sdb.stub(:public_xml).and_return(ng_xml.root)
-        @sdb.catkey.should == '12345'
-      end
-      it "should be nil if there is no indication of catkey in identityMetadata even if there is a catkey in the mods" do
-        m = "<mods #{@ns_decl}><recordInfo>
-          <recordIdentifier source=\"SIRSI\">a6780453</recordIdentifier>
-        </recordInfo></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        sdb.stub(:public_xml).and_return(@empty_id_md_ng.root)
-        sdb.catkey.should == nil
-      end
-      it "should log an error when there is identityMetadata/otherId with name attribute of barcode but there is no catkey in mods" do
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML("<mods #{@ns_decl}> </mods>"))
-        logger = Logger.new(@strio)
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, logger)
-        sdb.stub(:public_xml).and_return(@barcode_id_md_ng.root)
-        logger.should_receive(:error).with(/#{@fake_druid} has barcode .* in identityMetadata but no SIRSI catkey in mods/)
-        sdb.catkey
-      end
-      context "catkey from mods" do
-        it "should look for catkey in mods if identityMetadata/otherId with name attribute of barcode is found" do
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML("<mods #{@ns_decl}> </mods>"))
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-          sdb.stub(:public_xml).and_return(@barcode_id_md_ng.root)
-          smr = sdb.smods_rec
-          smr.should_receive(:record_info).and_call_original # this is as close as I can figure to @smods_rec.record_info.recordIdentifier
-          sdb.catkey
-        end
-        it 'should be nil if there is no catkey in the mods' do
-          m = "<mods #{@ns_decl}><recordInfo>
-            <descriptionStandard>dacs</descriptionStandard>
-          </recordInfo></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-          sdb.stub(:public_xml).and_return(@barcode_id_md_ng.root)
-          sdb.catkey.should == nil
-        end
-        it "populated when source attribute is SIRSI" do
-          m = "<mods #{@ns_decl}><recordInfo>
-            <recordIdentifier source=\"SIRSI\">a6780453</recordIdentifier>
-          </recordInfo></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-          sdb.stub(:public_xml).and_return(@barcode_id_md_ng.root)
-          sdb.catkey.should_not == nil
-        end
-        it "not populated when source attribute is not SIRSI" do
-          m = "<mods #{@ns_decl}><recordInfo>
-            <recordIdentifier source=\"FOO\">a6780453</recordIdentifier>
-          </recordInfo></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-          sdb.stub(:public_xml).and_return(@barcode_id_md_ng.root)
-          sdb.catkey.should == nil
-        end
-        it "should remove the a at the beginning of the catkey" do
-          m = "<mods #{@ns_decl}><recordInfo>
-            <recordIdentifier source=\"SIRSI\">a6780453</recordIdentifier>
-          </recordInfo></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-          sdb.stub(:public_xml).and_return(@barcode_id_md_ng.root)
-          sdb.catkey.should == '6780453'
-        end
-      end
-    end # catkey
-
   end # context using Harvestdor::Client
 
 end
