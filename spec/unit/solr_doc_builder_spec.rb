@@ -47,7 +47,7 @@ describe SolrDocBuilder do
       sdb.should_receive(:doc_hash_from_mods) # avoid expensive parsing unnec for this test
       sdb.doc_hash
     end
-    context "img_info" do
+    context "img_info field" do
       it "should have img_info as an Array of file ids from content metadata" do
         ng_xml = Nokogiri::XML("<contentMetadata type='image'>
         <resource type='image'><file id='foo' mimetype='image/jp2'/></resource>
@@ -63,7 +63,7 @@ describe SolrDocBuilder do
       sdb.should_receive(:doc_hash_from_mods)
       sdb.doc_hash
     end
-    context "collection_type" do
+    context "collection_type field" do
       before(:each) do
         @hdor_client = double()
         @hdor_client.stub(:public_xml).with(@fake_druid).and_return(nil)
