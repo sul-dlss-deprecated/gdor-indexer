@@ -171,7 +171,7 @@ class Indexer < Harvestdor::Indexer
     doc_hash = sdb.doc_hash
     
     # add coll level data to this solr doc and/or cache collection level information
-    coll_druids = sdb.collection_druids # in public_xml fields, from rels_ext
+    coll_druids = sdb.coll_druids_from_rels_ext # defined in public_xml fields
     if coll_druids
       doc_hash[:collection] = []
       doc_hash[:collection_with_title] = []

@@ -45,9 +45,9 @@ module PublicXmlFields
 
   # get the druids from isMemberOfCollection relationships in rels-ext from public_xml
   # @return [Array<String>] the druids (e.g. ww123yy1234) this object has isMemberOfColletion relationship with, or nil if none
-  def collection_druids
+  def coll_druids_from_rels_ext
 # TODO: create nom-xml terminology for rels-ext in harvestdor?
-    @collection_druids ||= begin
+    @coll_druids_from_rels_ext ||= begin
       ns_hash = {'rdf' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#', 'fedora' => "info:fedora/fedora-system:def/relations-external#", '' => ''}
       is_member_of_nodes ||= public_xml.xpath('/publicObject/rdf:RDF/rdf:Description/fedora:isMemberOfCollection/@rdf:resource', ns_hash)
       # from public_xml rels-ext

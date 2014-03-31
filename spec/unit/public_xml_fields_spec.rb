@@ -182,8 +182,8 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
       @hdor_client = double()
       @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
     end
-    context "collection druids" do
-      it "collection_druids look for the object's collection druids in the rels-ext in the public_xml" do
+    context "coll_druids_from_rels_ext" do
+      it "coll_druids_from_rels_ext look for the object's collection druids in the rels-ext in the public_xml" do
         coll_druid = 'ww121ss5000'
         rels_ext_xml = "<rdf:RDF  xmlns:fedora='info:fedora/fedora-system:def/relations-external#' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
           <rdf:Description rdf:about='info:fedora/druid:#{@fake_druid}'>
@@ -192,9 +192,9 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
         pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{rels_ext_xml}</publicObject>")
         @hdor_client.stub(:public_xml).with(@fake_druid).and_return(pub_xml)
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
-        sdb.collection_druids.should == [coll_druid]
+        sdb.coll_druids_from_rels_ext.should == [coll_druid]
       end
-      it "collection_druids should get multiple collection druids when they exist" do
+      it "coll_druids_from_rels_ext should get multiple collection druids when they exist" do
         coll_druid = 'ww121ss5000'
         coll_druid2 = 'ww121ss5001'
         rels_ext_xml = "<rdf:RDF  xmlns:fedora='info:fedora/fedora-system:def/relations-external#' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
@@ -205,9 +205,9 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
         pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{rels_ext_xml}</publicObject>")
         @hdor_client.stub(:public_xml).with(@fake_druid).and_return(pub_xml)
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
-        sdb.collection_druids.should == [coll_druid, coll_druid2]
+        sdb.coll_druids_from_rels_ext.should == [coll_druid, coll_druid2]
       end
-      it "collection_druids should be nil when no isMemberOf relationships exist" do
+      it "coll_druids_from_rels_ext should be nil when no isMemberOf relationships exist" do
         coll_druid = 'ww121ss5000'
         rels_ext_xml = "<rdf:RDF  xmlns:fedora='info:fedora/fedora-system:def/relations-external#' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
           <rdf:Description rdf:about='info:fedora/druid:#{@fake_druid}'>
@@ -215,7 +215,7 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
         pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{rels_ext_xml}</publicObject>")
         @hdor_client.stub(:public_xml).with(@fake_druid).and_return(pub_xml)
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
-        sdb.collection_druids.should == nil
+        sdb.coll_druids_from_rels_ext.should == nil
       end
     end # collection druids    
   end # fields from and methods pertaining to rels-ext

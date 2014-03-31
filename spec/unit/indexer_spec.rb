@@ -184,7 +184,7 @@ describe Indexer do
           <typeOfResource>still image</typeOfResource>
         </mods>"
         @hdor_client.stub(:mods).and_return(Nokogiri::XML(m))
-        SolrDocBuilder.any_instance.stub(:collection_druids).and_return([@coll_druid_from_config])
+        SolrDocBuilder.any_instance.stub(:coll_druids_from_rels_ext).and_return([@coll_druid_from_config])
         @indexer.stub(:identity_md_obj_label).with(@coll_druid_from_config).and_return('coll title')
         # actual test
         @indexer.sw_solr_doc 'fake_item_druid'
@@ -193,7 +193,7 @@ describe Indexer do
       it "gets multiple formats from single item for single collection" do
         # setup
         @hdor_client.stub(:mods).and_return(Nokogiri::XML("<mods #{@ns_decl}> </mods>"))
-        SolrDocBuilder.any_instance.stub(:collection_druids).and_return([@coll_druid_from_config])
+        SolrDocBuilder.any_instance.stub(:coll_druids_from_rels_ext).and_return([@coll_druid_from_config])
         @indexer.stub(:identity_md_obj_label).with(@coll_druid_from_config).and_return('coll title')
         Stanford::Mods::Record.any_instance.stub(:format).and_return(['Image', 'Video'])
         # actual test
@@ -203,7 +203,7 @@ describe Indexer do
       it "gets multiple formats from multiple items for single collection" do
         # setup
         @hdor_client.stub(:mods).and_return(Nokogiri::XML("<mods #{@ns_decl}> </mods>"))
-        SolrDocBuilder.any_instance.stub(:collection_druids).and_return([@coll_druid_from_config])
+        SolrDocBuilder.any_instance.stub(:coll_druids_from_rels_ext).and_return([@coll_druid_from_config])
         @indexer.stub(:identity_md_obj_label).with(@coll_druid_from_config).and_return('coll title')
         Stanford::Mods::Record.any_instance.stub(:format).and_return(['Image'])
         # actual test
