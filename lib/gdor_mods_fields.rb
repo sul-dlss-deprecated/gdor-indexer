@@ -66,11 +66,10 @@ module GdorModsFields
 
   # select one or more format values from the controlled vocabulary here:
   #   http://searchworks-solr-lb.stanford.edu:8983/solr/select?facet.field=format&rows=0&facet.sort=index
-  # based on the dor_content_type
+  # via stanford-mods gem
   # @return [Array<String>] value(s) in the SearchWorks controlled vocabulary, or []
   def format
     vals = @smods_rec.format ? @smods_rec.format : []
-    vals << Indexer.config[:add_format] if Indexer.config[:add_format]
     return vals.uniq if !vals.empty?
 
     if not @smods_rec.typeOfResource or @smods_rec.typeOfResource.length == 0

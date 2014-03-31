@@ -835,13 +835,6 @@ describe GdorModsFields do
       sdb.smods_rec.should_receive(:format).and_call_original
       sdb.smods_rec.format.should == ['Image']
     end
-    it "should add a format from a config file" do
-      m = "<mods #{@ns_decl}><typeOfResource>still image</typeOfResouce></mods>"
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      Indexer.stub(:config).and_return({:add_format => 'Map / Globe'})
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-      sdb.format.should == ['Image', 'Map / Globe']
-    end
     it "should return nothing if there is no format info" do
       m = "<mods #{@ns_decl}><originInfo>
       <dateCreated>1904</dateCreated>
