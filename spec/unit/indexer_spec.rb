@@ -54,20 +54,20 @@ describe Indexer do
       @indexer.solr_client.should_receive(:add)
       @indexer.index_collection_druid
     end
-    it "should include formats from the Indexer.coll_formats_from_items when the druid matches" do
-      Indexer.stub(:coll_formats_from_items).and_return({@coll_druid_from_test_config => ['Image']})
+    it "should include formats from coll_formats_from_items when the druid matches" do
+      @indexer.stub(:coll_formats_from_items).and_return({@coll_druid_from_test_config => ['Image']})
       @indexer.stub(:sw_solr_doc).and_return({})
       @indexer.solr_client.should_receive(:add).with(hash_including(:format => ['Image']))
       @indexer.index_collection_druid
     end
-    it "should not include formats from the Indexer.coll_formats_from_items when the druid doesn't match" do
-      Indexer.stub(:coll_formats_from_items).and_return({'foo' => ['Image']})
+    it "should not include formats from coll_formats_from_items when the druid doesn't match" do
+      @indexer.stub(:coll_formats_from_items).and_return({'foo' => ['Image']})
       @indexer.stub(:sw_solr_doc).and_return({:format => ['Video']})
       @indexer.solr_client.should_receive(:add).with(hash_including(:format => ['Video']))
       @indexer.index_collection_druid
     end
     it "should not have duplicate format values" do
-      Indexer.stub(:coll_formats_from_items).and_return({@coll_druid_from_test_config => ['Image', 'Video', 'Image']})
+      @indexer.stub(:coll_formats_from_items).and_return({@coll_druid_from_test_config => ['Image', 'Video', 'Image']})
       @indexer.stub(:sw_solr_doc).and_return({:format => ['Video']})
       @indexer.solr_client.should_receive(:add).with(hash_including(:format => ['Image', 'Video']))
       @indexer.index_collection_druid
@@ -176,7 +176,7 @@ describe Indexer do
         @coll_druid_from_config = 'ww121ss5000'
       end
       before(:each) do
-        Indexer.coll_formats_from_items[@coll_druid_from_config] = []
+        @indexer.coll_formats_from_items[@coll_druid_from_config] = []
       end
       it "gets single item format for single collection" do
         # setup
@@ -188,7 +188,7 @@ describe Indexer do
         @indexer.stub(:identity_md_obj_label).with(@coll_druid_from_config).and_return('coll title')
         # actual test
         @indexer.sw_solr_doc 'fake_item_druid'
-        Indexer.coll_formats_from_items[@coll_druid_from_config].should == ['Image']
+        @indexer.coll_formats_from_items[@coll_druid_from_config].should == ['Image']
       end
       it "gets multiple formats from single item for single collection" do
         # setup
@@ -198,7 +198,7 @@ describe Indexer do
         Stanford::Mods::Record.any_instance.stub(:format).and_return(['Image', 'Video'])
         # actual test
         @indexer.sw_solr_doc 'fake_item_druid'
-        Indexer.coll_formats_from_items[@coll_druid_from_config].should == ['Image', 'Video']
+        @indexer.coll_formats_from_items[@coll_druid_from_config].should == ['Image', 'Video']
       end
       it "gets multiple formats from multiple items for single collection" do
         # setup
@@ -211,7 +211,7 @@ describe Indexer do
         Stanford::Mods::Record.any_instance.stub(:format).and_return(['Video'])
         # actual test
         @indexer.sw_solr_doc 'fake_item_druid2'
-        Indexer.coll_formats_from_items[@coll_druid_from_config].should == ['Image', 'Video']
+        @indexer.coll_formats_from_items[@coll_druid_from_config].should == ['Image', 'Video']
       end
     end # coll_formats_from_items
   end # sw_solr_doc

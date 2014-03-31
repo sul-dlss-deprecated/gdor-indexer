@@ -145,7 +145,7 @@ class Indexer < Harvestdor::Indexer
         logger.debug "Indexing collection object #{coll_druid_from_config}"
         doc_hash = sw_solr_doc(coll_druid_from_config)
         # add item formats
-        addl_formats = Indexer.coll_formats_from_items[coll_druid_from_config] # guarenteed to be Array or nil
+        addl_formats = coll_formats_from_items[coll_druid_from_config] # guarenteed to be Array or nil
         if addl_formats && !addl_formats.empty?
           addl_formats.concat(doc_hash[:format]) if doc_hash[:format] # doc_hash[:format] guaranteed to be Array
           doc_hash[:format] = addl_formats.uniq
@@ -271,7 +271,7 @@ class Indexer < Harvestdor::Indexer
   # cache the format(s) of this object with a collection, so when the collection rec
   # is being indexed, it gets all of the formats of the members
   def cache_item_formats_for_collection coll_druid, item_formats
-    Indexer.coll_formats_from_items[coll_druid] ||= []
+    coll_formats_from_items[coll_druid] ||= []
     if item_formats
       if item_formats.kind_of?(Array)
         item_formats.each do |item_format|
@@ -286,7 +286,7 @@ class Indexer < Harvestdor::Indexer
   # add a format to the coll_formats_from_items array if it isn't already there
   # @param <Object> a single format as a String or an Array of Strings for multiple formats
   def add_to_coll_formats_from_items coll_druid, format
-    Indexer.coll_formats_from_items[coll_druid] << format if !Indexer.coll_formats_from_items[coll_druid].include? format
+    @coll_formats_from_items[coll_druid] << format if !@coll_formats_from_items[coll_druid].include? format
   end
 
   # called by indexing script (in bin directory)
@@ -307,8 +307,8 @@ class Indexer < Harvestdor::Indexer
 
   # cache formats from each item so we have this info for indexing collection record 
   # @return [Hash<String, Array<String>>] collection druids as keys, array of item formats as values
-  def self.coll_formats_from_items
-    @@coll_formats_from_items ||= {}
+  def coll_formats_from_items
+    @coll_formats_from_items ||= {}
   end
   
   def solr_client
