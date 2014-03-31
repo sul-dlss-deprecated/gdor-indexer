@@ -31,7 +31,7 @@ class Indexer < Harvestdor::Indexer
     @@config ||= Confstruct::Configuration.new()
   end
   def logger
-    @logger ||= load_logger(Indexer.config.log_dir, Indexer.config.log_name)
+    @logger ||= load_logger(Indexer.config.log_dir ||= 'logs', Indexer.config.log_name)
   end
   def retries
     @retries
