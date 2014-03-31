@@ -41,14 +41,38 @@ describe Indexer do
   end
   
   context "harvest and index collection record" do
-    it "gets the collection druid" do
-      @indexer.coll_druid_from_config.should eql("ww121ss5000")
+    before(:all) do
+      @ng_pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'></publicObject>")
+      @fake_mods = Nokogiri::XML("<mods #{@ns_decl}><note>coll indexing test</note></mods>")
+      @coll_druid_from_test_config = "ww121ss5000"
+    end
+    it "gets the collection druid from the config" do
+      String.any_instance.should_receive(:include?).with('is_member_of_collection_').and_call_original
+      @indexer.coll_druid_from_config.should eql(@coll_druid_from_test_config)
     end
     it "indexes the collection druid" do
       @indexer.solr_client.should_receive(:add)
       @indexer.index_collection_druid
     end
-  end
+    it "should include formats from the Indexer.coll_formats_from_items when the druid matches" do
+      Indexer.stub(:coll_formats_from_items).and_return({@coll_druid_from_test_config => ['Image']})
+      @indexer.stub(:sw_solr_doc).and_return({})
+      @indexer.solr_client.should_receive(:add).with(hash_including(:format => ['Image']))
+      @indexer.index_collection_druid
+    end
+    it "should not include formats from the Indexer.coll_formats_from_items when the druid doesn't match" do
+      Indexer.stub(:coll_formats_from_items).and_return({'foo' => ['Image']})
+      @indexer.stub(:sw_solr_doc).and_return({:format => ['Video']})
+      @indexer.solr_client.should_receive(:add).with(hash_including(:format => ['Video']))
+      @indexer.index_collection_druid
+    end
+    it "should not have duplicate format values" do
+      Indexer.stub(:coll_formats_from_items).and_return({@coll_druid_from_test_config => ['Image', 'Video', 'Image']})
+      @indexer.stub(:sw_solr_doc).and_return({:format => ['Video']})
+      @indexer.solr_client.should_receive(:add).with(hash_including(:format => ['Image', 'Video']))
+      @indexer.index_collection_druid
+    end
+  end # index collection record
   
   it "druids method should call druids_via_oai method on harvestdor_client" do
     @hdor_client.should_receive(:druids_via_oai).and_return []

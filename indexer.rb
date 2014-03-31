@@ -144,12 +144,18 @@ class Indexer < Harvestdor::Indexer
       else
         logger.debug "Indexing collection object #{coll_druid_from_config}"
         doc_hash = sw_solr_doc(coll_druid_from_config)
+        # add item formats
+        addl_formats = Indexer.coll_formats_from_items[coll_druid_from_config] # guarenteed to be Array or nil
+        if addl_formats && !addl_formats.empty?
+          addl_formats.concat(doc_hash[:format]) if doc_hash[:format] # doc_hash[:format] guaranteed to be Array
+          doc_hash[:format] = addl_formats.uniq
+        end
         solr_add(doc_hash, coll_druid_from_config) unless coll_druid_from_config.nil?
         @success_count += 1
       end
       # update DOR object's workflow datastream??   for harvest?  for indexing?
     rescue => e
-      logger.error "Failed to merge collection object #{coll_druid}: #{e.message}"
+      logger.error "Failed to merge collection object #{coll_druid_from_config}: #{e.message}"
       @error_count += 1
     end
   end

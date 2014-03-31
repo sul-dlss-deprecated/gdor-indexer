@@ -67,19 +67,12 @@ module GdorModsFields
   # select one or more format values from the controlled vocabulary here:
   #   http://searchworks-solr-lb.stanford.edu:8983/solr/select?facet.field=format&rows=0&facet.sort=index
   # based on the dor_content_type
-  # @return [String] value in the SearchWorks controlled vocabulary
+  # @return [Array<String>] value(s) in the SearchWorks controlled vocabulary, or []
   def format
-    val = @smods_rec.format ? @smods_rec.format : []
-    
-    if Indexer.config[:add_format]
-      val << Indexer.config[:add_format]
-    end
-    if collection_formats and collection_formats.length > 0
-      return collection_formats.concat(val).uniq
-    end
-    if val.length > 0
-      return val.uniq
-    end
+    vals = @smods_rec.format ? @smods_rec.format : []
+    vals << Indexer.config[:add_format] if Indexer.config[:add_format]
+    return vals.uniq if !vals.empty?
+
     if not @smods_rec.typeOfResource or @smods_rec.typeOfResource.length == 0
       @logger.warn "#{@druid} has no valid typeOfResource"
       []
@@ -88,13 +81,6 @@ module GdorModsFields
 
 protected
 
-  # get the formats for this solr_doc_builder's druid stored during the indexing process
-  #  note that formats are only stored for collection druids
-  def collection_formats
-    vals = Indexer.coll_formats_from_items[@druid]
-    vals ? vals.uniq : nil
-  end
-  
   # currently only called to populate :pub_date_group_facet (from doc_hash_from_mods)
   def pub_date
     val = @smods_rec.pub_year

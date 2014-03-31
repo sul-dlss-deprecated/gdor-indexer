@@ -842,24 +842,6 @@ describe GdorModsFields do
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
       sdb.format.should == ['Image', 'Map / Globe']
     end
-    it "should include formats from the Indexer.coll_formats_from_items when the druid matches" do
-      m = "<mods #{@ns_decl}><originInfo>
-      <dateCreated>1904</dateCreated>
-      </originInfo></mods>"
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      Indexer.stub(:coll_formats_from_items).and_return({@fake_druid=>['Image']})
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-      sdb.format.should == ['Image']
-    end
-    it "should not include formats from the Indexer.coll_formats_from_items when the druid doesn't match" do
-      m = "<mods #{@ns_decl}><originInfo>
-      <dateCreated>1904</dateCreated>
-      </originInfo></mods>"
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      Indexer.stub(:coll_formats_from_items).and_return({'foo'=>['Image']})
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-      sdb.format.should == []
-    end
     it "should return nothing if there is no format info" do
       m = "<mods #{@ns_decl}><originInfo>
       <dateCreated>1904</dateCreated>
@@ -868,17 +850,6 @@ describe GdorModsFields do
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
       sdb.smods_rec.format.should == []
     end
-    context "collection_formats should aggregate item formats" do
-      it "should not have duplicate values" do
-        m = "<mods #{@ns_decl}>
-          <note>hi</note>
-        </mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        Indexer.stub(:coll_formats_from_items).and_return({@fake_druid=>['Image', 'Video', 'Image']})
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        sdb.format.should == ['Image', 'Video']
-      end
-    end # collection_formats
   end # context format
 
 end
