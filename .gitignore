@@ -10,6 +10,8 @@ InstalledFiles
 _yardoc
 coverage
 doc/
+solrmarc-sw
+solrmarc.log*
 lib/bundler/man
 pkg
 rdoc
