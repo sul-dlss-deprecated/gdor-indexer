@@ -15,14 +15,9 @@ describe GdorModsFields do
   before(:each) do
     @hdor_client = double()
     @hdor_client.stub(:public_xml).with(@fake_druid).and_return(nil)
-    Indexer.stub(:config).and_return({:max_pub_date => 2013, :min_pub_date => 1})
   end
 
   context "doc_hash_from_mods" do
-    before(:each) do
-      @hdor_client = double()
-      @hdor_client.stub(:public_xml).with(@fake_druid).and_return(nil)
-    end
 
     # see https://consul.stanford.edu/display/NGDE/Required+and+Recommended+Solr+Fields+for+SearchWorks+documents
 
@@ -239,19 +234,19 @@ describe GdorModsFields do
     context "author fields" do
       before(:all) do
         name_mods = "<mods #{@ns_decl}>
-        <name type='personal'>
-        <namePart type='given'>John</namePart>
-        <namePart type='family'>Huston</namePart>
-        <role><roleTerm type='code' authority='marcrelator'>drt</roleTerm></role>
-        <displayForm>q</displayForm>
-        </name>
-        <name type='personal'><namePart>Crusty The Clown</namePart></name>
-        <name type='corporate'><namePart>Watchful Eye</namePart></name>
-        <name type='corporate'>
-        <namePart>Exciting Prints</namePart>
-        <role><roleTerm type='text'>lithographer</roleTerm></role>
-        </name>
-        <name type='conference'><namePart>conference</namePart></name>
+          <name type='personal'>
+            <namePart type='given'>John</namePart>
+            <namePart type='family'>Huston</namePart>
+            <role><roleTerm type='code' authority='marcrelator'>drt</roleTerm></role>
+            <displayForm>q</displayForm>
+          </name>
+          <name type='personal'><namePart>Crusty The Clown</namePart></name>
+          <name type='corporate'><namePart>Watchful Eye</namePart></name>
+          <name type='corporate'>
+            <namePart>Exciting Prints</namePart>
+            <role><roleTerm type='text'>lithographer</roleTerm></role>
+          </name>
+          <name type='conference'><namePart>conference</namePart></name>
         </mods>"
         @ng_name_mods = Nokogiri::XML(name_mods)
       end
