@@ -1,10 +1,22 @@
-# Settings for Archives Parlementaires
+# config for testing code
+
+# log_name: name of log file  (default: harvestdor.log)
+log_name: walters.log
 
 # log_dir:  directory for log file  (default logs, relative to harvestdor gem path)
 log_dir: spec/test_logs  
 
-# log_name: name of log file  (default: harvestdor.log)
-log_name: walters.log
+# default_set:  default set for harvest  (default: nil)
+#   can be overridden on calls to harvest_ids and harvest_records
+default_set: is_member_of_collection_ww121ss5000
+
+solrmarc:
+  dist_dir: solrmarc-sw/dist
+# the url of the searchworks solr url we're fetching FROM
+  sw_solr_url: http://searchworks-solr-lb.stanford.edu:8983/solr/
+# the name of the solrmarc config file to use
+  config_file: sw_config.properties
+
 
 # purl: url for the DOR purl server (used to get ContentMetadata, etc.)
 purl: http://purl.stanford.edu
@@ -15,7 +27,6 @@ purl: http://purl.stanford.edu
 
 # oai_repository_url:  URL of the OAI data provider
 oai_repository_url: https://dor-oaiprovider-prod.stanford.edu/oai
-#oai_repository_url: https://dor-oaiprovider-test.stanford.edu/oai
 
 # default_metadata_prefix:  default metadata prefix to be used for harvesting  (default: mods)
 #   can be overridden on calls to harvest_ids and harvest_records
@@ -25,10 +36,6 @@ oai_repository_url: https://dor-oaiprovider-prod.stanford.edu/oai
 
 # default_until_date:  default until date for harvest  (default: nil)
 #   can be overridden on calls to harvest_ids and harvest_records
-
-# default_set:  default set for harvest  (default: nil)
-#   can be overridden on calls to harvest_ids and harvest_records
-default_set: is_member_of_collection_ww121ss5000
 
 # Additional options to pass to Faraday http client (https://github.com/technoweenie/faraday)
 http_options:
