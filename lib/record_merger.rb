@@ -24,14 +24,11 @@ class RecordMerger
     }
   end
   
-  def self.merge_and_index druid, catkey
+  # @param [String] catkey - the Symphony record catkey of the record we will be merging with
+  # @param [Hash<String, Object>] doc_hash_to_add - the keys are Solr field names, the values are either String or an Array of Strings
+  def self.merge_and_index catkey, doc_hash_to_add
     doc = RecordMerger.fetch_sw_solr_input_doc catkey
-    fields_to_add = {
-      "url_fulltext" => "http://purl.stanford.edu/#{druid}",
-      "access_facet" => 'Online',
-      "collection_type" => 'Digital Collection'
-    }
-    add_hash_to_solr_input_doc(doc, fields_to_add)
+    add_hash_to_solr_input_doc(doc, doc_hash_to_add)
     solrj.add_doc_to_ix(doc, catkey)
   end
   

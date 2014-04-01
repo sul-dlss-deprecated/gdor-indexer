@@ -58,16 +58,16 @@ describe RecordMerger do
   
   context "#merge_and_index" do
     before(:all) do
-      @druid = 'oo000oo0000'
+      @hash =  {'a' => '1', 'b' => '2'}
     end
-    it "should call add_hash_to_solr_input_doc with gdor fields to be added" do
-      RecordMerger.should_receive(:add_hash_to_solr_input_doc).with(anything, hash_including('collection_type', 'url_fulltext'))
+    it "should call add_hash_to_solr_input_doc with hash passed in to merge_and_index" do
+      RecordMerger.should_receive(:add_hash_to_solr_input_doc).with(anything, @hash)
       SolrjWrapper.any_instance.should_receive(:add_doc_to_ix)
-      RecordMerger.merge_and_index(@druid, @catkey)
+      RecordMerger.merge_and_index(@catkey, @hash)
     end
-    it "should call SolrjWrapper.add_doc_to_index with gdor fields in the doc to be added" do
-      SolrjWrapper.any_instance.should_receive(:add_doc_to_ix).with(hash_including('collection_type', 'url_fulltext'), @catkey)
-      RecordMerger.merge_and_index(@druid, @catkey)
+    it "should call SolrjWrapper.add_doc_to_index with fields from the passed hash" do
+      SolrjWrapper.any_instance.should_receive(:add_doc_to_ix).with(hash_including('a', 'b'), @catkey)
+      RecordMerger.merge_and_index(@catkey, @hash)
     end
   end
 end

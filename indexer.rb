@@ -139,7 +139,12 @@ class Indexer < Harvestdor::Indexer
     begin
       if coll_catkey
         logger.debug "Merging collection object #{coll_druid_from_config} into #{coll_catkey}"
-        RecordMerger.merge_and_index(coll_druid_from_config, coll_catkey)
+        fields_to_add = {
+          :url_fulltext => "http://purl.stanford.edu/#{coll_druid_from_config}",
+          :access_facet => 'Online',
+          :collection_type => 'Digital Collection'
+        }
+        RecordMerger.merge_and_index(coll_catkey, fields_to_add)
         @success_count += 1
       else
         logger.debug "Indexing collection object #{coll_druid_from_config}"
@@ -153,7 +158,6 @@ class Indexer < Harvestdor::Indexer
         solr_add(doc_hash, coll_druid_from_config) unless coll_druid_from_config.nil?
         @success_count += 1
       end
-      # update DOR object's workflow datastream??   for harvest?  for indexing?
     rescue => e
       logger.error "Failed to merge collection object #{coll_druid_from_config}: #{e.message}"
       @error_count += 1
