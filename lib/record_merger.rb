@@ -3,24 +3,51 @@ require 'solrj_wrapper'
 
 class RecordMerger
   
-  def self.fetch_sw_solr_input_doc
-    dist_dir = Indexer.config.solrmarc.dist_dir
-    sw_solr_url = Indexer.config.solrmarc.sw_solr_url
-    config_file = Indexer.config.solrmarc.config_file
-    smwrapper = SolrmarcWrapper.new(dist_dir, config_file, sw_solr_url)
-    @sw_solr_input_doc = smwrapper.get_solr_input_doc_from_marcxml(@catkey)
+  def self.fetch_sw_solr_input_doc catkey
+    @sw_solr_input_doc = smwrapper.get_solr_input_doc_from_marcxml(catkey)
+  end
+  
+  # @param [SolrInputDocumnet] solr_input_doc - java SolrInputDocument per solrj; the solr document object
+  # @param [Hash<String, Object>] field_hash the keys are Solr field names, the values are either String or an Array of Strings
+  def self.add_hash_to_solr_input_doc solr_input_doc, field_hash
+    field_hash.each_pair { |name, val| 
+      name = name.to_s if name.is_a?(Symbol) 
+      if val.is_a?(String)
+        solrj.add_val_to_fld(solr_input_doc, name, val)
+      elsif val.is_a?(Array)
+        val.each { |v|  
+          solrj.add_val_to_fld(solr_input_doc, name, v)
+        }
+      else
+        raise "hash to add to merged solr document has incorrectly typed field value for #{name}: #{field_hash.inspect}"
+      end
+    }
   end
   
   def self.merge_and_index druid, catkey
-    @catkey = catkey
-    @druid = druid
-    doc = RecordMerger.fetch_sw_solr_input_doc
-    solrj = SolrjWrapper.new('../solrmarc-sw/lib/solrj-lib', Indexer.config.solr.url, 1, 1)
-    solrj.add_val_to_fld(doc, "url_fulltext", 'http://purl.stanford.edu/' + druid)
-    solrj.add_val_to_fld(doc, "access_facet", "Online")
-    # at the moment we  only merge collections, this will have to check for item vs collection in the future
-    solrj.add_val_to_fld(doc, "collection_type", "Digital Collection")
-    solrj.add_doc_to_ix(doc, @catkey)
+    doc = RecordMerger.fetch_sw_solr_input_doc catkey
+    fields_to_add = {
+      "url_fulltext" => "http://purl.stanford.edu/#{druid}",
+      "access_facet" => 'Online',
+      "collection_type" => 'Digital Collection'
+    }
+    add_hash_to_solr_input_doc(doc, fields_to_add)
+    solrj.add_doc_to_ix(doc, catkey)
+  end
+  
+  # cache SolrJWrapper object at class level
+  def self.solrj
+    @@solrj ||= SolrjWrapper.new('../solrmarc-sw/lib/solrj-lib', Indexer.config.solr.url, 1, 1)
+  end
+  
+  # cache SolrmarcWrapper object at class level
+  def self.smwrapper
+    @@smwrapper ||= begin
+      dist_dir = Indexer.config.solrmarc.dist_dir
+      sw_solr_url = Indexer.config.solrmarc.sw_solr_url
+      config_file = Indexer.config.solrmarc.config_file
+      SolrmarcWrapper.new(dist_dir, config_file, sw_solr_url)
+    end
   end
 
 end
