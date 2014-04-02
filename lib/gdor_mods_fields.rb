@@ -47,16 +47,16 @@ module GdorModsFields
       :pub_date_sort =>  @smods_rec.pub_date_sort,
       :imprint_display =>  @smods_rec.pub_date_display,
       :pub_date =>  @smods_rec.pub_date_facet,
-      :pub_date_group_facet =>  @smods_rec.pub_date_groups(pub_date), # pub_date_group_facet is deprecated
+      :pub_date_group_facet =>  @smods_rec.pub_date_groups(@smods_rec.pub_year), # pub_date_group_facet is deprecated
       :pub_date_display =>  @smods_rec.pub_date_display, # pub_date_display may be deprecated
       
       :all_search => @smods_rec.text.gsub(/\s+/, ' ') 
     }
     
     # more pub date fields
-    pub_date_sort = @smods_rec.pub_date_sort
+    pub_date_sort = doc_hash[:pub_date_sort]
     if is_positive_int? pub_date_sort
-       doc_hash[:pub_year_tisim] =  pub_date_sort
+       doc_hash[:pub_year_tisim] =  pub_date_sort # for date slider
       # put the displayable year in the correct field, :creation_year_isi for example
       doc_hash[date_type_sym] =  @smods_rec.pub_date_sort  if date_type_sym
     end
@@ -79,22 +79,6 @@ module GdorModsFields
   end
 
 protected
-
-  # currently only called to populate :pub_date_group_facet (from doc_hash_from_mods)
-  def pub_date
-    val = @smods_rec.pub_year
-    if val
-      return val unless Indexer.config[:max_pub_date] && Indexer.config[:min_pub_date]
-      return val if val.include? '-'
-      if val and val.to_i < Indexer.config[:max_pub_date] and val.to_i > Indexer.config[:min_pub_date]
-        return val
-      end
-    end
-    if val 
-      @logger.info("#{@druid} skipping date out of range "+val)
-    end
-    nil
-  end
 
   # @return true if the string parses into an int, and if so, the int is >= 0
   def is_positive_int? str
