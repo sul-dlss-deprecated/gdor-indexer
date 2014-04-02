@@ -13,7 +13,7 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
   # "Doubles, stubs, and message expectations are all cleaned out after each example."
   # per https://www.relishapp.com/rspec/rspec-mocks/docs/scope
   
-  context "fields from and methods pertaining to identityMetadata" do
+  context "identityMetadata fields and methods" do
     before(:all) do
       @id_md_xml = "<identityMetadata><objectId>druid:#{@fake_druid}</objectId></identityMetadata>"
       @pub_xml = "<publicObject id='druid:#{@fake_druid}'>#{@id_md_xml}</publicObject>"
@@ -63,12 +63,14 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
         @sdb.coll_object?.should == false
       end
     end
-  end
+  end # identityMetadata fields and methods
   
-  context "fields from and methods pertaining to contentMetadata" do
+  context "contentMetadata fields and methods" do
     before(:all) do
+      @content_md_start = "<contentMetadata objectId='#{@fake_druid}'>"
+      @content_md_end = "</contentMetadata>"
       @cntnt_md_type = 'image'
-      @cntnt_md_xml = "<contentMetadata type='#{@cntnt_md_type}' objectId='#{@fake_druid}'></contentMetadata>"
+      @cntnt_md_xml = "<contentMetadata type='#{@cntnt_md_type}' objectId='#{@fake_druid}'>#{@content_md_end}"
       @pub_xml = "<publicObject id='druid:#{@fake_druid}'>#{@cntnt_md_xml}</publicObject>"
       @ng_pub_xml = Nokogiri::XML(@pub_xml)
     end
@@ -95,64 +97,61 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
         @sdb.send(:content_md)
       end
     end
+
+    context "dor_content_type" do
+      it "should be retreived from the <contentMetadata>" do
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+        sdb.should_receive(:content_md)
+        sdb.dor_content_type
+      end
+      it "should be the value of the type attribute on <contentMetadata> element" do
+        val = 'foo'
+        cntnt_md_xml = "<contentMetadata type='#{val}'>#{@content_md_end}"
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+        sdb.should_receive(:content_md).at_least(1).times.and_return(Nokogiri::XML(cntnt_md_xml).root)
+        sdb.dor_content_type.should == val
+      end
+    end
     
     context "display_type" do
-      it "should be 'collection' if solr_doc_builder.collection?" do
-        coll_mods_xml = "<mods #{@ns_decl}><typeOfResource collection='yes'/><note>hi</note></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(coll_mods_xml))
+      it "should not access the mods to determine the display_type" do
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+        @hdor_client.should_not_receive(:mods).with(@fake_druid)
+        sdb.should_receive(:coll_object?).and_return(false)
+        sdb.display_type
+      end
+      it "should be 'collection' if coll_object? and no add_display_type" do
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+        sdb.should_receive(:coll_object?).and_return(true)
         sdb.display_type.should == 'collection'
       end
-      it "should be 'hydrus_collection' if it is a collection and :display_type=hydrus is in the collection yml file" do
-        coll_mods_xml = "<mods #{@ns_decl}><typeOfResource collection='yes'/><note>hi</note></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(coll_mods_xml))
-        Indexer.stub(:config).and_return({:add_display_type => 'hydrus'})
+      it "should be the value of dor_content_type if not coll_object?" do
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
-        sdb.display_type.should == 'hydrus_collection'
-      end
-      it "should be 'hydrus_object' if it is not a collection and :display_type=hydrus is in the collection yml file" do
-        coll_mods_xml = "<mods #{@ns_decl}><typeOfResource/><note>hi</note></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(coll_mods_xml))
-        Indexer.stub(:config).and_return({:add_display_type => 'hydrus'})
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
-        sdb.display_type.should == 'hydrus_object'
-      end
-      it "should be the same as <contentMetadata> type attribute if it's not a collection" do
-        # NOTE: from the contentMetadata, not the mods
-        m = "<mods #{@ns_decl}><typeOfResource>sound recording</typeOfResource></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
-        sdb.display_type.should == @cntnt_md_type
+        sdb.should_receive(:coll_object?).and_return(false)
         sdb.stub(:dor_content_type).and_return('bogus')
         sdb.display_type.should == 'bogus'
       end
-      it "should log an error message if contentMetadata has no type" do
+      it "should be hydrus_collection for config :add_display_type of 'hydrus' and coll_object?" do
+        Indexer.stub(:config).and_return({:add_display_type => 'hydrus'})
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+        sdb.should_receive(:coll_object?).and_return(true)
+        sdb.display_type.should == 'hydrus_collection'
+      end
+      it "should be hydrus_object for config :add_display_type of 'hydrus' and not coll_object?" do
+        Indexer.stub(:config).and_return({:add_display_type => 'hydrus'})
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+        sdb.should_receive(:coll_object?).and_return(false)
+        sdb.display_type.should == 'hydrus_object'
+      end
+      it "should log an error message if dor_content_type is nil" do
         @sdb.stub(:dor_content_type).and_return(nil)
-        @sdb.logger.should_receive(:warn).with(/has no DOR content type/)
+        @sdb.logger.should_receive(:error).with("#{@fake_druid} has no DOR content type (<contentMetadata> element may be missing type attribute)")
+        @sdb.should_receive(:coll_object?).and_return(false)
         @sdb.display_type
       end
-      
-      it "should be hydrus_collection for config :add_display_type of 'hydrus' and collection object" do
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
-        Indexer.stub(:config).and_return({:add_display_type => 'hydrus'})
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        sdb.stub(:collection?).and_return(true)
-        sdb.display_type.should eql("hydrus_collection")
-      end
-      it "should be hydrus_object for config :add_display_type of 'hydrus' and member object" do
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
-        Indexer.stub(:config).and_return({:add_display_type => 'hydrus'})
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        sdb.stub(:collection?).and_return(false)
-        sdb.display_type.should eql("hydrus_object")      
-      end
-    end # display_ytype
+    end # display_type
     
     context "image_ids" do
-      before(:all) do
-        @content_md_start = "<contentMetadata objectId='#{@fake_druid}'>"
-        @content_md_end = "</contentMetadata>"
-      end
       before(:each) do
         @hdor_client = double()
         @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
@@ -235,11 +234,11 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
         @sdb.stub(:content_md).and_return(ng_xml.root)
         @sdb.image_ids.should == ['W188_000001_300']
       end
-    end
+    end # image_ids
     
-  end # fields from and methods pertaining to contentMetadata
+  end # contentMetadata fields and methods
   
-  context "fields from and methods pertaining to rels-ext" do
+  context "rels-ext fields and methods" do
     before(:each) do
       @hdor_client = double()
       @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
@@ -291,6 +290,6 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
         sdb.coll_druids_from_rels_ext.should == nil
       end
     end # collection druids    
-  end # fields from and methods pertaining to rels-ext
+  end # rels-ext fields and methods
   
 end

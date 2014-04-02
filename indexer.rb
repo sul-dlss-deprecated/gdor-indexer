@@ -42,8 +42,9 @@ class Indexer < Harvestdor::Indexer
   
   # per this Indexer's config options 
   #  harvest the druids via OAI
-  #   create a Solr document for each druid suitable for SearchWorks
+  #   create a Solr document for each druid suitable for SearchWorks and
   #   write the result to the SearchWorks Solr index
+  #  (all members of the collection + coll rec itself)
   def harvest_and_index(nocommit = false)
     start_time=Time.now
     
@@ -138,10 +139,11 @@ class Indexer < Harvestdor::Indexer
     end
   end
 
-  # Create a solr document for the collection druid suitable for searchworks
-  # write the result to the SearchWorks Solr Index
+  # Create Solr document for the collection druid suitable for SearchWorks
+  #  and write the result to the SearchWorks Solr Index
   # @param [String] druid 
   def index_collection_druid
+    # we have already affirmed that coll_druid_from_config is a collection record in harvest_and_index method
     begin
       if coll_catkey
         logger.debug "Merging collection object #{coll_druid_from_config} into #{coll_catkey}"
@@ -155,6 +157,7 @@ class Indexer < Harvestdor::Indexer
       else
         logger.info "Indexing collection object #{coll_druid_from_config}"
         doc_hash = sw_solr_doc(coll_druid_from_config)
+        doc_hash[:collection_type] = 'Digital Collection'
         # add item formats
         addl_formats = coll_formats_from_items[coll_druid_from_config] # guarenteed to be Array or nil
         if addl_formats && !addl_formats.empty?

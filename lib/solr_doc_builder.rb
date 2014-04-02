@@ -27,7 +27,7 @@ class SolrDocBuilder
     @harvestdor_client = harvestdor_client
     @logger = logger
     @smods_rec = smods_rec
-    @smods_rec.druid=druid
+    @smods_rec.druid = druid
     @public_xml = public_xml
   end
   
@@ -47,19 +47,8 @@ class SolrDocBuilder
       @doc_hash[:format] = format # defined in gdor_mods_fields
       hash_from_mods = doc_hash_from_mods # defined in gdor_mods_fields
       @doc_hash.merge!(hash_from_mods) if hash_from_mods
-      @doc_hash[:collection_type] = 'Digital Collection' if collection?
     end
     @doc_hash
-  end
-  
-  # If MODS record has a top level typeOfResource element with attribute collection set to 'yes,
-  #  (<mods><typeOfResource collection='yes'>) then return true; false otherwise
-  # @return true if MODS indicates this is a collection object
-  def collection?
-    @smods_rec.typeOfResource.each { |n|  
-      return true if n.collection == 'yes'
-    }
-    false
   end
   
   # @return array of Strings pertaining to absence of required fields

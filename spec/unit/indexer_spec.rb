@@ -85,26 +85,27 @@ describe Indexer do
         @indexer.solr_client.should_receive(:add)
         @indexer.index_collection_druid
       end
-      it "should include formats from coll_formats_from_items when the druid matches" do
-        @indexer.stub(:coll_formats_from_items).and_return({@coll_druid_from_test_config => ['Image']})
-        @indexer.stub(:sw_solr_doc).and_return({})
-        @indexer.solr_client.should_receive(:add).with(hash_including(:format => ['Image']))
-        @indexer.index_collection_druid
+      context "format" do
+        it "should include formats from coll_formats_from_items when the druid matches" do
+          @indexer.stub(:coll_formats_from_items).and_return({@coll_druid_from_test_config => ['Image']})
+          @indexer.stub(:sw_solr_doc).and_return({})
+          @indexer.solr_client.should_receive(:add).with(hash_including(:format => ['Image']))
+          @indexer.index_collection_druid
+        end
+        it "should not include formats from coll_formats_from_items when the druid doesn't match" do
+          @indexer.stub(:coll_formats_from_items).and_return({'foo' => ['Image']})
+          @indexer.stub(:sw_solr_doc).and_return({:format => ['Video']})
+          @indexer.solr_client.should_receive(:add).with(hash_including(:format => ['Video']))
+          @indexer.index_collection_druid
+        end
+        it "should not have duplicate format values" do
+          @indexer.stub(:coll_formats_from_items).and_return({@coll_druid_from_test_config => ['Image', 'Video', 'Image']})
+          @indexer.stub(:sw_solr_doc).and_return({:format => ['Video']})
+          @indexer.solr_client.should_receive(:add).with(hash_including(:format => ['Image', 'Video']))
+          @indexer.index_collection_druid
+        end
       end
-      it "should not include formats from coll_formats_from_items when the druid doesn't match" do
-        @indexer.stub(:coll_formats_from_items).and_return({'foo' => ['Image']})
-        @indexer.stub(:sw_solr_doc).and_return({:format => ['Video']})
-        @indexer.solr_client.should_receive(:add).with(hash_including(:format => ['Video']))
-        @indexer.index_collection_druid
-      end
-      it "should not have duplicate format values" do
-        @indexer.stub(:coll_formats_from_items).and_return({@coll_druid_from_test_config => ['Image', 'Video', 'Image']})
-        @indexer.stub(:sw_solr_doc).and_return({:format => ['Video']})
-        @indexer.solr_client.should_receive(:add).with(hash_including(:format => ['Image', 'Video']))
-        @indexer.index_collection_druid
-      end
-      it "should include collection_type of 'Digital Collection'" do
-        pending "only if we move collection_type population to indexer.rb"
+      it "collection_type should be 'Digital Collection'" do
         @indexer.stub(:sw_solr_doc).and_return({})
         @indexer.solr_client.should_receive(:add).with(hash_including(:collection_type => 'Digital Collection'))
         @indexer.index_collection_druid
@@ -112,10 +113,17 @@ describe Indexer do
     end # unmerged coll record
 
     context "merged record" do
+      before(:each) do
+        @ckey = '666'
+        @indexer.stub(:coll_catkey).and_return(@ckey)
+      end
       it "should call RecordMerger.merge_and_index" do
-        @indexer.stub(:coll_catkey).and_return('666')
         RecordMerger.should_receive(:merge_and_index).with('666', hash_including(:url_fulltext, :access_facet => 'Online', 
                                                                                 :collection_type => "Digital Collection"))
+        @indexer.index_collection_druid
+      end
+      it "should add a doc to Solr with field collection_type" do
+        SolrjWrapper.any_instance.should_receive(:add_doc_to_ix).with(hash_including('collection_type'), @ckey)
         @indexer.index_collection_druid
       end
     end

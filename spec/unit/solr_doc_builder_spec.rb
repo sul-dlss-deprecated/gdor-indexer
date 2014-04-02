@@ -63,26 +63,6 @@ describe SolrDocBuilder do
       sdb.should_receive(:doc_hash_from_mods)
       sdb.doc_hash
     end
-    context "collection_type field" do
-      before(:each) do
-        @hdor_client = double()
-        @hdor_client.stub(:public_xml).with(@fake_druid).and_return(nil)
-      end
-      it "should be 'Digital Collection' if MODS has <typeOfResource collection='yes'/>" do
-        coll_mods_xml = "<mods #{@ns_decl}><typeOfResource collection='yes'/><note>hi</note></mods>"
-        hc = double
-        hc.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(coll_mods_xml))
-        hc.stub(:public_xml).with(@fake_druid).and_return(@ng_pub_xml)
-        sdb = SolrDocBuilder.new(@fake_druid, hc, Logger.new(@strio))
-        sdb.doc_hash[:collection_type].should == 'Digital Collection'
-      end
-      it "should not be present if if MODS doesn't have <typeOfResource collection='yes'/>" do
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
-        @hdor_client.stub(:public_xml).with(@fake_druid).and_return(@ng_pub_xml)
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        sdb.doc_hash[:collection_type].should == nil
-      end
-    end
     context "validation method" do
       it 'should have no validation messages for a complete record' do
         solr_doc = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
@@ -102,46 +82,6 @@ describe SolrDocBuilder do
       end
     end  
   end # doc hash
-
-  context "collection?" do
-    before(:each) do
-      @hdor_client = double()
-      @hdor_client.stub(:public_xml).with(@fake_druid).and_return(nil)
-    end
-    it "should return true if MODS has top level <typeOfResource collection='yes'>" do
-      m = "<mods #{@ns_decl}><typeOfResource collection='yes'/><note>boo</note></mods>"
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-      sdb.should be_a_collection
-    end
-    it "should return false if MODS has no top level <typeOfResource> elements" do
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-      sdb.should_not be_a_collection
-    end
-    it "should return false if MODS has top level <typeOfResource> elements without collection attribute" do
-      m = "<mods #{@ns_decl}><typeOfResource manuscript='yes'/><note>boo</note></mods>"
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-      sdb.should_not be_a_collection
-    end
-    it "should return false if MODS has top level <typeOfResource> element with collection not set to 'yes" do
-      m = "<mods #{@ns_decl}><typeOfResource collection='no'/><note>boo</note></mods>"
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-      sdb.should_not be_a_collection
-    end
-    it "should return true if MODS has multiple top level <typeOfResource> elements and at least one is a collection" do
-      m = "<mods #{@ns_decl}>
-      <typeOfResource>cartographic</typeOfResource>
-      <typeOfResource collection='yes'/>
-      <typeOfResource>still image</typeOfResource>
-      </mods>"
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-      sdb.should be_a_collection
-    end
-  end  # collection?
 
   context 'catkey' do
     before(:all) do

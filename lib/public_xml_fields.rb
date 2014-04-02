@@ -14,16 +14,16 @@ module PublicXmlFields
   # @return [String] 'collection' or DOR content type
   def display_type
     disp_type_prefix = Indexer.config[:add_display_type]
-    if disp_type_prefix && collection?
+    if disp_type_prefix && coll_object?
       "#{disp_type_prefix}_collection"
     elsif disp_type_prefix
       "#{disp_type_prefix}_object"
-    elsif collection?
+    elsif coll_object?
       'collection'
     elsif dor_content_type
       dor_content_type
     else
-      logger.warn "Object #{druid} has no DOR content type (possibly missing type attribute on <contentMetadata> element)"
+      logger.error "#{druid} has no DOR content type (<contentMetadata> element may be missing type attribute)"
     end
   end
   
