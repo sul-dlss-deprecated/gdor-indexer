@@ -78,4 +78,11 @@ module PublicXmlFields
     @content_md ||= public_xml.root.xpath('/publicObject/contentMetadata').first
   end
   
+  # the identityMetadata for this object, derived from the public_xml 
+  # @return [Nokogiri::XML::Element] containing the identityMetadata
+  def identity_md
+# FIXME:  create nom-xml terminology for identityMetadata in harvestdor?
+    @identity_md ||= public_xml.root.xpath('/publicObject/identityMetadata').first
+  end
+  
 end # SolrDocBuilder class

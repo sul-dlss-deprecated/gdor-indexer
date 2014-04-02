@@ -12,6 +12,29 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
   # "Doubles, stubs, and message expectations are all cleaned out after each example."
   # per https://www.relishapp.com/rspec/rspec-mocks/docs/scope
   
+  context "fields from and methods pertaining to identityMetadata" do
+    before(:all) do
+      @id_md_xml = "<identityMetadata><objectId>druid:#{@fake_druid}</objectId></identityMetadata>"
+      @pub_xml = "<publicObject id='druid:#{@fake_druid}'>#{@id_md_xml}</publicObject>"
+      @ng_pub_xml = Nokogiri::XML(@pub_xml)
+    end
+    before(:each) do
+      @hdor_client = double()
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+      @hdor_client.stub(:public_xml).with(@fake_druid).and_return(@ng_pub_xml)
+      @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+    end
+    it "identity_md should get the identityMetadata from public_xml, not a separate fetch" do
+      @hdor_client.should_not_receive(:identity_metadata)
+      @sdb.should_receive(:public_xml).and_call_original
+      identity_md = @sdb.send(:identity_md)
+      identity_md.should be_an_instance_of(Nokogiri::XML::Element)
+      identity_md.name.should == 'identityMetadata'
+# NOTE:  the below isn't working -- probably due to Nokogiri bug with attributes
+#      identity_md.should be_equivalent_to(@id_md_xml)
+    end
+  end
+  
   context "fields from and methods pertaining to contentMetadata" do
     before(:all) do
       @cntnt_md_type = 'image'
@@ -32,7 +55,7 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
       content_md = @sdb.send(:content_md)
       content_md.should be_an_instance_of(Nokogiri::XML::Element)
       content_md.name.should == 'contentMetadata'
-# NOTE:  the below isn't working -- probably due to Nokogiri attribute bug introduced      
+# NOTE:  the below isn't working -- probably due to Nokogiri bug with attributes
 #      content_md.should be_equivalent_to(@cntnt_md_xml)
     end
     
