@@ -48,24 +48,31 @@ class Indexer < Harvestdor::Indexer
     start_time=Time.now
     
     logger.info("Started harvest_and_index at #{start_time}")
-    if whitelist.empty?
-      druids.threach(3) { |druid| index_item druid }
+
+    if !coll_sdb.coll_object?
+      logger.fatal("#{coll_druid_from_config} is not a collection object!! (per identityMetaadata)  Ending indexing.")
     else
-      whitelist.threach(3) { |druid| index_item druid }
+      if whitelist.empty?
+        druids.threach(3) { |druid| index_item druid }
+      else
+        whitelist.threach(3) { |druid| index_item druid }
+      end
+      index_collection_druid
     end
-    index_collection_druid
+    
     total_time = elapsed_time(start_time)
     total_objects = @success_count + @error_count
     logger.info("Finished harvest_and_index at #{Time.now}: final Solr commit returned")
     logger.info("Total elapsed time for harvest and index: #{(total_time/60.0)} minutes")
-    logger.info("Beginning Commit.")
-    ## Commit our indexing job unless the :nocommit flag was passed
-    unless nocommit
+
+    if !nocommit && coll_sdb.coll_object?
+      logger.info("Beginning Commit.")
       solr_client.commit
-    else
-      puts "Skipping commit because :nocommit flag was passed"
+      count_recs_in_solr
+    elsif nocommit
+      logger.info("Skipping commit per nocommit flag")
     end
-    count_recs_in_solr
+
     logger.info("Avg solr commit time per object (successful): #{@total_time_to_solr/@success_count} seconds") unless (@total_time_to_solr == 0 || @success_count == 0)
     logger.info("Avg solr commit time per object (all): #{@total_time_to_solr/total_objects} seconds") unless (@total_time_to_solr == 0 || @error_count == 0 || total_objects == 0)
     logger.info("Avg parse time per object (successful): #{@total_time_to_parse/@success_count} seconds") unless (@total_time_to_parse == 0 || @success_count == 0)
@@ -85,9 +92,10 @@ class Indexer < Harvestdor::Indexer
   end
   
   def send_notifications
+    to_email = Indexer::config.notification ? Indexer::config.notification : 'gdor-indexing-notification@lists.stanford.edu'
+
     total_objects = @success_count + @error_count
-    notifications = Indexer::config.notification ? Indexer::config.notification : 'gdor-indexing-notification@lists.stanford.edu'
-    subject = "#{Indexer.config.log_name} into Solr server #{Indexer.config[:solr][:url]} is ready"
+    
     body = "Successful count: #{@success_count}\n"
     if @found_in_solr_count == @success_count
       body += "Records verified in solr: #{@found_in_solr_count}\n"
@@ -102,14 +110,12 @@ class Indexer < Harvestdor::Indexer
     body += "full log is at gdor_indexer/shared/#{Indexer.config.log_dir}/#{Indexer.config.log_name} on #{Socket.gethostname}"
     body += "\n"
     body += @validation_messages
+
     opts = {}
-    opts[:from_alias] = 'gryphondor'
-    opts[:server] = 'localhost'
-    opts[:from] = 'gryphondor@stanford.edu'
-    opts[:subject] = subject
+    opts[:subject] = "#{Indexer.config.log_name} into Solr server #{Indexer.config[:solr][:url]} is finished"
     opts[:body] = body
     begin
-    send_email(notifications,opts)
+      send_email(to_email, opts)
     rescue
       logger.error('Failed to send email notification!')
     end
@@ -147,7 +153,7 @@ class Indexer < Harvestdor::Indexer
         RecordMerger.merge_and_index(coll_catkey, fields_to_add)
         @success_count += 1
       else
-        logger.debug "Indexing collection object #{coll_druid_from_config}"
+        logger.info "Indexing collection object #{coll_druid_from_config}"
         doc_hash = sw_solr_doc(coll_druid_from_config)
         # add item formats
         addl_formats = coll_formats_from_items[coll_druid_from_config] # guarenteed to be Array or nil
@@ -201,7 +207,12 @@ class Indexer < Harvestdor::Indexer
   
   # @return [String] The collection object catkey or nil if none exists
   def coll_catkey
-    @coll_catkey ||= SolrDocBuilder.new(coll_druid_from_config, harvestdor_client, logger).catkey
+    @coll_catkey ||= coll_sdb.catkey
+  end
+  
+  # @return [SolrDocBuilder] a SolrDocBuilder object for the collection per coll_druid_from_config
+  def coll_sdb
+    @coll_sdb ||= SolrDocBuilder.new(coll_druid_from_config, harvestdor_client, logger)
   end
   
   # return String indicating the druid of a collection object, or nil if there is no collection druid
@@ -241,11 +252,11 @@ class Indexer < Harvestdor::Indexer
   end
 
   def send_email(to, opts = {})
-    opts[:server]      ||= 'localhost'
-    opts[:from]        ||= 'email@example.com'
-    opts[:from_alias]  ||= 'Example Emailer'
-    opts[:subject]     ||= "You need to see this"
-    opts[:body]        ||= "Important stuff!"
+    opts[:server]     ||= 'localhost'
+    opts[:from]       ||= 'gryphondor@stanford.edu'
+    opts[:from_alias] ||= 'gryphondor'
+    opts[:subject]    ||= "default subject"
+    opts[:body]       ||= "default message body"
     mail = Mail.new do
       from    opts[:from]
       to      to

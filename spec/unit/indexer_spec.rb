@@ -26,18 +26,47 @@ describe Indexer do
     @hdor_client.config.default_set.should == @yaml['default_set']
   end
   
-  context "harvest_and_index item records" do
-    it "should call druids and then call :add on rsolr connection" do
-      pending 
+  context "harvest_and_index" do
+    before(:each) do
+      @indexer.stub(:coll_druid_from_config).and_return(@fake_druid)
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML("<mods #{@ns_decl}><note>hi</note></mods>"))
+      @hdor_client.stub(:public_xml).with(@fake_druid).and_return(Nokogiri::XML("<publicObject id='druid#{@fake_druid}'></publicObject>"))
+      @coll_sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+      @coll_sdb.stub(:coll_object?).and_return(true)
+      @indexer.stub(:coll_sdb).and_return(@coll_sdb)
+    end
+    it "if coll rec from config harvested relationship isn't a coll rec per identity metadata, no further indexing should occur" do
+      @coll_sdb.stub(:coll_object?).and_return(false)
+      @indexer.stub(:coll_sdb).and_return(@coll_sdb)
+      @indexer.logger.should_receive(:fatal).with("#{@fake_druid} is not a collection object!! (per identityMetaadata)  Ending indexing.")
+      @indexer.should_not_receive(:index_item)
+      @indexer.should_not_receive(:index_collection_druid)
+      @indexer.solr_client.should_not_receive(:commit)
+      @indexer.harvest_and_index
+    end
+    it "should call index_item for each druid" do
+      Harvestdor::Indexer.any_instance.should_receive(:druids).and_return(['1', '2', '3'])
+      @indexer.should_receive(:index_item).with('1')
+      @indexer.should_receive(:index_item).with('2')
+      @indexer.should_receive(:index_item).with('3')
+      @indexer.harvest_and_index(true) # nocommit for ease of testing
+    end
+    it "should call index_collection_druid once for the coll druid from the config file" do
+      Harvestdor::Indexer.any_instance.should_receive(:druids).and_return([])
+      @indexer.should_receive(:index_collection_druid)
+      @indexer.harvest_and_index(true) # nocommit for ease of testing
+    end
+  end # harvest_and_index
+  
+  context "index_item" do
+    it "should call solr_add" do
       doc_hash = {
         :id => @fake_druid,
         :field => 'val'
       }
       @indexer.stub(:sw_solr_doc).and_return(doc_hash)
-      @hdor_client.should_receive(:druids_via_oai).and_return([@fake_druid])
-      @indexer.solr_client.should_receive(:add).with(doc_hash)
-      @indexer.solr_client.stub(:commit)
-      @indexer.harvest_and_index
+      Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(doc_hash, @fake_druid)
+      @indexer.index_item @fake_druid
     end
   end
   
