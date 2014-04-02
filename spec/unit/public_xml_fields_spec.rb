@@ -6,6 +6,7 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
     @fake_druid = 'oo000oo0000'
     @ns_decl = "xmlns='#{Mods::MODS_NS}'"
     @ng_mods_xml = Nokogiri::XML("<mods #{@ns_decl}><note>hi</note></mods>")
+    @empty_ng_pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'></publicObject>")
   end
     
   # NOTE:  
@@ -24,14 +25,43 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
       @hdor_client.stub(:public_xml).with(@fake_druid).and_return(@ng_pub_xml)
       @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
     end
-    it "identity_md should get the identityMetadata from public_xml, not a separate fetch" do
-      @hdor_client.should_not_receive(:identity_metadata)
-      @sdb.should_receive(:public_xml).and_call_original
-      identity_md = @sdb.send(:identity_md)
-      identity_md.should be_an_instance_of(Nokogiri::XML::Element)
-      identity_md.name.should == 'identityMetadata'
+    context "identity_md" do
+      it "identity_md should get the identityMetadata from public_xml, not a separate fetch" do
+        @hdor_client.should_not_receive(:identity_metadata)
+        @sdb.should_receive(:public_xml).and_call_original
+        identity_md = @sdb.send(:identity_md)
+        identity_md.should be_an_instance_of(Nokogiri::XML::Element)
+        identity_md.name.should == 'identityMetadata'
 # NOTE:  the below isn't working -- probably due to Nokogiri bug with attributes
-#      identity_md.should be_equivalent_to(@id_md_xml)
+#        identity_md.should be_equivalent_to(@id_md_xml)
+      end
+      it "should log an error message if there is no identityMetadata" do
+        @sdb.should_receive(:public_xml).and_return(@empty_ng_pub_xml)
+        @sdb.logger.should_receive(:warn).with("#{@fake_druid} missing identityMetadata")
+        @sdb.send(:identity_md)
+      end
+    end
+    
+    context "coll_rec?" do
+      it "should return true if identityMetadata has objectType element with value 'collection'" do
+        id_md_xml = "<identityMetadata><objectType>collection</objectType></identityMetadata>"
+        ng_pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{id_md_xml}</publicObject>")
+        @hdor_client.stub(:public_xml).with(@fake_druid).and_return(ng_pub_xml)
+        @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+        @sdb.coll_rec?.should == true
+      end
+      it "should return false if identityMetadata has objectType element with value other than 'collection'" do
+        id_md_xml = "<identityMetadata><objectType>other</objectType></identityMetadata>"
+        ng_pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{id_md_xml}</publicObject>")
+        @hdor_client.stub(:public_xml).with(@fake_druid).and_return(ng_pub_xml)
+        @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+        @sdb.coll_rec?.should == false
+      end
+      it "should return false if identityMetadata doesn't have an objectType" do
+        @hdor_client.stub(:public_xml).with(@fake_druid).and_return(@ng_pub_xml)
+        @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+        @sdb.coll_rec?.should == false
+      end
     end
   end
   
@@ -49,14 +79,21 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
       @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
     end
 
-    it "content_md should get the contentMetadata from public_xml, not a separate fetch" do
-      @hdor_client.should_not_receive(:content_metadata)
-      @sdb.should_receive(:public_xml).and_call_original
-      content_md = @sdb.send(:content_md)
-      content_md.should be_an_instance_of(Nokogiri::XML::Element)
-      content_md.name.should == 'contentMetadata'
+    context "content_md" do
+      it "content_md should get the contentMetadata from public_xml, not a separate fetch" do
+        @hdor_client.should_not_receive(:content_metadata)
+        @sdb.should_receive(:public_xml).and_call_original
+        content_md = @sdb.send(:content_md)
+        content_md.should be_an_instance_of(Nokogiri::XML::Element)
+        content_md.name.should == 'contentMetadata'
 # NOTE:  the below isn't working -- probably due to Nokogiri bug with attributes
-#      content_md.should be_equivalent_to(@cntnt_md_xml)
+#        content_md.should be_equivalent_to(@cntnt_md_xml)
+      end
+      it "should log an error message if there is no contentMetadata" do
+        @sdb.should_receive(:public_xml).and_return(@empty_ng_pub_xml)
+        @sdb.logger.should_receive(:warn).with("#{@fake_druid} missing contentMetadata")
+        @sdb.send(:content_md)
+      end
     end
     
     context "display_type" do
