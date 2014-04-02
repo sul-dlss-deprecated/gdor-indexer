@@ -44,7 +44,7 @@ module PublicXmlFields
   end
 
   # @return true if the identityMetadata has <objectType>collection</objectType>, false otherwise
-  def coll_rec?
+  def coll_object?
     @is_collection ||= begin
       if identity_md
         object_type_nodes = identity_md.xpath('./objectType')

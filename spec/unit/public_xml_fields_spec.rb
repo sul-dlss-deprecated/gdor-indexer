@@ -42,25 +42,25 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
       end
     end
     
-    context "coll_rec?" do
+    context "coll_object?" do
       it "should return true if identityMetadata has objectType element with value 'collection'" do
         id_md_xml = "<identityMetadata><objectType>collection</objectType></identityMetadata>"
         ng_pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{id_md_xml}</publicObject>")
         @hdor_client.stub(:public_xml).with(@fake_druid).and_return(ng_pub_xml)
         @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-        @sdb.coll_rec?.should == true
+        @sdb.coll_object?.should == true
       end
       it "should return false if identityMetadata has objectType element with value other than 'collection'" do
         id_md_xml = "<identityMetadata><objectType>other</objectType></identityMetadata>"
         ng_pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{id_md_xml}</publicObject>")
         @hdor_client.stub(:public_xml).with(@fake_druid).and_return(ng_pub_xml)
         @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-        @sdb.coll_rec?.should == false
+        @sdb.coll_object?.should == false
       end
       it "should return false if identityMetadata doesn't have an objectType" do
         @hdor_client.stub(:public_xml).with(@fake_druid).and_return(@ng_pub_xml)
         @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-        @sdb.coll_rec?.should == false
+        @sdb.coll_object?.should == false
       end
     end
   end
