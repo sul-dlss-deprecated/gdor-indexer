@@ -262,13 +262,12 @@ class Indexer < Harvestdor::Indexer
     end
   end
   
-# FIXME:  move to public_xml_fields???  
+# FIXME:  move to public_xml_fields???
   # given a druid, get its objectLabel from its purl page identityMetadata
   # @param [String] druid, e.g. ab123cd4567
   # @return [String] the value of the <objectLabel> element in the identityMetadata for the object
   def identity_md_obj_label druid
     ng_imd = harvestdor_client.identity_metadata druid
-    # TODO: create nom-xml terminology for identityMetadata in harvestdor?
     ng_imd.xpath('identityMetadata/objectLabel').text
   end
   

@@ -85,10 +85,9 @@ module PublicXmlFields
   # the contentMetadata for this object, derived from the public_xml
   # @return [Nokogiri::XML::Element] containing the contentMetadata
   def content_md 
-# FIXME:  create nom-xml terminology for contentMetadata in harvestdor?
     @content_md ||= begin
       c_md = public_xml.root.xpath('/publicObject/contentMetadata').first
-      logger.warn("#{@druid} missing contentMetadata") if !c_md
+      logger.error("#{@druid} missing contentMetadata") if !c_md
       c_md
     end
   end
@@ -96,10 +95,9 @@ module PublicXmlFields
   # the identityMetadata for this object, derived from the public_xml 
   # @return [Nokogiri::XML::Element] containing the identityMetadata
   def identity_md
-# FIXME:  create nom-xml terminology for identityMetadata in harvestdor?
     @identity_md ||= begin
       id_md = public_xml.root.xpath('/publicObject/identityMetadata').first
-      logger.warn("#{@druid} missing identityMetadata") if !id_md
+      logger.error("#{@druid} missing identityMetadata") if !id_md
       id_md
     end
   end

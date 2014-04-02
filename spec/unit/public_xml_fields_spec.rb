@@ -37,7 +37,7 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
       end
       it "should log an error message if there is no identityMetadata" do
         @sdb.should_receive(:public_xml).and_return(@empty_ng_pub_xml)
-        @sdb.logger.should_receive(:warn).with("#{@fake_druid} missing identityMetadata")
+        @sdb.logger.should_receive(:error).with("#{@fake_druid} missing identityMetadata")
         @sdb.send(:identity_md)
       end
     end
@@ -91,7 +91,7 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
       end
       it "should log an error message if there is no contentMetadata" do
         @sdb.should_receive(:public_xml).and_return(@empty_ng_pub_xml)
-        @sdb.logger.should_receive(:warn).with("#{@fake_druid} missing contentMetadata")
+        @sdb.logger.should_receive(:error).with("#{@fake_druid} missing contentMetadata")
         @sdb.send(:content_md)
       end
     end
