@@ -26,7 +26,9 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
       @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
     end
 
-    it "content_md should get the contentMetadata from the public_xml" do
+    it "content_md should get the contentMetadata from public_xml, not a separate fetch" do
+      @hdor_client.should_not_receive(:content_metadata)
+      @sdb.should_receive(:public_xml).and_call_original
       content_md = @sdb.send(:content_md)
       content_md.should be_an_instance_of(Nokogiri::XML::Element)
       content_md.name.should == 'contentMetadata'
@@ -181,11 +183,22 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
     before(:each) do
       @hdor_client = double()
       @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+      @ns_decl = "xmlns:fedora='info:fedora/fedora-system:def/relations-external#' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'"
     end
     context "coll_druids_from_rels_ext" do
+      it "should get the rels_ext from public_xml, not a separate fetch" do
+        rels_ext_xml = "<rdf:RDF #{@ns_decl}>
+          <rdf:Description rdf:about='info:fedora/druid:#{@fake_druid}'></rdf:Description></rdf:RDF>"
+        pub_xml_ng = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{rels_ext_xml}</publicObject>")
+        @hdor_client.should_receive(:public_xml).and_return(pub_xml_ng)
+        @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+        @hdor_client.should_not_receive(:rels_ext)
+        @sdb.should_receive(:public_xml).and_return(pub_xml_ng)
+        @sdb.coll_druids_from_rels_ext
+      end
       it "coll_druids_from_rels_ext look for the object's collection druids in the rels-ext in the public_xml" do
         coll_druid = 'ww121ss5000'
-        rels_ext_xml = "<rdf:RDF  xmlns:fedora='info:fedora/fedora-system:def/relations-external#' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
+        rels_ext_xml = "<rdf:RDF #{@ns_decl}>
           <rdf:Description rdf:about='info:fedora/druid:#{@fake_druid}'>
             <fedora:isMemberOfCollection rdf:resource='info:fedora/druid:#{coll_druid}'/>
           </rdf:Description></rdf:RDF>"
@@ -197,7 +210,7 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
       it "coll_druids_from_rels_ext should get multiple collection druids when they exist" do
         coll_druid = 'ww121ss5000'
         coll_druid2 = 'ww121ss5001'
-        rels_ext_xml = "<rdf:RDF  xmlns:fedora='info:fedora/fedora-system:def/relations-external#' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
+        rels_ext_xml = "<rdf:RDF #{@ns_decl}>
           <rdf:Description rdf:about='info:fedora/druid:#{@fake_druid}'>
             <fedora:isMemberOfCollection rdf:resource='info:fedora/druid:#{coll_druid}'/>
             <fedora:isMemberOfCollection rdf:resource='info:fedora/druid:#{coll_druid2}'/>
@@ -209,7 +222,7 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
       end
       it "coll_druids_from_rels_ext should be nil when no isMemberOf relationships exist" do
         coll_druid = 'ww121ss5000'
-        rels_ext_xml = "<rdf:RDF  xmlns:fedora='info:fedora/fedora-system:def/relations-external#' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
+        rels_ext_xml = "<rdf:RDF #{@ns_decl}>
           <rdf:Description rdf:about='info:fedora/druid:#{@fake_druid}'>
           </rdf:Description></rdf:RDF>"
         pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{rels_ext_xml}</publicObject>")
