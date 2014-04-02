@@ -268,6 +268,7 @@ class Indexer < Harvestdor::Indexer
   # @return [String] the value of the <objectLabel> element in the identityMetadata for the object
   def identity_md_obj_label druid
     ng_imd = harvestdor_client.identity_metadata druid
+    logger.error("#{@druid} (collection) missing identityMetadata") if !ng_imd
     ng_imd.xpath('identityMetadata/objectLabel').text
   end
   
