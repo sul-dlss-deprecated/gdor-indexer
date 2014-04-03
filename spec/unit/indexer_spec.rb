@@ -12,6 +12,7 @@ describe Indexer do
     @yaml = YAML.load_file(config_yml_path)
     @hdor_client = @indexer.send(:harvestdor_client)
     @fake_druid = 'oo000oo0000'
+    @coll_druid_from_test_config = "ww121ss5000"
   end
   
   describe "logging" do
@@ -59,29 +60,56 @@ describe Indexer do
   end # harvest_and_index
   
   context "index_item" do
-    it "should call solr_add" do
-      doc_hash = {
-        :id => @fake_druid,
-        :field => 'val'
-      }
-      @indexer.stub(:sw_solr_doc).and_return(doc_hash)
-      Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(doc_hash, @fake_druid)
-      @indexer.index_item @fake_druid
+    context "unmerged" do
+      it "doesn't have a catkey" do
+        pending "to be implemented"
+      end
+      it "should call solr_add" do
+        doc_hash = {
+          :id => @fake_druid,
+          :field => 'val'
+        }
+        @indexer.stub(:sw_solr_doc).and_return(doc_hash)
+        Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(doc_hash, @fake_druid)
+        @indexer.index_item @fake_druid
+      end
+    end
+    context "merged with marc" do
+      it "has a catkey" do
+        pending "to be implemented"
+      end
     end
   end
   
-  context "harvest and index collection record" do
+  it "coll_druid_from_config gets the druid from the config" do
+    String.any_instance.should_receive(:include?).with('is_member_of_collection_').and_call_original
+    @indexer.coll_druid_from_config.should eql(@coll_druid_from_test_config)
+  end
+
+  context "#index_coll_obj_per_config" do
     before(:all) do
       @ng_pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'></publicObject>")
       @fake_mods = Nokogiri::XML("<mods #{@ns_decl}><note>coll indexing test</note></mods>")
-      @coll_druid_from_test_config = "ww121ss5000"
     end
-    it "gets the collection druid from the config" do
-      String.any_instance.should_receive(:include?).with('is_member_of_collection_').and_call_original
-      @indexer.coll_druid_from_config.should eql(@coll_druid_from_test_config)
+    context "merge or not?" do
+      it "uses RecordMerger if there is a catkey" do
+        ckey = '666'
+        @indexer.stub(:coll_catkey).and_return(ckey)
+        RecordMerger.should_receive(:merge_and_index)
+        @indexer.index_coll_obj_per_config
+      end
+      it "does not use RecordMerger if there isn't a catkey" do
+        @indexer.stub(:coll_catkey).and_return(nil)
+        RecordMerger.should_not_receive(:merge_and_index)
+        # speed up the test
+        SolrDocBuilder.any_instance.stub(:doc_hash).and_return({})
+        @indexer.solr_client.should_receive(:add)
+        @indexer.index_coll_obj_per_config
+      end
     end
-    context "unmerged record" do
-      it "indexes the collection druid" do
+    context "unmerged" do
+      it "adds the collection doc to the index" do
+        SolrDocBuilder.any_instance.stub(:doc_hash).and_return({}) # speed up the test
         @indexer.solr_client.should_receive(:add)
         @indexer.index_coll_obj_per_config
       end
@@ -106,19 +134,20 @@ describe Indexer do
         end
       end
       it "collection_type should be 'Digital Collection'" do
+        SolrDocBuilder.any_instance.stub(:doc_hash).and_return({}) # speed up the test
         @indexer.stub(:sw_solr_doc).and_return({})
         @indexer.solr_client.should_receive(:add).with(hash_including(:collection_type => 'Digital Collection'))
         @indexer.index_coll_obj_per_config
       end
-    end # unmerged coll record
+    end # unmerged 
 
-    context "merged record" do
+    context "merged with marc" do
       before(:each) do
         @ckey = '666'
         @indexer.stub(:coll_catkey).and_return(@ckey)
       end
       it "should call RecordMerger.merge_and_index" do
-        RecordMerger.should_receive(:merge_and_index).with('666', hash_including(:url_fulltext, :access_facet => 'Online', 
+        RecordMerger.should_receive(:merge_and_index).with(@ckey, hash_including(:url_fulltext, :access_facet => 'Online', 
                                                                                 :collection_type => "Digital Collection"))
         @indexer.index_coll_obj_per_config
       end
@@ -127,7 +156,7 @@ describe Indexer do
         @indexer.index_coll_obj_per_config
       end
     end
-  end # index collection record
+  end #  index_coll_obj_per_config
   
   it "druids method should call druids_via_oai method on harvestdor_client" do
     @hdor_client.should_receive(:druids_via_oai).and_return []
