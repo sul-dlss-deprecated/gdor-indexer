@@ -88,19 +88,19 @@ describe Indexer do
       context "format" do
         it "should include formats from coll_formats_from_items when the druid matches" do
           @indexer.stub(:coll_formats_from_items).and_return({@coll_druid_from_test_config => ['Image']})
-          @indexer.stub(:sw_solr_doc).and_return({})
+          SolrDocBuilder.any_instance.stub(:doc_hash).and_return({})
           @indexer.solr_client.should_receive(:add).with(hash_including(:format => ['Image']))
-          @indexer.index_collection_druid
+          @indexer.index_collection_druid # uses coll_druid_from_test_config
         end
         it "should not include formats from coll_formats_from_items when the druid doesn't match" do
           @indexer.stub(:coll_formats_from_items).and_return({'foo' => ['Image']})
-          @indexer.stub(:sw_solr_doc).and_return({:format => ['Video']})
+          SolrDocBuilder.any_instance.stub(:doc_hash).and_return({:format => ['Video']})
           @indexer.solr_client.should_receive(:add).with(hash_including(:format => ['Video']))
-          @indexer.index_collection_druid
+          @indexer.index_collection_druid # uses coll_druid_from_test_config
         end
         it "should not have duplicate format values" do
           @indexer.stub(:coll_formats_from_items).and_return({@coll_druid_from_test_config => ['Image', 'Video', 'Image']})
-          @indexer.stub(:sw_solr_doc).and_return({:format => ['Video']})
+          SolrDocBuilder.any_instance.stub(:doc_hash).and_return({:format => ['Video']})
           @indexer.solr_client.should_receive(:add).with(hash_including(:format => ['Image', 'Video']))
           @indexer.index_collection_druid
         end

@@ -156,7 +156,7 @@ class Indexer < Harvestdor::Indexer
         @success_count += 1
       else
         logger.info "Indexing collection object #{coll_druid_from_config}"
-        doc_hash = sw_solr_doc(coll_druid_from_config)
+        doc_hash = coll_sdb.doc_hash
         doc_hash[:collection_type] = 'Digital Collection'
         # add item formats
         addl_formats = coll_formats_from_items[coll_druid_from_config] # guarenteed to be Array or nil
@@ -184,19 +184,18 @@ class Indexer < Harvestdor::Indexer
     doc_hash = sdb.doc_hash
     
     # add coll level data to this solr doc and/or cache collection level information
-    coll_druids = sdb.coll_druids_from_rels_ext # defined in public_xml fields
+    coll_druids = sdb.coll_druids_from_rels_ext # defined in public_xml_fields
     if coll_druids
       doc_hash[:collection] = []
       doc_hash[:collection_with_title] = []
       coll_druids.each { |coll_druid|  
-        cache_coll_title coll_druid        
+        cache_coll_title coll_druid
         cache_item_formats_for_collection coll_druid, doc_hash[:format]  
         if coll_catkey
           doc_hash[:collection] << coll_catkey
         else
           doc_hash[:collection] << coll_druid
         end
-        
         doc_hash[:collection_with_title] << "#{coll_druid}-|-#{coll_druid_2_title_hash[coll_druid]}"
       } # each coll_druid
     end
@@ -204,7 +203,7 @@ class Indexer < Harvestdor::Indexer
     sdb.validate.each do |msg|
       @validation_messages += msg + "\n"
     end
-
+    
     doc_hash
   end
   
