@@ -11,8 +11,12 @@ describe Indexer do
     require 'yaml'
     @yaml = YAML.load_file(config_yml_path)
     @hdor_client = @indexer.send(:harvestdor_client)
+    @ns_decl = "xmlns='#{Mods::MODS_NS}'"
     @fake_druid = 'oo000oo0000'
     @coll_druid_from_test_config = "ww121ss5000"
+    mods_xml = "<mods #{@ns_decl}><note>Indexer test</note></mods>"
+    @ng_mods_xml =  Nokogiri::XML(mods_xml)
+    @ng_pub_xml = Nokogiri::XML("<publicObject id='druid#{@fake_druid}'></publicObject>")
   end
   
   describe "logging" do
@@ -30,8 +34,8 @@ describe Indexer do
   context "harvest_and_index" do
     before(:each) do
       @indexer.stub(:coll_druid_from_config).and_return(@fake_druid)
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML("<mods #{@ns_decl}><note>hi</note></mods>"))
-      @hdor_client.stub(:public_xml).with(@fake_druid).and_return(Nokogiri::XML("<publicObject id='druid#{@fake_druid}'></publicObject>"))
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+      @hdor_client.stub(:public_xml).with(@fake_druid).and_return(@ng_pub_xml)
       @coll_sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
       @coll_sdb.stub(:coll_object?).and_return(true)
       @indexer.stub(:coll_sdb).and_return(@coll_sdb)
@@ -84,10 +88,6 @@ describe Indexer do
   end
 
   context "#index_coll_obj_per_config" do
-    before(:all) do
-      @ng_pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'></publicObject>")
-      @fake_mods = Nokogiri::XML("<mods #{@ns_decl}><note>coll indexing test</note></mods>")
-    end
     context "merge or not?" do
       it "uses RecordMerger if there is a catkey" do
         ckey = '666'
@@ -165,33 +165,20 @@ describe Indexer do
     @indexer.druids
   end
   
-  context "sw_solr_doc fields" do
-    
-    before(:all) do
-      @ns_decl = "xmlns='#{Mods::MODS_NS}'"
-      @mods_xml = "<mods #{@ns_decl}><note>hi</note></mods>"
-    end
+  context "#add_coll_info" do
     before(:each) do
-      @title = 'qervavdsaasdfa'
-      ng_mods = Nokogiri::XML("<mods #{@ns_decl}><titleInfo><title>#{@title}</title></titleInfo></mods>")
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(ng_mods)
-      cntnt_md_xml = "<contentMetadata type='image' objectId='#{@fake_druid}'></contentMetadata>"
-      ng_pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{cntnt_md_xml}</publicObject>")
-      @hdor_client.stub(:public_xml).and_return(ng_pub_xml)
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+      @hdor_client.stub(:public_xml).and_return(@ng_pub_xml)
       @doc_hash = @indexer.sw_solr_doc(@fake_druid)
     end
 
-    it "should have fields populated from the MODS" do
-      @doc_hash[:title_245_search] = @title
+    it "collection field should be added to doc_hash" do
+      pending "to be implemented"
     end
-    it "should have fields populated from the public_xml" do
-      @doc_hash = @indexer.sw_solr_doc(@fake_druid)
-      @doc_hash[:format] = 'Image'
+    it "collection_with_title" do
+      pending "to be implemented"
     end
-    it "should populate url_fulltext field with purl page url" do
-      @doc_hash[:url_fulltext].should == "#{@yaml['purl']}/#{@fake_druid}"
-    end
-       
+    
     context "coll_druid_2_title_hash" do
       before(:all) do
         @coll_druid = 'ww121ss5000'
@@ -203,7 +190,7 @@ describe Indexer do
         @coll_title = "My Collection Has an Interesting Title"
       end
       before(:each) do
-        @hdor_client.stub(:mods).and_return(Nokogiri::XML(@mods_xml))        
+        @hdor_client.stub(:mods).and_return(@ng_mods_xml)
         @hdor_client.stub(:public_xml).with(@fake_druid).and_return(@pub_xml)
         @indexer.stub(:identity_md_obj_label).with(@coll_druid).and_return(@coll_title)
       end
@@ -232,7 +219,7 @@ describe Indexer do
         </rdf:Description></rdf:RDF>"
         pub_xml = Nokogiri::XML("<publicObject id='druid:#{item_druid}'>#{rels_ext_xml}</publicObject>")
         @hdor_client.stub(:public_xml).with(item_druid).and_return(pub_xml)
-        @hdor_client.stub(:mods).with(item_druid).and_return(Nokogiri::XML(@mods_xml))
+        @hdor_client.stub(:mods).with(item_druid).and_return(@ng_mods_xml)
         @indexer.stub(:identity_md_obj_label).with(coll_druid1).and_return('foo')
         @indexer.stub(:identity_md_obj_label).with(coll_druid2).and_return('bar')
         doc_hash = @indexer.sw_solr_doc(item_druid)
@@ -246,7 +233,7 @@ describe Indexer do
         </rdf:Description></rdf:RDF>"
         pub_xml = Nokogiri::XML("<publicObject id='druid:#{item_druid}'>#{rels_ext_xml}</publicObject>")
         @hdor_client.stub(:public_xml).with(item_druid).and_return(pub_xml)
-        @hdor_client.stub(:mods).with(item_druid).and_return(Nokogiri::XML(@mods_xml))
+        @hdor_client.stub(:mods).with(item_druid).and_return(@ng_mods_xml)
         doc_hash = @indexer.sw_solr_doc(item_druid)
         doc_hash[:collection].should == nil
         doc_hash[:collection_with_title].should == nil
@@ -278,7 +265,7 @@ describe Indexer do
       end
       it "gets multiple formats from single item for single collection" do
         # setup
-        @hdor_client.stub(:mods).and_return(Nokogiri::XML("<mods #{@ns_decl}> </mods>"))
+        @hdor_client.stub(:mods).and_return(@ng_mods_xml)
         SolrDocBuilder.any_instance.stub(:coll_druids_from_rels_ext).and_return([@coll_druid_from_config])
         @indexer.stub(:identity_md_obj_label).with(@coll_druid_from_config).and_return('coll title')
         Stanford::Mods::Record.any_instance.stub(:format).and_return(['Image', 'Video'])
@@ -288,7 +275,7 @@ describe Indexer do
       end
       it "gets multiple formats from multiple items for single collection" do
         # setup
-        @hdor_client.stub(:mods).and_return(Nokogiri::XML("<mods #{@ns_decl}> </mods>"))
+        @hdor_client.stub(:mods).and_return(@ng_mods_xml)
         SolrDocBuilder.any_instance.stub(:coll_druids_from_rels_ext).and_return([@coll_druid_from_config])
         @indexer.stub(:identity_md_obj_label).with(@coll_druid_from_config).and_return('coll title')
         Stanford::Mods::Record.any_instance.stub(:format).and_return(['Image'])
@@ -300,6 +287,31 @@ describe Indexer do
         @indexer.coll_formats_from_items[@coll_druid_from_config].should == ['Image', 'Video']
       end
     end # coll_formats_from_items
+  end #add_coll_info
+  
+  context "sw_solr_doc fields" do
+    before(:all) do
+      @title = 'qervavdsaasdfa'
+      @ng_mods = Nokogiri::XML("<mods #{@ns_decl}><titleInfo><title>#{@title}</title></titleInfo></mods>")
+      cntnt_md_xml = "<contentMetadata type='image' objectId='#{@fake_druid}'></contentMetadata>"
+      @ng_pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{cntnt_md_xml}</publicObject>")
+    end
+    before(:each) do
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods)
+      @hdor_client.stub(:public_xml).and_return(@ng_pub_xml)
+      @doc_hash = @indexer.sw_solr_doc(@fake_druid)
+    end
+
+    it "should have fields populated from the MODS" do
+      @doc_hash[:title_245_search] = @title
+    end
+    it "should have fields populated from the public_xml" do
+      @doc_hash = @indexer.sw_solr_doc(@fake_druid)
+      @doc_hash[:display_type] = 'image'
+    end
+    it "should populate url_fulltext field with purl page url" do
+      @doc_hash[:url_fulltext].should == "#{@yaml['purl']}/#{@fake_druid}"
+    end
   end # sw_solr_doc
   
   it "solr_client should initialize the rsolr client using the options from the config" do

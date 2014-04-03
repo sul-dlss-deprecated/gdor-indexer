@@ -46,8 +46,7 @@ class Indexer < Harvestdor::Indexer
   #   write the result to the SearchWorks Solr index
   #  (all members of the collection + coll rec itself)
   def harvest_and_index(nocommit = false)
-    start_time=Time.now
-    
+    start_time=Time.now 
     logger.info("Started harvest_and_index at #{start_time}")
 
     if !coll_sdb.coll_object?
@@ -131,21 +130,14 @@ class Indexer < Harvestdor::Indexer
     end
   end
 
-  # Create a Solr doc, as a Hash, to be added to the SearchWorks Solr index.  
-  # Solr doc contents are based on the mods, contentMetadata, etc. for the druid
-  # @param [String] druid, e.g. ab123cd4567
-  # @param [Stanford::Mods::Record] MODS metadata as a Stanford::Mods::Record object
-  # @param [Hash] Hash representing the Solr document
-  def sw_solr_doc druid
-    sdb = SolrDocBuilder.new(druid, harvestdor_client, logger)
-    
-    doc_hash = sdb.doc_hash
-    
-    # add coll level data to this solr doc and/or cache collection level information
-    coll_druids = sdb.coll_druids_from_rels_ext # defined in public_xml_fields
+  # add coll level data to this solr doc and/or cache collection level information
+  # @param [Hash] Hash representing the Solr document (for an item)
+  # @param [Array<String>] coll_druids  the druids for collection object the item is a member of
+  def add_coll_info doc_hash, coll_druids
     if coll_druids
       doc_hash[:collection] = []
       doc_hash[:collection_with_title] = []
+      
       coll_druids.each { |coll_druid|  
         cache_coll_title coll_druid
         cache_item_formats_for_collection coll_druid, doc_hash[:format]  
@@ -155,8 +147,19 @@ class Indexer < Harvestdor::Indexer
           doc_hash[:collection] << coll_druid
         end
         doc_hash[:collection_with_title] << "#{coll_druid}-|-#{coll_druid_2_title_hash[coll_druid]}"
-      } # each coll_druid
+      } 
     end
+  end
+
+  # Create a Solr doc, as a Hash, to be added to the SearchWorks Solr index.  
+  # Solr doc contents are based on the mods, contentMetadata, etc. for the druid
+  # @param [String] druid, e.g. ab123cd4567
+  def sw_solr_doc druid
+    sdb = SolrDocBuilder.new(druid, harvestdor_client, logger)
+    
+    doc_hash = sdb.doc_hash
+    
+    add_coll_info doc_hash, sdb.coll_druids_from_rels_ext # defined in public_xml_fields
 
     sdb.validate.each do |msg|
       @validation_messages += msg + "\n"
