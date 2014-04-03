@@ -5,7 +5,7 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
   before(:all) do
     @fake_druid = 'oo000oo0000'
     @ns_decl = "xmlns='#{Mods::MODS_NS}'"
-    @ng_mods_xml = Nokogiri::XML("<mods #{@ns_decl}><note>hi</note></mods>")
+    @ng_mods_xml = Nokogiri::XML("<mods #{@ns_decl}><note>public_xml_fields tests</note></mods>")
     @empty_ng_pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'></publicObject>")
   end
     
@@ -208,7 +208,7 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
       end
       
       it "should be ignore all but <file> element children of the image resource element" do
-        ng_xml = ng_xml = Nokogiri::XML("#{@content_md_start}<resource type='image'><label id='foo'>bar</label></resource>#{@content_md_end}")
+        ng_xml = Nokogiri::XML("#{@content_md_start}<resource type='image'><label id='foo'>bar</label></resource>#{@content_md_end}")
         @sdb.stub(:content_md).and_return(ng_xml.root)
         @sdb.image_ids.should == nil
       end
