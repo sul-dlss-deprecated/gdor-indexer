@@ -5,21 +5,22 @@ require 'record_merger'
 describe Indexer do
   
   before(:all) do
-    config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "walters_integration_spec.yml")
+    @config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "walters_integration_spec.yml")
     @solr_yml_path = File.join(File.dirname(__FILE__), "..", "config", "solr.yml")
-    @indexer = Indexer.new(config_yml_path, @solr_yml_path)
     require 'yaml'
-    @yaml = YAML.load_file(config_yml_path)
-    @hdor_client = @indexer.send(:harvestdor_client)
+    @yaml = YAML.load_file(@config_yml_path)
     @ns_decl = "xmlns='#{Mods::MODS_NS}'"
     @fake_druid = 'oo000oo0000'
     @coll_druid_from_test_config = "ww121ss5000"
-    mods_xml = "<mods #{@ns_decl}><note>Indexer test</note></mods>"
-    @ng_mods_xml =  Nokogiri::XML(mods_xml)
+    @ng_mods_xml =  Nokogiri::XML("<mods #{@ns_decl}><note>Indexer test</note></mods>")
     @ng_pub_xml = Nokogiri::XML("<publicObject id='druid#{@fake_druid}'></publicObject>")
   end
+  before(:each) do
+    @indexer = Indexer.new(@config_yml_path, @solr_yml_path)
+    @hdor_client = @indexer.send(:harvestdor_client)
+  end
   
-  describe "logging" do
+  context "logging" do
     it "should write the log file to the directory indicated by log_dir" do
       @indexer.logger.info("walters_integration_spec logging test message")
       File.exists?(File.join(@yaml['log_dir'], @yaml['log_name'])).should == true
@@ -63,11 +64,23 @@ describe Indexer do
     end
   end # harvest_and_index
   
-  context "index_item" do
-    context "unmerged" do
-      it "doesn't have a catkey" do
-        pending "to be implemented"
+  context "#index_item" do
+    context "merge or not?" do
+      it "uses RecordMerger if there is a catkey" do
+        pending "need to implement item level merge"
+        ckey = '666'
+        SolrDocBuilder.any_instance.stub(:catkey).and_return(ckey)
+        RecordMerger.should_receive(:merge_and_index)
+        @indexer.index_item @fake_druid
       end
+      it "does not use RecordMerger if there isn't a catkey" do
+        SolrDocBuilder.any_instance.stub(:catkey).and_return(nil)
+        RecordMerger.should_not_receive(:merge_and_index)
+        SolrDocBuilder.any_instance.stub(:doc_hash).and_return({}) # speed up the test
+        @indexer.index_item @fake_druid
+      end
+    end
+    context "unmerged" do
       it "should call solr_add" do
         doc_hash = {
           :id => @fake_druid,
@@ -166,125 +179,90 @@ describe Indexer do
   end
   
   context "#add_coll_info" do
-    before(:each) do
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
-      @hdor_client.stub(:public_xml).and_return(@ng_pub_xml)
-      @doc_hash = @indexer.sw_solr_doc(@fake_druid)
+    before(:all) do
+      @coll_druids_array = [@coll_druid_from_test_config]
     end
 
-    it "collection field should be added to doc_hash" do
-      pending "to be implemented"
-    end
-    it "collection_with_title" do
-      pending "to be implemented"
+    it "should add no collection field values to doc_hash if there are none" do
+      doc_hash = {}
+      @indexer.add_coll_info(doc_hash, nil)
+      doc_hash[:collection].should == nil
+      doc_hash[:collection_with_title].should == nil
     end
     
-    context "coll_druid_2_title_hash" do
-      before(:all) do
-        @coll_druid = 'ww121ss5000'
-        rels_ext_xml = "<rdf:RDF  xmlns:fedora='info:fedora/fedora-system:def/relations-external#' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
-        <rdf:Description rdf:about='info:fedora/druid:#{@fake_druid}'>
-        <fedora:isMemberOfCollection rdf:resource='info:fedora/druid:#{@coll_druid}'/>
-        </rdf:Description></rdf:RDF>"
-        @pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{rels_ext_xml}</publicObject>")
-        @coll_title = "My Collection Has an Interesting Title"
+    context "collection field" do
+      it "should be added field to doc hash" do
+        doc_hash = {}
+        @indexer.add_coll_info(doc_hash, @coll_druids_array)
+        doc_hash[:collection].should == [@coll_druid_from_test_config]
       end
-      before(:each) do
-        @hdor_client.stub(:mods).and_return(@ng_mods_xml)
-        @hdor_client.stub(:public_xml).with(@fake_druid).and_return(@pub_xml)
-        @indexer.stub(:identity_md_obj_label).with(@coll_druid).and_return(@coll_title)
-      end
-      
-      it "should add any missing druids" do
-        @indexer.coll_druid_2_title_hash.keys.should == []
-        @indexer.sw_solr_doc(@fake_druid)
-        @indexer.coll_druid_2_title_hash.keys.should == [@coll_druid]
-      end
-      it "should retrieve missing collection titles via identity_md_obj_label" do
-        @indexer.sw_solr_doc(@fake_druid)
-        @indexer.coll_druid_2_title_hash[@coll_druid].should == @coll_title
-      end
-      it "should be used to add collection field to solr doc" do
-        doc_hash = @indexer.sw_solr_doc(@fake_druid)
-        doc_hash[:collection].should == [@coll_druid]
-      end
-      it "should add two collection field values when object belongs to two collections" do
-        item_druid = 'oo123oo4567'
+      it "should add two values to doc_hash when object belongs to two collections" do
         coll_druid1 = 'oo111oo2222'
         coll_druid2 = 'oo333oo4444'
-        rels_ext_xml = "<rdf:RDF  xmlns:fedora='info:fedora/fedora-system:def/relations-external#' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
-        <rdf:Description rdf:about='info:fedora/druid:#{item_druid}'>
-        <fedora:isMemberOfCollection rdf:resource='info:fedora/druid:#{coll_druid1}'/>
-        <fedora:isMemberOfCollection rdf:resource='info:fedora/druid:#{coll_druid2}'/>
-        </rdf:Description></rdf:RDF>"
-        pub_xml = Nokogiri::XML("<publicObject id='druid:#{item_druid}'>#{rels_ext_xml}</publicObject>")
-        @hdor_client.stub(:public_xml).with(item_druid).and_return(pub_xml)
-        @hdor_client.stub(:mods).with(item_druid).and_return(@ng_mods_xml)
-        @indexer.stub(:identity_md_obj_label).with(coll_druid1).and_return('foo')
-        @indexer.stub(:identity_md_obj_label).with(coll_druid2).and_return('bar')
-        doc_hash = @indexer.sw_solr_doc(item_druid)
+        @indexer.stub(:identity_md_obj_label)
+        doc_hash = {}
+        @indexer.add_coll_info(doc_hash, [coll_druid1, coll_druid2])
         doc_hash[:collection].should == [coll_druid1, coll_druid2]
+      end
+    end
+
+    context "collection_with_title field" do
+      it "should be added to doc_hash" do
+        coll_druid = 'oo000oo1234'
+        @indexer.should_receive(:identity_md_obj_label).with(coll_druid).and_return('zzz')
+        doc_hash = {}
+        @indexer.add_coll_info(doc_hash, [coll_druid])
+        doc_hash[:collection_with_title].should == ["#{coll_druid}-|-zzz"]
+      end
+      it "should add two values to doc_hash when object belongs to two collections" do
+        coll_druid1 = 'oo111oo2222'
+        coll_druid2 = 'oo333oo4444'
+        @indexer.should_receive(:identity_md_obj_label).with(coll_druid1).and_return('foo')
+        @indexer.should_receive(:identity_md_obj_label).with(coll_druid2).and_return('bar')
+        doc_hash = {}
+        @indexer.add_coll_info(doc_hash, [coll_druid1, coll_druid2])
         doc_hash[:collection_with_title].should == ["#{coll_druid1}-|-foo", "#{coll_druid2}-|-bar"]
       end
-      it "should add no collection field values if there are none" do
-        item_druid = 'oo123oo4567'
-        rels_ext_xml = "<rdf:RDF  xmlns:fedora='info:fedora/fedora-system:def/relations-external#' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
-        <rdf:Description rdf:about='info:fedora/druid:#{item_druid}'>
-        </rdf:Description></rdf:RDF>"
-        pub_xml = Nokogiri::XML("<publicObject id='druid:#{item_druid}'>#{rels_ext_xml}</publicObject>")
-        @hdor_client.stub(:public_xml).with(item_druid).and_return(pub_xml)
-        @hdor_client.stub(:mods).with(item_druid).and_return(@ng_mods_xml)
-        doc_hash = @indexer.sw_solr_doc(item_druid)
-        doc_hash[:collection].should == nil
-        doc_hash[:collection_with_title].should == nil
+    end
+    
+    context "coll_druid_2_title_hash interactions" do
+      it "should add any missing druids" do
+        @indexer.stub(:coll_druid_2_title_hash).and_return({})
+        @indexer.stub(:identity_md_obj_label)
+        @indexer.add_coll_info({}, @coll_druids_array)
+        @indexer.coll_druid_2_title_hash.keys.should == @coll_druids_array
       end
-      it "should be used to add collection_with_title field to solr doc" do
-        doc_hash = @indexer.sw_solr_doc(@fake_druid)
-        doc_hash[:collection_with_title].should == ["#{@coll_druid}-|-#{@coll_title}"]
+      it "should retrieve missing collection titles via identity_md_obj_label" do
+        @indexer.stub(:identity_md_obj_label).and_return('qqq')
+        @indexer.add_coll_info({}, @coll_druids_array)
+        @indexer.coll_druid_2_title_hash[@coll_druid_from_test_config].should == 'qqq'
       end
     end # coll_druid_2_title_hash
 
     context "#coll_formats_from_items" do
-      before(:all) do
-        @coll_druid_from_config = 'ww121ss5000'
-      end
       before(:each) do
-        @indexer.coll_formats_from_items[@coll_druid_from_config] = []
+        @hdor_client.stub(:public_xml).and_return(@ng_pub_xml)
+        @indexer.coll_formats_from_items[@coll_druid_from_test_config] = []
       end
       it "gets single item format for single collection" do
-        # setup
-        m = "<mods #{@ns_decl}>
-          <typeOfResource>still image</typeOfResource>
-        </mods>"
-        @hdor_client.stub(:mods).and_return(Nokogiri::XML(m))
-        SolrDocBuilder.any_instance.stub(:coll_druids_from_rels_ext).and_return([@coll_druid_from_config])
-        @indexer.stub(:identity_md_obj_label).with(@coll_druid_from_config).and_return('coll title')
-        # actual test
-        @indexer.sw_solr_doc 'fake_item_druid'
-        @indexer.coll_formats_from_items[@coll_druid_from_config].should == ['Image']
+        @indexer.stub(:identity_md_obj_label)
+        doc_hash = {:format => 'Image'}
+        @indexer.add_coll_info(doc_hash, @coll_druids_array)
+        @indexer.coll_formats_from_items[@coll_druid_from_test_config].should == ['Image']
       end
       it "gets multiple formats from single item for single collection" do
-        # setup
-        @hdor_client.stub(:mods).and_return(@ng_mods_xml)
-        SolrDocBuilder.any_instance.stub(:coll_druids_from_rels_ext).and_return([@coll_druid_from_config])
-        @indexer.stub(:identity_md_obj_label).with(@coll_druid_from_config).and_return('coll title')
-        Stanford::Mods::Record.any_instance.stub(:format).and_return(['Image', 'Video'])
-        # actual test
-        @indexer.sw_solr_doc 'fake_item_druid'
-        @indexer.coll_formats_from_items[@coll_druid_from_config].should == ['Image', 'Video']
+        @indexer.stub(:identity_md_obj_label)
+        doc_hash = {:format => ['Image', 'Video']}
+        @indexer.add_coll_info(doc_hash, @coll_druids_array)
+        @indexer.coll_formats_from_items[@coll_druid_from_test_config].should == ['Image', 'Video']
       end
       it "gets multiple formats from multiple items for single collection" do
-        # setup
-        @hdor_client.stub(:mods).and_return(@ng_mods_xml)
-        SolrDocBuilder.any_instance.stub(:coll_druids_from_rels_ext).and_return([@coll_druid_from_config])
-        @indexer.stub(:identity_md_obj_label).with(@coll_druid_from_config).and_return('coll title')
-        Stanford::Mods::Record.any_instance.stub(:format).and_return(['Image'])
-        # actual test
-        @indexer.sw_solr_doc 'fake_item_druid'
-        Stanford::Mods::Record.any_instance.stub(:format).and_return(['Video'])
-        # actual test
-        @indexer.sw_solr_doc 'fake_item_druid2'
-        @indexer.coll_formats_from_items[@coll_druid_from_config].should == ['Image', 'Video']
+        @indexer.stub(:identity_md_obj_label)
+        doc_hash = {:format => 'Image'}
+        @indexer.add_coll_info(doc_hash, @coll_druids_array)
+        doc_hash = {:format => 'Video'}
+        @indexer.add_coll_info(doc_hash, @coll_druids_array)
+        @indexer.coll_formats_from_items[@coll_druid_from_test_config].should == ['Image', 'Video']
       end
     end # coll_formats_from_items
   end #add_coll_info
