@@ -20,7 +20,7 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
       @ng_pub_xml = Nokogiri::XML(@pub_xml)
     end
     before(:each) do
-      @hdor_client = double()
+      @hdor_client = double
       @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
       @hdor_client.stub(:public_xml).with(@fake_druid).and_return(@ng_pub_xml)
       @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
@@ -75,7 +75,7 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
       @ng_pub_xml = Nokogiri::XML(@pub_xml)
     end
     before(:each) do
-      @hdor_client = double()
+      @hdor_client = double
       @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
       @hdor_client.stub(:public_xml).with(@fake_druid).and_return(@ng_pub_xml)
       @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
@@ -153,7 +153,7 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
     
     context "image_ids" do
       before(:each) do
-        @hdor_client = double()
+        @hdor_client = double
         @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
         @hdor_client.stub(:public_xml).with(@fake_druid).and_return(nil)
         @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
@@ -240,7 +240,7 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
   
   context "rels-ext fields and methods" do
     before(:each) do
-      @hdor_client = double()
+      @hdor_client = double
       @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
       @ns_decl = "xmlns:fedora='info:fedora/fedora-system:def/relations-external#' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'"
     end

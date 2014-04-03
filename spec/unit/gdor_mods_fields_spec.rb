@@ -13,7 +13,7 @@ describe GdorModsFields do
   # "Doubles, stubs, and message expectations are all cleaned out after each example."
   # per https://www.relishapp.com/rspec/rspec-mocks/docs/scope
   before(:each) do
-    @hdor_client = double()
+    @hdor_client = double
     @hdor_client.stub(:public_xml).with(@fake_druid).and_return(nil)
   end
 
@@ -337,7 +337,7 @@ describe GdorModsFields do
       end
       before(:each) do
         @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_subject_mods)
-        @subject_doc_hash = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash_from_mods
+        @subject_doc_hash = SolrDocBuilder.new(@fake_druid, @hdor_client, nil).doc_hash_from_mods
       end
       it "should call the appropriate methods in stanford-mods to populate the Solr fields" do
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))

@@ -91,7 +91,7 @@ describe SolrDocBuilder do
       @barcode_id_md_ng = Nokogiri::XML("#{@identity_md_start}<otherId name=\"barcode\">666</otherId>#{@identity_md_end}")
     end
     before(:each) do
-      @hdor_client = double()
+      @hdor_client = double
       @hdor_client.stub(:public_xml).with(@fake_druid).and_return(nil)
       @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
       @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
