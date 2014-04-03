@@ -128,8 +128,8 @@ class Indexer < Harvestdor::Indexer
     if blacklist.include?(druid)
       logger.info("#{druid} is on the blacklist and will have no Solr doc created")
     else
+      logger.info "indexing item #{druid}"
       begin
-        logger.info "indexing item #{druid}"
         solr_add(sw_solr_doc(druid), druid)
         @success_count += 1
       rescue => e
@@ -159,10 +159,13 @@ class Indexer < Harvestdor::Indexer
         doc_hash = coll_sdb.doc_hash
         doc_hash[:collection_type] = 'Digital Collection'
         # add item formats
-        addl_formats = coll_formats_from_items[coll_druid_from_config] # guarenteed to be Array or nil
+        addl_formats = coll_formats_from_items[coll_druid_from_config] # guaranteed to be Array or nil
         if addl_formats && !addl_formats.empty?
           addl_formats.concat(doc_hash[:format]) if doc_hash[:format] # doc_hash[:format] guaranteed to be Array
           doc_hash[:format] = addl_formats.uniq
+        end
+        coll_sdb.validate.each do |msg|
+          @validation_messages += msg + "\n"
         end
         solr_add(doc_hash, coll_druid_from_config) unless coll_druid_from_config.nil?
         @success_count += 1

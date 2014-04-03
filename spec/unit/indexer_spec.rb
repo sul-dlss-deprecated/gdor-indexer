@@ -75,9 +75,6 @@ describe Indexer do
       end
     end
     context "merged with marc" do
-      it "has a catkey" do
-        pending "to be implemented"
-      end
     end
   end
   
@@ -111,6 +108,11 @@ describe Indexer do
       it "adds the collection doc to the index" do
         SolrDocBuilder.any_instance.stub(:doc_hash).and_return({}) # speed up the test
         @indexer.solr_client.should_receive(:add)
+        @indexer.index_coll_obj_per_config
+      end
+      it "validates the collection doc via SolrDocBuilder.validate" do
+        SolrDocBuilder.any_instance.stub(:doc_hash).and_return({}) # speed up the test
+        SolrDocBuilder.any_instance.should_receive(:validate)
         @indexer.index_coll_obj_per_config
       end
       context "format" do
