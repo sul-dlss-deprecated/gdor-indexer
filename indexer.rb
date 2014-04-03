@@ -74,54 +74,10 @@ class Indexer < Harvestdor::Indexer
       logger.info("Skipping commit per nocommit flag")
     end
 
-    logger.info("Avg solr commit time per object (successful): #{@total_time_to_solr/@success_count} seconds") unless (@total_time_to_solr == 0 || @success_count == 0)
-    logger.info("Avg solr commit time per object (all): #{@total_time_to_solr/total_objects} seconds") unless (@total_time_to_solr == 0 || @error_count == 0 || total_objects == 0)
-    logger.info("Avg parse time per object (successful): #{@total_time_to_parse/@success_count} seconds") unless (@total_time_to_parse == 0 || @success_count == 0)
-    logger.info("Avg parse time per object (all): #{@total_time_to_parse/total_objects} seconds") unless (@total_time_to_parse == 0 || @error_count == 0 || total_objects == 0)
-    logger.info("Avg complete index time per object (successful): #{total_time/@success_count} seconds") unless (@success_count == 0)
-    logger.info("Avg complete index time per object (all): #{total_time/total_objects} seconds") unless (@error_count == 0 || total_objects == 0)
-    logger.info("Successful count: #{@success_count}")
-    if @found_in_solr_count == @success_count
-      logger.info("Records verified in solr: #{@found_in_solr_count}")
-    else
-      logger.info("Success Count and Solr count dont match, this might be a problem! Records verified in solr: #{@found_in_solr_count}")
-    end
-    logger.info("Error count: #{@error_count}")
-    logger.info("Retry count: #{@retries}")
-    logger.info("Total records processed: #{total_objects}")
-    send_notifications
+    log_results
+    email_results
   end
   
-  def send_notifications
-    to_email = Indexer::config.notification ? Indexer::config.notification : 'gdor-indexing-notification@lists.stanford.edu'
-
-    total_objects = @success_count + @error_count
-    
-    body = "Successful count: #{@success_count}\n"
-    if @found_in_solr_count == @success_count
-      body += "Records verified in solr: #{@found_in_solr_count}\n"
-    else
-      body += "Success Count and Solr count dont match, this might be a problem!\nRecords verified in solr: #{@found_in_solr_count}\n"
-    end
-    body += "Error count: #{@error_count}\n"
-    body += "Retry count: #{@retries}\n"
-    body += "Total records processed: #{total_objects}\n"
-    body += "\n"
-    require 'socket'
-    body += "full log is at gdor_indexer/shared/#{Indexer.config.log_dir}/#{Indexer.config.log_name} on #{Socket.gethostname}"
-    body += "\n"
-    body += @validation_messages
-
-    opts = {}
-    opts[:subject] = "#{Indexer.config.log_name} into Solr server #{Indexer.config[:solr][:url]} is finished"
-    opts[:body] = body
-    begin
-      send_email(to_email, opts)
-    rescue
-      logger.error('Failed to send email notification!')
-    end
-  end
-
   # create Solr doc for the druid and add it to Solr, unless it is on the blacklist.  
   #  NOTE: don't forget to send commit to Solr, either once at end (already in harvest_and_index), or for each add, or ...
   def index_item druid
@@ -256,21 +212,6 @@ class Indexer < Harvestdor::Indexer
     @found_in_solr_count
   end
 
-  def send_email(to, opts = {})
-    opts[:server]     ||= 'localhost'
-    opts[:from]       ||= 'gryphondor@stanford.edu'
-    opts[:from_alias] ||= 'gryphondor'
-    opts[:subject]    ||= "default subject"
-    opts[:body]       ||= "default message body"
-    mail = Mail.new do
-      from    opts[:from]
-      to      to
-      subject opts[:subject]
-      body    opts[:body]
-    end
-    mail.deliver!
-  end
-  
   # cache the coll title so we don't have to look it up more than once
   def cache_coll_title coll_druid
     if !coll_druid_2_title_hash.keys.include? coll_druid
@@ -333,6 +274,71 @@ class Indexer < Harvestdor::Indexer
   
   def solr_client
     @solr_client ||= RSolr.connect(Indexer.config.solr.to_hash)
+  end
+  
+  # log details about the results of indexing
+  def log_results
+    logger.info("Avg solr commit time per object (successful): #{@total_time_to_solr/@success_count} seconds") unless (@total_time_to_solr == 0 || @success_count == 0)
+    logger.info("Avg solr commit time per object (all): #{@total_time_to_solr/total_objects} seconds") unless (@total_time_to_solr == 0 || @error_count == 0 || total_objects == 0)
+    logger.info("Avg parse time per object (successful): #{@total_time_to_parse/@success_count} seconds") unless (@total_time_to_parse == 0 || @success_count == 0)
+    logger.info("Avg parse time per object (all): #{@total_time_to_parse/total_objects} seconds") unless (@total_time_to_parse == 0 || @error_count == 0 || total_objects == 0)
+    logger.info("Avg complete index time per object (successful): #{total_time/@success_count} seconds") unless (@success_count == 0)
+    logger.info("Avg complete index time per object (all): #{total_time/total_objects} seconds") unless (@error_count == 0 || total_objects == 0)
+    logger.info("Successful count: #{@success_count}")
+    if @found_in_solr_count == @success_count
+      logger.info("Records verified in solr: #{@found_in_solr_count}")
+    else
+      logger.info("Success Count and Solr count dont match, this might be a problem! Records verified in solr: #{@found_in_solr_count}")
+    end
+    logger.info("Error count: #{@error_count}")
+    logger.info("Retry count: #{@retries}")
+    logger.info("Total records processed: #{total_objects}")
+  end
+  
+  # email the results of indexing
+  def email_results
+    to_email = Indexer::config.notification ? Indexer::config.notification : 'gdor-indexing-notification@lists.stanford.edu'
+
+    total_objects = @success_count + @error_count
+    
+    body = "Successful count: #{@success_count}\n"
+    if @found_in_solr_count == @success_count
+      body += "Records verified in solr: #{@found_in_solr_count}\n"
+    else
+      body += "Success Count and Solr count dont match, this might be a problem!\nRecords verified in solr: #{@found_in_solr_count}\n"
+    end
+    body += "Error count: #{@error_count}\n"
+    body += "Retry count: #{@retries}\n"
+    body += "Total records processed: #{total_objects}\n"
+    body += "\n"
+    require 'socket'
+    body += "full log is at gdor_indexer/shared/#{Indexer.config.log_dir}/#{Indexer.config.log_name} on #{Socket.gethostname}"
+    body += "\n"
+    body += @validation_messages
+
+    opts = {}
+    opts[:subject] = "#{Indexer.config.log_name} into Solr server #{Indexer.config[:solr][:url]} is finished"
+    opts[:body] = body
+    begin
+      send_email(to_email, opts)
+    rescue
+      logger.error('Failed to send email notification!')
+    end
+  end
+
+  def send_email(to, opts = {})
+    opts[:server]     ||= 'localhost'
+    opts[:from]       ||= 'gryphondor@stanford.edu'
+    opts[:from_alias] ||= 'gryphondor'
+    opts[:subject]    ||= "default subject"
+    opts[:body]       ||= "default message body"
+    mail = Mail.new do
+      from    opts[:from]
+      to      to
+      subject opts[:subject]
+      body    opts[:body]
+    end
+    mail.deliver!
   end
 
 end
