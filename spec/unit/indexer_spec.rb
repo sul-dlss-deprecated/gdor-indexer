@@ -18,6 +18,7 @@ describe Indexer do
   before(:each) do
     @indexer = Indexer.new(@config_yml_path, @solr_yml_path)
     @hdor_client = @indexer.send(:harvestdor_client)
+    @hdor_client.stub(:public_xml).and_return(@ng_pub_xml)
   end
   
   context "logging" do
@@ -81,13 +82,29 @@ describe Indexer do
       end
     end
     context "unmerged" do
+      before(:each) do
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+      end
       it "should call solr_add" do
-        doc_hash = {
-          :id => @fake_druid,
-          :field => 'val'
-        }
-        @indexer.stub(:sw_solr_doc).and_return(doc_hash)
-        Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(doc_hash, @fake_druid)
+        Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(instance_of(Hash), @fake_druid)
+        @indexer.index_item @fake_druid
+      end
+      it "should have fields populated from the MODS" do
+        title = 'fake title in mods'
+        ng_mods = Nokogiri::XML("<mods #{@ns_decl}><titleInfo><title>#{title}</title></titleInfo></mods>")
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(ng_mods)
+        Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(hash_including(:title_245_search => title), @fake_druid)
+        @indexer.index_item @fake_druid
+      end
+      it "should have fields populated from the public_xml" do
+        cntnt_md_xml = "<contentMetadata type='image' objectId='#{@fake_druid}'></contentMetadata>"
+        ng_pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{cntnt_md_xml}</publicObject>")
+        @hdor_client.stub(:public_xml).and_return(ng_pub_xml)
+        Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(hash_including(:display_type => 'image'), @fake_druid)
+        @indexer.index_item @fake_druid
+      end
+      it "should populate url_fulltext field with purl page url" do
+        Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(hash_including(:url_fulltext => "#{@yaml['purl']}/#{@fake_druid}"), @fake_druid)
         @indexer.index_item @fake_druid
       end
     end
@@ -150,7 +167,6 @@ describe Indexer do
       end
       it "collection_type should be 'Digital Collection'" do
         SolrDocBuilder.any_instance.stub(:doc_hash).and_return({}) # speed up the test
-        @indexer.stub(:sw_solr_doc).and_return({})
         @indexer.solr_client.should_receive(:add).with(hash_including(:collection_type => 'Digital Collection'))
         @indexer.index_coll_obj_per_config
       end
@@ -266,32 +282,7 @@ describe Indexer do
       end
     end # coll_formats_from_items
   end #add_coll_info
-  
-  context "sw_solr_doc fields" do
-    before(:all) do
-      @title = 'qervavdsaasdfa'
-      @ng_mods = Nokogiri::XML("<mods #{@ns_decl}><titleInfo><title>#{@title}</title></titleInfo></mods>")
-      cntnt_md_xml = "<contentMetadata type='image' objectId='#{@fake_druid}'></contentMetadata>"
-      @ng_pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{cntnt_md_xml}</publicObject>")
-    end
-    before(:each) do
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods)
-      @hdor_client.stub(:public_xml).and_return(@ng_pub_xml)
-      @doc_hash = @indexer.sw_solr_doc(@fake_druid)
-    end
-
-    it "should have fields populated from the MODS" do
-      @doc_hash[:title_245_search] = @title
-    end
-    it "should have fields populated from the public_xml" do
-      @doc_hash = @indexer.sw_solr_doc(@fake_druid)
-      @doc_hash[:display_type] = 'image'
-    end
-    it "should populate url_fulltext field with purl page url" do
-      @doc_hash[:url_fulltext].should == "#{@yaml['purl']}/#{@fake_druid}"
-    end
-  end # sw_solr_doc
-  
+    
   it "solr_client should initialize the rsolr client using the options from the config" do
     indexer = Indexer.new(nil, @solr_yml_path, Confstruct::Configuration.new(:solr => { :url => 'http://localhost:2345', :a => 1 }) )
     RSolr.should_receive(:connect).with(hash_including(:url => 'http://solr.baseurl.org'))

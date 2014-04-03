@@ -84,7 +84,14 @@ class Indexer < Harvestdor::Indexer
     else
       logger.info "indexing item #{druid}"
       begin
-        solr_add(sw_solr_doc(druid), druid)
+        sdb = SolrDocBuilder.new(druid, harvestdor_client, logger)
+        doc_hash = sdb.doc_hash
+        add_coll_info doc_hash, sdb.coll_druids_from_rels_ext # defined in public_xml_fields
+        sdb.validate.each do |msg|
+          @validation_messages += msg + "\n"
+        end
+
+        solr_add(doc_hash, druid)
         @success_count += 1
       rescue => e
         @error_count += 1
@@ -107,7 +114,6 @@ class Indexer < Harvestdor::Indexer
           :collection_type => 'Digital Collection'
         }
         RecordMerger.merge_and_index(coll_catkey, fields_to_add)
-        @success_count += 1
       else
         logger.info "Indexing collection object #{coll_druid_from_config}"
         doc_hash = coll_sdb.doc_hash
@@ -122,8 +128,8 @@ class Indexer < Harvestdor::Indexer
           @validation_messages += msg + "\n"
         end
         solr_add(doc_hash, coll_druid_from_config) unless coll_druid_from_config.nil?
-        @success_count += 1
       end
+      @success_count += 1
     rescue => e
       logger.error "Failed to merge collection object #{coll_druid_from_config}: #{e.message}"
       @error_count += 1
@@ -150,23 +156,6 @@ class Indexer < Harvestdor::Indexer
       } 
     end
   end
-
-  # Create a Solr doc, as a Hash, to be added to the SearchWorks Solr index.  
-  # Solr doc contents are based on the mods, contentMetadata, etc. for the druid
-  # @param [String] druid, e.g. ab123cd4567
-  def sw_solr_doc druid
-    sdb = SolrDocBuilder.new(druid, harvestdor_client, logger)
-    
-    doc_hash = sdb.doc_hash
-    
-    add_coll_info doc_hash, sdb.coll_druids_from_rels_ext # defined in public_xml_fields
-
-    sdb.validate.each do |msg|
-      @validation_messages += msg + "\n"
-    end
-    
-    doc_hash
-  end
   
   # @return [String] The collection object catkey or nil if none exists
   def coll_catkey
@@ -188,30 +177,6 @@ class Indexer < Harvestdor::Indexer
       end
       druid
     end
-  end
-
-  # count the number of records in solr for this collection (and the collection record itself)
-  #  and check for a purl in the collection record
-  def count_recs_in_solr
-    params = {:fl => 'id', :rows => 1000}
-    coll_rec_id = coll_catkey ? coll_catkey : coll_druid_from_config
-    params[:fq] = "collection:\"#{coll_rec_id}\""
-    params[:start] ||= 0
-    resp = solr_client.get 'select', :params => params
-    @found_in_solr_count = resp['response']['numFound'].to_i
-
-    # get the collection record too
-    params.delete(:fq)
-    params[:fl] = 'id, url_fulltext'
-    params[:qt] = 'document'
-    params[:id] = coll_rec_id
-    resp = solr_client.get 'select', :params => params
-    resp['response']['docs'].each do |doc|
-      if doc['url_fulltext'] and doc['url_fulltext'].to_s.include?('http://purl.stanford.edu/' + doc['id'])
-        @found_in_solr_count += 1
-      end
-    end
-    @found_in_solr_count
   end
 
   # cache the coll title so we don't have to look it up more than once
@@ -278,6 +243,30 @@ class Indexer < Harvestdor::Indexer
     @solr_client ||= RSolr.connect(Indexer.config.solr.to_hash)
   end
   
+  # count the number of records in solr for this collection (and the collection record itself)
+  #  and check for a purl in the collection record
+  def count_recs_in_solr
+    params = {:fl => 'id', :rows => 1000}
+    coll_rec_id = coll_catkey ? coll_catkey : coll_druid_from_config
+    params[:fq] = "collection:\"#{coll_rec_id}\""
+    params[:start] ||= 0
+    resp = solr_client.get 'select', :params => params
+    @found_in_solr_count = resp['response']['numFound'].to_i
+
+    # get the collection record too
+    params.delete(:fq)
+    params[:fl] = 'id, url_fulltext'
+    params[:qt] = 'document'
+    params[:id] = coll_rec_id
+    resp = solr_client.get 'select', :params => params
+    resp['response']['docs'].each do |doc|
+      if doc['url_fulltext'] and doc['url_fulltext'].to_s.include?('http://purl.stanford.edu/' + doc['id'])
+        @found_in_solr_count += 1
+      end
+    end
+    @found_in_solr_count
+  end
+
   # log details about the results of indexing
   def log_results
     total_objects = @success_count + @error_count
