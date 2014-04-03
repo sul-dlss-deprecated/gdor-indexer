@@ -61,10 +61,9 @@ class Indexer < Harvestdor::Indexer
       index_coll_obj_per_config
     end
     
-    total_time = elapsed_time(start_time)
-    total_objects = @success_count + @error_count
+    @total_time = elapsed_time(start_time)
     logger.info("Finished harvest_and_index at #{Time.now}: final Solr commit returned")
-    logger.info("Total elapsed time for harvest and index: #{(total_time/60.0)} minutes")
+    logger.info("Total elapsed time for harvest and index: #{(@total_time/60.0)} minutes")
 
     if !nocommit && coll_sdb.coll_object?
       logger.info("Beginning Commit.")
@@ -278,12 +277,13 @@ class Indexer < Harvestdor::Indexer
   
   # log details about the results of indexing
   def log_results
+    total_objects = @success_count + @error_count
     logger.info("Avg solr commit time per object (successful): #{@total_time_to_solr/@success_count} seconds") unless (@total_time_to_solr == 0 || @success_count == 0)
     logger.info("Avg solr commit time per object (all): #{@total_time_to_solr/total_objects} seconds") unless (@total_time_to_solr == 0 || @error_count == 0 || total_objects == 0)
     logger.info("Avg parse time per object (successful): #{@total_time_to_parse/@success_count} seconds") unless (@total_time_to_parse == 0 || @success_count == 0)
     logger.info("Avg parse time per object (all): #{@total_time_to_parse/total_objects} seconds") unless (@total_time_to_parse == 0 || @error_count == 0 || total_objects == 0)
-    logger.info("Avg complete index time per object (successful): #{total_time/@success_count} seconds") unless (@success_count == 0)
-    logger.info("Avg complete index time per object (all): #{total_time/total_objects} seconds") unless (@error_count == 0 || total_objects == 0)
+    logger.info("Avg complete index time per object (successful): #{@total_time/@success_count} seconds") unless (@success_count == 0)
+    logger.info("Avg complete index time per object (all): #{@total_time/total_objects} seconds") unless (@error_count == 0 || total_objects == 0)
     logger.info("Successful count: #{@success_count}")
     if @found_in_solr_count == @success_count
       logger.info("Records verified in solr: #{@found_in_solr_count}")
