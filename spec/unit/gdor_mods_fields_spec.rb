@@ -5,7 +5,7 @@ describe GdorModsFields do
     @fake_druid = 'oo000oo0000'
     @ns_decl = "xmlns='#{Mods::MODS_NS}'"
     @strio = StringIO.new
-    @mods_xml = "<mods #{@ns_decl}><note>hi</note></mods>"
+    @mods_xml = "<mods #{@ns_decl}><note>gdor_mods_fields testing</note></mods>"
     @ng_mods_xml = Nokogiri::XML(@mods_xml)
   end
 
@@ -30,8 +30,8 @@ describe GdorModsFields do
       end
       it "should have a value for each abstract element" do
         m = "<mods #{@ns_decl}>
-        <abstract>one</abstract>
-        <abstract>two</abstract>
+          <abstract>one</abstract>
+          <abstract>two</abstract>
         </mods>"
         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
@@ -74,11 +74,11 @@ describe GdorModsFields do
       end
       it "should have a value for each extent element" do
         m = "<mods #{@ns_decl}>
-        <physicalDescription>
-        <extent>one</extent>
-        <extent>two</extent>
-        </physicalDescription>
-        <physicalDescription><extent>three</extent></physicalDescription>
+          <physicalDescription>
+            <extent>one</extent>
+            <extent>two</extent>
+          </physicalDescription>
+          <physicalDescription><extent>three</extent></physicalDescription>
         </mods>"
         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
@@ -107,14 +107,14 @@ describe GdorModsFields do
       end
       it "should have a value for each mods/relatedItem/location/url element" do
         m = "<mods #{@ns_decl}>
-        <relatedItem>
-        <location><url>one</url></location>
-        <location>
-        <url>two</url>
-        <url>three</url>
-        </location>
-        </relatedItem>
-        <relatedItem><location><url>four</url></location></relatedItem>
+          <relatedItem>
+            <location><url>one</url></location>
+            <location>
+              <url>two</url>
+              <url>three</url>
+            </location>
+          </relatedItem>
+          <relatedItem><location><url>four</url></location></relatedItem>
         </mods>"
         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
@@ -128,9 +128,9 @@ describe GdorModsFields do
       end
       it "should not be present if there are only empty relatedItem/location/url elements in the MODS" do
         m = "<mods #{@ns_decl}>
-        <relatedItem><location><url/></location></relatedItem>
-        <relatedItem><location/></relatedItem>
-        <relatedItem/><note>notit</note></mods>"
+          <relatedItem><location><url/></location></relatedItem>
+          <relatedItem><location/></relatedItem>
+          <relatedItem/><note>notit</note></mods>"
         @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
         sdb.doc_hash_from_mods[:url_suppl].should ==  nil
@@ -216,8 +216,8 @@ describe GdorModsFields do
           <titleInfo><title>Joke</title></titleInfo>
           <titleInfo type='alternative'><title>Alternative</title></titleInfo>
           </mods>"
-          @ng_title_mods = Nokogiri::XML(title_mods)
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_title_mods)
+          ng_title_mods = Nokogiri::XML(title_mods)
+          @hdor_client.stub(:mods).with(@fake_druid).and_return(ng_title_mods)
           @title_doc_hash = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash_from_mods
           @title_doc_hash
           @title_doc_hash[:title_full_display].should == "The Jerk is whom"
@@ -647,8 +647,7 @@ describe GdorModsFields do
           doc_hash[:pub_date_group_facet].should == ['Last 3 years']
         end
         it 'should be missing for a missing date' do
-          m = "<mods #{@ns_decl}><note>hi</note></originInfo></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
           doc_hash = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash_from_mods
           doc_hash[:pub_date_groups_facet].should == nil
         end
@@ -823,10 +822,7 @@ describe GdorModsFields do
       sdb.smods_rec.format.should == ['Image']
     end
     it "should return nothing if there is no format info" do
-      m = "<mods #{@ns_decl}><originInfo>
-      <dateCreated>1904</dateCreated>
-      </originInfo></mods>"
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
       sdb.smods_rec.format.should == []
     end

@@ -6,7 +6,7 @@ describe SolrDocBuilder do
   before(:all) do
     @fake_druid = 'oo000oo0000'
     @ns_decl = "xmlns='#{Mods::MODS_NS}'"
-    @mods_xml = "<mods #{@ns_decl}><note>hi</note></mods>"
+    @mods_xml = "<mods #{@ns_decl}><note>SolrDocBuilder test</note></mods>"
     @ng_mods_xml = Nokogiri::XML(@mods_xml)
     @strio = StringIO.new
   end
@@ -17,7 +17,6 @@ describe SolrDocBuilder do
 
   context "doc_hash" do
     before(:all) do
-      @ng_mods_xml = Nokogiri::XML("<mods #{@ns_decl}><note>hi</note></mods>")
       cmd_xml = "<contentMetadata type='image' objectId='#{@fake_druid}'></contentMetadata>"
       @ng_pub_xml = Nokogiri::XML("<publicObject id='druid#{@fake_druid}'>#{cmd_xml}</publicObject>")
     end
@@ -76,8 +75,8 @@ describe SolrDocBuilder do
         messages.length.should == 0
       end
       it 'should have validation messages for an incomplete record' do
-        solr_doc=SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        messages=solr_doc.validate
+        solr_doc = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+        messages = solr_doc.validate
         messages.length.should > 0
       end
     end  
@@ -116,7 +115,7 @@ describe SolrDocBuilder do
       sdb.catkey.should == nil
     end
     it "should log an error when there is identityMetadata/otherId with name attribute of barcode but there is no catkey in mods" do
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML("<mods #{@ns_decl}> </mods>"))
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
       logger = Logger.new(@strio)
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, logger)
       sdb.stub(:public_xml).and_return(@barcode_id_md_ng.root)
@@ -125,7 +124,7 @@ describe SolrDocBuilder do
     end
     context "catkey from mods" do
       it "should look for catkey in mods if identityMetadata/otherId with name attribute of barcode is found" do
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML("<mods #{@ns_decl}> </mods>"))
+        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
         sdb.stub(:public_xml).and_return(@barcode_id_md_ng.root)
         smr = sdb.smods_rec
