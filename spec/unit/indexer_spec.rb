@@ -40,7 +40,7 @@ describe Indexer do
       @indexer.stub(:coll_sdb).and_return(@coll_sdb)
       @indexer.logger.should_receive(:fatal).with("#{@fake_druid} is not a collection object!! (per identityMetaadata)  Ending indexing.")
       @indexer.should_not_receive(:index_item)
-      @indexer.should_not_receive(:index_collection_druid)
+      @indexer.should_not_receive(:index_coll_obj_per_config)
       @indexer.solr_client.should_not_receive(:commit)
       @indexer.harvest_and_index
     end
@@ -51,9 +51,9 @@ describe Indexer do
       @indexer.should_receive(:index_item).with('3')
       @indexer.harvest_and_index(true) # nocommit for ease of testing
     end
-    it "should call index_collection_druid once for the coll druid from the config file" do
+    it "should call index_coll_obj_per_config once for the coll druid from the config file" do
       Harvestdor::Indexer.any_instance.should_receive(:druids).and_return([])
-      @indexer.should_receive(:index_collection_druid)
+      @indexer.should_receive(:index_coll_obj_per_config)
       @indexer.harvest_and_index(true) # nocommit for ease of testing
     end
   end # harvest_and_index
@@ -83,32 +83,32 @@ describe Indexer do
     context "unmerged record" do
       it "indexes the collection druid" do
         @indexer.solr_client.should_receive(:add)
-        @indexer.index_collection_druid
+        @indexer.index_coll_obj_per_config
       end
       context "format" do
         it "should include formats from coll_formats_from_items when the druid matches" do
           @indexer.stub(:coll_formats_from_items).and_return({@coll_druid_from_test_config => ['Image']})
           SolrDocBuilder.any_instance.stub(:doc_hash).and_return({})
           @indexer.solr_client.should_receive(:add).with(hash_including(:format => ['Image']))
-          @indexer.index_collection_druid # uses coll_druid_from_test_config
+          @indexer.index_coll_obj_per_config
         end
         it "should not include formats from coll_formats_from_items when the druid doesn't match" do
           @indexer.stub(:coll_formats_from_items).and_return({'foo' => ['Image']})
           SolrDocBuilder.any_instance.stub(:doc_hash).and_return({:format => ['Video']})
           @indexer.solr_client.should_receive(:add).with(hash_including(:format => ['Video']))
-          @indexer.index_collection_druid # uses coll_druid_from_test_config
+          @indexer.index_coll_obj_per_config
         end
         it "should not have duplicate format values" do
           @indexer.stub(:coll_formats_from_items).and_return({@coll_druid_from_test_config => ['Image', 'Video', 'Image']})
           SolrDocBuilder.any_instance.stub(:doc_hash).and_return({:format => ['Video']})
           @indexer.solr_client.should_receive(:add).with(hash_including(:format => ['Image', 'Video']))
-          @indexer.index_collection_druid
+          @indexer.index_coll_obj_per_config
         end
       end
       it "collection_type should be 'Digital Collection'" do
         @indexer.stub(:sw_solr_doc).and_return({})
         @indexer.solr_client.should_receive(:add).with(hash_including(:collection_type => 'Digital Collection'))
-        @indexer.index_collection_druid
+        @indexer.index_coll_obj_per_config
       end
     end # unmerged coll record
 
@@ -120,11 +120,11 @@ describe Indexer do
       it "should call RecordMerger.merge_and_index" do
         RecordMerger.should_receive(:merge_and_index).with('666', hash_including(:url_fulltext, :access_facet => 'Online', 
                                                                                 :collection_type => "Digital Collection"))
-        @indexer.index_collection_druid
+        @indexer.index_coll_obj_per_config
       end
       it "should add a doc to Solr with field collection_type" do
         SolrjWrapper.any_instance.should_receive(:add_doc_to_ix).with(hash_including('collection_type'), @ckey)
-        @indexer.index_collection_druid
+        @indexer.index_coll_obj_per_config
       end
     end
   end # index collection record

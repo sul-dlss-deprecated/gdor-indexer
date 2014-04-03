@@ -58,7 +58,7 @@ class Indexer < Harvestdor::Indexer
       else
         whitelist.threach(3) { |druid| index_item druid }
       end
-      index_collection_druid
+      index_coll_obj_per_config
     end
     
     total_time = elapsed_time(start_time)
@@ -126,7 +126,7 @@ class Indexer < Harvestdor::Indexer
   #  NOTE: don't forget to send commit to Solr, either once at end (already in harvest_and_index), or for each add, or ...
   def index_item druid
     if blacklist.include?(druid)
-      logger.info("Druid #{druid} is on the blacklist and will have no Solr doc created")
+      logger.info("#{druid} is on the blacklist and will have no Solr doc created")
     else
       begin
         logger.info "indexing item #{druid}"
@@ -142,7 +142,7 @@ class Indexer < Harvestdor::Indexer
   # Create Solr document for the collection druid suitable for SearchWorks
   #  and write the result to the SearchWorks Solr Index
   # @param [String] druid 
-  def index_collection_druid
+  def index_coll_obj_per_config
     # we have already affirmed that coll_druid_from_config is a collection record in harvest_and_index method
     begin
       if coll_catkey
