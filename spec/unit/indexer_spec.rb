@@ -363,13 +363,37 @@ describe Indexer do
       end
     end
     context "expected value is a String" do
-      it "does something" do
-        pending "to be implemented"
+      it "true if doc_hash[field] is a String and matches" do
+        {:foo => "a"}.field_present?(:foo, 'a').should == true
+      end
+      it "false if doc_hash[field] is a String and doesn't match" do
+        {:foo => "a"}.field_present?(:foo, 'b').should == false
+      end
+      it "true if doc_hash[field] is an Array with a value that matches" do
+        {:foo => ["a", "b"]}.field_present?(:foo, 'a').should == true
+      end
+      it "false if doc_hash[field] is an Array with no value that matches" do
+        {:foo => ["a", "b"]}.field_present?(:foo, 'c').should == false
+      end
+      it "false if doc_hash[field] is not a String or Array" do
+        {:foo => {}}.field_present?(:foo, 'a').should == false
       end
     end
     context "expected value is Regex" do
-      it "does something" do
-        pending "to be implemented"
+      it "true if doc_hash[field] is a String and matches" do
+        {:foo => "aba"}.field_present?(:foo, /b/).should == true
+      end
+      it "false if doc_hash[field] is a String and doesn't match" do
+        {:foo => "aaaaa"}.field_present?(:foo, /b/).should == false
+      end
+      it "true if doc_hash[field] is an Array with a value that matches" do
+        {:foo => ["a", "b"]}.field_present?(:foo, /b/).should == true
+      end
+      it "false if doc_hash[field] is an Array with no value that matches" do
+        {:foo => ["a", "b"]}.field_present?(:foo, /c/).should == false
+      end
+      it "false if doc_hash[field] is not a String or Array" do
+        {:foo => {}}.field_present?(:foo, /a/).should == false
       end
     end
   end
