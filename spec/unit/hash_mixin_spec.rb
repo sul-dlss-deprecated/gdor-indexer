@@ -2,6 +2,19 @@ require 'hash_mixin'
 
 describe Hash do
   context "#field_present?" do
+    
+    context "actual field value is boolean true" do
+      it "true if expected value is nil" do
+        {:a => true}.field_present?(:a).should == false
+      end
+      it "false if expected value is String" do
+        {:a => true}.field_present?(:a, 'true').should == false
+      end
+      it "false if expected value is Regex" do
+        {:a => true}.field_present?(:a => /true/).should == false
+      end
+    end
+
     context "expected value is nil" do
       it "false if the field is not in the doc_hash" do
         {}.field_present?(:any).should == false
@@ -28,6 +41,7 @@ describe Hash do
         {:foo => {}}.field_present?(:foo).should == false
       end
     end
+    
     context "expected value is a String" do
       it "true if doc_hash[field] is a String and matches" do
         {:foo => "a"}.field_present?(:foo, 'a').should == true
@@ -45,6 +59,7 @@ describe Hash do
         {:foo => {}}.field_present?(:foo, 'a').should == false
       end
     end
+    
     context "expected value is Regex" do
       it "true if doc_hash[field] is a String and matches" do
         {:foo => "aba"}.field_present?(:foo, /b/).should == true

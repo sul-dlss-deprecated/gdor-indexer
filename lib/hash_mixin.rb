@@ -6,7 +6,7 @@ class Hash
   # when exp_val is a Regexp, looks for String value that matches, or Array with a String member that matches
   # @return true if the field is non-trivially present in the hash, false otherwise
   def field_present? field, exp_val = nil
-    if self[field] && self[field].length > 0 
+    if self[field] && (self[field].instance_of?(String) || self[field].instance_of?(Array)) && self[field].length > 0 
       actual = self[field]
       return true if exp_val == nil && ( !actual.instance_of?(Array) || actual.index { |s| s.length > 0 } )
       if exp_val.instance_of?(String)
