@@ -88,9 +88,10 @@ class Indexer < Harvestdor::Indexer
         sdb = SolrDocBuilder.new(druid, harvestdor_client, logger)
         doc_hash = sdb.doc_hash
         add_coll_info doc_hash, sdb.coll_druids_from_rels_ext # defined in public_xml_fields
-        sdb.validate.each do |msg|
-          @validation_messages += msg + "\n"
-        end
+
+        validation_messages = validate_item(druid, doc_hash)
+        validation_messages.concat sdb.validate_mods(druid, doc_hash)
+        @validation_messages = validation_messages.join("\n") + "\n"
 
         solr_add(doc_hash, druid)
         @success_count += 1
@@ -114,6 +115,8 @@ class Indexer < Harvestdor::Indexer
           :access_facet => 'Online',
           :collection_type => 'Digital Collection'
         }
+        validation_messages = validate_collection(coll_druid_from_config, fields_to_add)
+        @validation_messages = validation_messages.join("\n") + "\n"
         RecordMerger.merge_and_index(coll_catkey, fields_to_add)
       else
         logger.info "Indexing collection object #{coll_druid_from_config}"
@@ -125,9 +128,11 @@ class Indexer < Harvestdor::Indexer
           addl_formats.concat(doc_hash[:format]) if doc_hash[:format] # doc_hash[:format] guaranteed to be Array
           doc_hash[:format] = addl_formats.uniq
         end
-        coll_sdb.validate.each do |msg|
-          @validation_messages += msg + "\n"
-        end
+
+        validation_messages = validate_collection(coll_druid_from_config, doc_hash)
+        validation_messages.concat coll_sdb.validate_mods(coll_druid_from_config, doc_hash)
+        @validation_messages = validation_messages.join("\n") + "\n"
+
         solr_add(doc_hash, coll_druid_from_config) unless coll_druid_from_config.nil?
       end
       @success_count += 1
@@ -251,7 +256,6 @@ class Indexer < Harvestdor::Indexer
     result << "#{druid} missing collection of harvest\n" if !doc_hash.field_present?(:collection, coll_druid_from_config)
     result << "#{druid} missing collection_with_title (or collection #{coll_druid_from_config} is missing title)\n" if !doc_hash.field_present?(:collection_with_title, Regexp.new("#{coll_druid_from_config}-\\|-.+"))
     result << "#{druid} missing file_id\n" if !doc_hash.field_present?(:file_id)
-#    result << validate_mods druid, doc_hash
     result
   end
   
@@ -260,7 +264,6 @@ class Indexer < Harvestdor::Indexer
   def validate_collection druid, doc_hash
     result = validate_gdor_fields druid, doc_hash
     result << "#{druid} missing collection_type 'Digital Collection'\n" if !doc_hash.field_present?(:collection_type, 'Digital Collection')
-#    result << validate_mods druid, doc_hash
     result
   end
 

@@ -51,19 +51,17 @@ class SolrDocBuilder
     @doc_hash
   end
   
-  # @return array of Strings pertaining to absence of required fields
-  def validate
-    messages = []
-    messages << "#{@druid} missing druid" if doc_hash.blank? :druid
-    messages << "#{@druid} missing modsxml" if doc_hash.blank? :modsxml
-    messages << "#{@druid} missing access_facet" if doc_hash.blank? :access_facet
-    messages << "#{@druid} missing display_type" if display_type.kind_of?(String) && doc_hash.blank?(:display_type)
-    messages << "#{@druid} missing format" if doc_hash.blank? :format
-    messages << "#{@druid} missing title" if doc_hash.blank? :title_display
-    messages << "#{@druid} missing pub year for date slider" if doc_hash.blank? :pub_year_tisim
-    messages << "#{@druid} missing author" if doc_hash.blank? :author_person_display
-    messages << "#{@druid} missing language" if doc_hash.blank? :language
-    messages
+  # validate fields that should be in doc hash for every unmerged gryphonDOR object in SearchWorks Solr
+  # @return [Array<String>] array of Strings indicating absence of required fields
+  def validate_mods druid = @druid, doc_fields_hash = doc_hash
+    result = []
+    result << "#{druid} missing modsxml\n" if !doc_fields_hash.field_present?(:modsxml)
+    result << "#{druid} missing format\n" if !doc_fields_hash.field_present?(:format)
+    result << "#{druid} missing title\n" if !doc_fields_hash.field_present?(:title_display)
+    result << "#{druid} missing pub year for date slider\n" if !doc_hash.field_present?(:pub_year_tisim)
+    result << "#{druid} missing author\n" if !doc_fields_hash.field_present?(:author_person_display)
+    result << "#{druid} missing language\n" if !doc_fields_hash.field_present?(:language)
+    result
   end
 
   # @return [String] value with SIRSI/Symphony numeric catkey in it, or nil if none exists

@@ -62,27 +62,31 @@ describe SolrDocBuilder do
       sdb.should_receive(:doc_hash_from_mods)
       sdb.doc_hash
     end
-    context "validation method" do
+    context "#validation_mods" do
       it 'should have no validation messages for a complete record' do
-        solr_doc = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        hash = solr_doc.doc_hash
-        hash[:title_display] = 'title'
-        hash[:pub_year_tisim] = 'some year'
-        hash[:author_person_display] = 'author'
-        hash[:format] = 'Image'
-        hash[:language] = 'English'
-        messages = solr_doc.validate
-        messages.length.should == 0
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+        sdb.stub(:doc_hash).and_return({
+          :modsxml => 'whatever',
+          :title_display => 'title',
+          :pub_year_tisim => 'some year',
+          :author_person_display => 'author',
+          :format => 'Image',
+          :language => 'English'
+        })
+        sdb.validate_mods.length.should == 0
       end
       it 'should have validation messages for an incomplete record' do
-        solr_doc = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        messages = solr_doc.validate
-        messages.length.should > 0
+        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+        # note that passing in args this time
+        doc_hash = {
+          :modsxml => 'whatever',
+        }
+        sdb.validate_mods('druid', doc_hash).length.should > 0
       end
     end  
   end # doc hash
 
-  context 'catkey' do
+  context '#catkey' do
     before(:all) do
       @identity_md_start = "<publicObject><identityMetadata objectId='#{@fake_druid}'>"
       @identity_md_end = "</identityMetadata></publicObject>"
@@ -122,6 +126,7 @@ describe SolrDocBuilder do
       logger.should_receive(:error).with(/#{@fake_druid} has barcode .* in identityMetadata but no SIRSI catkey in mods/)
       sdb.catkey
     end
+    
     context "catkey from mods" do
       it "should look for catkey in mods if identityMetadata/otherId with name attribute of barcode is found" do
         @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
@@ -168,7 +173,7 @@ describe SolrDocBuilder do
         sdb.catkey.should == '6780453'
       end
     end
-  end # catkey
+  end # #catkey
 
   context "using Harvestdor::Client" do
     before(:all) do
@@ -178,7 +183,7 @@ describe SolrDocBuilder do
       @real_hdor_client = @indexer.send(:harvestdor_client)
     end
     
-    context "smods_rec method (called in initialize method)" do
+    context "#smods_rec (called in initialize method)" do
       it "should return Stanford::Mods::Record object" do
         @real_hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
         @real_hdor_client.stub(:public_xml).with(@fake_druid).and_return(nil)
@@ -194,7 +199,7 @@ describe SolrDocBuilder do
       end
     end
 
-    context "public_xml method (called in initialize method)" do
+    context "#public_xml (called in initialize method)" do
       before(:each) do
         @real_hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
       end

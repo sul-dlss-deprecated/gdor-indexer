@@ -81,6 +81,7 @@ describe Indexer do
         @indexer.index_item @fake_druid
       end
     end
+
     context "unmerged" do
       before(:each) do
         @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
@@ -107,10 +108,22 @@ describe Indexer do
         Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(hash_including(:url_fulltext => "#{@yaml['purl']}/#{@fake_druid}"), @fake_druid)
         @indexer.index_item @fake_druid
       end
-    end
+      it "validates the item doc via validate_item" do
+        @indexer.should_receive(:validate_item)
+        @indexer.index_item @fake_druid
+      end
+      it "validates the item doc via SolrDocBuilder.validate_mods" do
+        SolrDocBuilder.any_instance.should_receive(:validate_mods)
+        @indexer.index_item @fake_druid
+      end
+    end # umerged item
+
     context "merged with marc" do
-    end
-  end
+      it "does something" do
+        pending "item level merge to be implemented"
+      end
+    end # merged item
+  end # index_item 
   
   it "coll_druid_from_config gets the druid from the config" do
     String.any_instance.should_receive(:include?).with('is_member_of_collection_').and_call_original
@@ -140,9 +153,14 @@ describe Indexer do
         @indexer.solr_client.should_receive(:add)
         @indexer.index_coll_obj_per_config
       end
-      it "validates the collection doc via SolrDocBuilder.validate" do
+      it "validates the collection doc via validate_collection" do
         SolrDocBuilder.any_instance.stub(:doc_hash).and_return({}) # speed up the test
-        SolrDocBuilder.any_instance.should_receive(:validate)
+        @indexer.should_receive(:validate_collection)
+        @indexer.index_coll_obj_per_config
+      end
+      it "validates the collection doc via SolrDocBuilder.validate_mods" do
+        SolrDocBuilder.any_instance.stub(:doc_hash).and_return({}) # speed up the test
+        SolrDocBuilder.any_instance.should_receive(:validate_mods)
         @indexer.index_coll_obj_per_config
       end
       context "format" do
@@ -184,6 +202,11 @@ describe Indexer do
       end
       it "should add a doc to Solr with field collection_type" do
         SolrjWrapper.any_instance.should_receive(:add_doc_to_ix).with(hash_including('collection_type'), @ckey)
+        @indexer.index_coll_obj_per_config
+      end
+      it "validates the collection doc via validate_collection" do
+        SolrDocBuilder.any_instance.stub(:doc_hash).and_return({}) # speed up the test
+        @indexer.should_receive(:validate_collection)
         @indexer.index_coll_obj_per_config
       end
     end
