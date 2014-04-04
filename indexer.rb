@@ -243,7 +243,18 @@ class Indexer < Harvestdor::Indexer
     @solr_client ||= RSolr.connect(Indexer.config.solr.to_hash)
   end
 
-  # test fields that should be in hash for a collection object in SearchWorks Solr
+  # validate fields that should be in hash for any item object in SearchWorks Solr
+  # @return [Array<String>] Array of messages suitable for notificaiton email and/or logs
+  def validate_item druid, doc_hash
+    result = validate_gdor_fields druid, doc_hash
+    result << "#{druid} missing collection of harvest\n" if !doc_hash.field_present?(:collection, coll_druid_from_config)
+    result << "#{druid} missing collection_with_title (or collection #{coll_druid_from_config} is missing title)\n" if !doc_hash.field_present?(:collection_with_title, Regexp.new("#{coll_druid_from_config}-\\|-.+"))
+    result << "#{druid} missing file_id\n" if !doc_hash.field_present?(:file_id)
+#    result << validate_mods druid, doc_hash
+    result
+  end
+  
+  # validate fields that should be in hash for any collection object in SearchWorks Solr
   # @return [Array<String>] Array of messages suitable for notificaiton email and/or logs
   def validate_collection druid, doc_hash
     result = validate_gdor_fields druid, doc_hash
@@ -252,7 +263,7 @@ class Indexer < Harvestdor::Indexer
     result
   end
 
-  # test fields that should be in hash for every gryphonDOR object in SearchWorks Solr
+  # validate fields that should be in hash for every gryphonDOR object in SearchWorks Solr
   # @return [Array<String>] Array of messages suitable for notificaiton email and/or logs
   def validate_gdor_fields druid, doc_hash
     result = []

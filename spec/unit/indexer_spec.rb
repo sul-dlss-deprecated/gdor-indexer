@@ -33,7 +33,7 @@ describe Indexer do
     @hdor_client.config.default_set.should == @yaml['default_set']
   end
   
-  context "harvest_and_index" do
+  context "#harvest_and_index" do
     before(:each) do
       @indexer.stub(:coll_druid_from_config).and_return(@fake_druid)
       @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
@@ -128,12 +128,12 @@ describe Indexer do
       it "does not use RecordMerger if there isn't a catkey" do
         @indexer.stub(:coll_catkey).and_return(nil)
         RecordMerger.should_not_receive(:merge_and_index)
-        # speed up the test
-        SolrDocBuilder.any_instance.stub(:doc_hash).and_return({})
+        SolrDocBuilder.any_instance.stub(:doc_hash).and_return({}) # speed up the test
         @indexer.solr_client.should_receive(:add)
         @indexer.index_coll_obj_per_config
       end
     end
+    
     context "unmerged" do
       it "adds the collection doc to the index" do
         SolrDocBuilder.any_instance.stub(:doc_hash).and_return({}) # speed up the test
@@ -183,7 +183,7 @@ describe Indexer do
         @indexer.index_coll_obj_per_config
       end
       it "should add a doc to Solr with field collection_type" do
-        SolrjWrapper.any_instance.should_receive(:add_doc_to_ix).with(hash_including('collection_type'), @ckey)
+        SolrjWrapper.any_instance.should_receive(:add_doc_to_ix).with(hash_including('collection_type' => "Digital Collection"), @ckey)
         @indexer.index_coll_obj_per_config
       end
     end
@@ -363,7 +363,57 @@ describe Indexer do
         :display_type => 'image'}
         @indexer.validate_gdor_fields(@fake_druid, hash).first.should =~ /access_facet/
     end
-  end
+  end # validate_gdor_fields
+
+  context "#validate_item" do
+    before(:each) do
+      @indexer.stub(:validate_gdor_fields).and_return([])
+    end
+    it "should call validate_gdor_fields" do
+      @indexer.should_receive(:validate_gdor_fields)
+      @indexer.validate_item(@fake_druid, {})
+    end
+    it "should have a value if collection is wrong" do
+      hash = {
+        :collection => 'junk',
+        :collection_with_title => "#{@coll_druid_from_test_config}-|-asdasdf",
+        :file_id => 'anything'
+      }
+      @indexer.validate_item(@fake_druid, hash).first.should =~ /collection /
+    end
+    it "should have a value if collection_with_title is missing" do
+      hash = {
+        :collection => @coll_druid_from_test_config,
+        :collection_with_title => nil,
+        :file_id => 'anything'
+      }
+      @indexer.validate_item(@fake_druid, hash).first.should =~ /collection_with_title /
+    end
+    it "should have a value if collection_with_title is missing the title" do
+      hash = {
+        :collection => @coll_druid_from_test_config,
+        :collection_with_title => "#{@coll_druid_from_test_config}-|-",
+        :file_id => 'anything'
+      }
+      @indexer.validate_item(@fake_druid, hash).first.should =~ /collection_with_title /
+    end
+    it "should have a value if file_id field is missing" do
+      hash = {
+        :collection => @coll_druid_from_test_config,
+        :collection_with_title => "#{@coll_druid_from_test_config}-|-asdasdf",
+        :file_id => nil
+      }
+      @indexer.validate_item(@fake_druid, hash).first.should =~ /file_id/
+    end
+    it "should not have a value if gdor_fields and item fields are ok" do
+      hash = {
+        :collection => @coll_druid_from_test_config,
+        :collection_with_title => "#{@coll_druid_from_test_config}-|-asdasdf",
+        :file_id => 'anything'
+      }
+      @indexer.validate_item(@fake_druid, hash).should == []
+    end
+  end # validate_item
 
   context "#validate_collection" do
     before(:each) do
@@ -382,7 +432,7 @@ describe Indexer do
     it "should not have a value if gdor_fields and collection_type are ok" do
       @indexer.validate_collection(@fake_druid, {:collection_type => 'Digital Collection'}).should == []
     end
-  end
+  end # validate_collection
 
   context "Hash.field_present?" do
     context "expected value is nil" do
