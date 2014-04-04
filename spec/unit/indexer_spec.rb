@@ -183,7 +183,7 @@ describe Indexer do
         @indexer.index_coll_obj_per_config
       end
       it "should add a doc to Solr with field collection_type" do
-        SolrjWrapper.any_instance.should_receive(:add_doc_to_ix).with(hash_including('collection_type' => "Digital Collection"), @ckey)
+        SolrjWrapper.any_instance.should_receive(:add_doc_to_ix).with(hash_including('collection_type'), @ckey)
         @indexer.index_coll_obj_per_config
       end
     end
