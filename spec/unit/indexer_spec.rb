@@ -289,7 +289,7 @@ describe Indexer do
     indexer.solr_client
   end
   
-  context "identity_md_obj_label" do
+  context "#identity_md_obj_label" do
     before(:all) do
       @coll_title = "My Collection Has a Lovely Title"
       @ng_id_md_xml = Nokogiri::XML("<identityMetadata><objectLabel>#{@coll_title}</objectLabel></identityMetadata>")
@@ -306,7 +306,7 @@ describe Indexer do
     end
   end
   
-  context "count_recs_in_solr" do
+  context "#count_recs_in_solr" do
     before :each do 
       @collection_response = {'response' => {'numFound'=>'1','docs'=>[{'id'=>'dm212rn7381', 'url_fulltext' => ['http://purl.stanford.edu/dm212rn7381']}]}}
       @bad_collection_response = {'response' => {'numFound'=>'1','docs'=>[{'id'=>'dm212rn7381'}]}}
@@ -334,6 +334,36 @@ describe Indexer do
       end
     end
   end # count_recs_in_solr
+
+  context "#validate_gdor_fields" do
+    it "should return an empty Array when there are no problems" do
+      hash = {
+        :access_facet => 'Online',
+        :druid => @fake_druid,
+        :url_fulltext => "#{@yaml['purl']}/#{@fake_druid}",
+        :display_type => 'image'}
+      @indexer.validate_gdor_fields(@fake_druid, hash).should == []
+    end
+    it "should have a value for each missing field" do
+      @indexer.validate_gdor_fields(@fake_druid, {}).length.should == 4
+    end
+    it "should have a value for an unrecognized display_type" do
+      hash = {
+        :access_facet => 'Online',
+        :druid => @fake_druid,
+        :url_fulltext => "#{@yaml['purl']}/#{@fake_druid}",
+        :display_type => 'zzzz'}
+      @indexer.validate_gdor_fields(@fake_druid, hash).first.should =~ /display_type/
+    end
+    it "should have a value for access_facet other than 'Online'" do
+      hash = {
+        :access_facet => 'BAD',
+        :druid => @fake_druid,
+        :url_fulltext => "#{@yaml['purl']}/#{@fake_druid}",
+        :display_type => 'image'}
+        @indexer.validate_gdor_fields(@fake_druid, hash).first.should =~ /access_facet/
+    end
+  end
 
   context "Hash.field_present?" do
     context "expected value is nil" do
