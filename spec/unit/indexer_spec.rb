@@ -365,6 +365,25 @@ describe Indexer do
     end
   end
 
+  context "#validate_collection" do
+    before(:each) do
+      @indexer.stub(:validate_gdor_fields).and_return([])
+    end
+    it "should call validate_gdor_fields" do
+      @indexer.should_receive(:validate_gdor_fields)
+      @indexer.validate_collection(@fake_druid, {})
+    end
+    it "should have a value if collection_type is missing" do
+      @indexer.validate_collection(@fake_druid, {}).first.should =~ /collection_type/
+    end
+    it "should have a value if collection_type is not 'Digital Collection'" do
+      @indexer.validate_collection(@fake_druid, {:collection_type => 'lalalalala'}).first.should =~ /collection_type/
+    end
+    it "should not have a value if gdor_fields and collection_type are ok" do
+      @indexer.validate_collection(@fake_druid, {:collection_type => 'Digital Collection'}).should == []
+    end
+  end
+
   context "Hash.field_present?" do
     context "expected value is nil" do
       it "false if the field is not in the doc_hash" do
