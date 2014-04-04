@@ -242,6 +242,17 @@ class Indexer < Harvestdor::Indexer
   def solr_client
     @solr_client ||= RSolr.connect(Indexer.config.solr.to_hash)
   end
+
+  # test fields that should be in hash for every gryphonDOR object in SearchWorks Solr
+  # @return [Array<String>] Array of messages suitable for notificaiton email and/or logs
+  def validate_gdor_fields druid, doc_hash
+    result = []
+    result << "#{druid} missing druid field\n" if !doc_hash.field_present?(:druid, druid)
+    result << "#{druid} missing url_fulltext for purl\n" if !doc_hash.field_present?(:url_fulltext, "#{Indexer.config.purl}/#{druid}")
+    result << "#{druid} missing access_facet 'Online'\n" if !doc_hash.field_present?(:access_facet, 'Online')
+    result << "#{druid} missing or bad display_type, possibly caused by unrecognized @type attribute on <contentMetadata>\n" if !doc_hash.field_present?(:display_type, /(file)|(image)|(media)|(book)/)
+    result
+  end
   
   # count the number of records in solr for this collection (and the collection record itself)
   #  and check for a purl in the collection record
