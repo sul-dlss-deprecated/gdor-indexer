@@ -26,4 +26,34 @@ class Hash
     false
   end
   
+  # merge in field values from the new hash, with the following guarantees:
+  #  values for keys in new_hash will be a non-empty String or flat Array 
+  #  keys will be removed from hash if all values are nil or empty 
+  def combine new_hash
+    new_hash.each_key { |key| 
+      # only pay attention to real new values
+      new_val = new_hash[key] if new_hash[key] && (new_hash[key].instance_of?(String) || new_hash[key].instance_of?(Array)) && new_hash[key].length > 0
+
+      if self[key] && (self[key].instance_of?(String) || self[key].instance_of?(Array)) && self[key].length > 0 
+        orig_val = self[key]
+        if orig_val.instance_of?(String)
+          if new_val
+            self[key] = [orig_val, new_val].flatten.uniq
+          end
+        elsif orig_val.instance_of?(Array)
+          if new_val
+            self[key] = [orig_val, new_val].flatten.uniq
+          end
+        end
+      else # no old value
+        if new_val
+          self[key] = new_val
+        else
+          self.delete(key)
+        end
+      end
+    }
+    self
+  end
+  
 end
