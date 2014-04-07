@@ -83,17 +83,33 @@ class Indexer < Harvestdor::Indexer
     if blacklist.include?(druid)
       logger.info("#{druid} is on the blacklist and will have no Solr doc created")
     else
-      logger.info "indexing item #{druid}"
       begin
         sdb = SolrDocBuilder.new(druid, harvestdor_client, logger)
-        doc_hash = sdb.doc_hash
-        add_coll_info doc_hash, sdb.coll_druids_from_rels_ext # defined in public_xml_fields
+        ckey = sdb.catkey
+        if ckey
+          logger.debug "item #{druid} merged into #{ckey}"
+          fields_to_add = {
+            :druid => druid,
+            :url_fulltext => "http://purl.stanford.edu/#{druid}",
+            :access_facet => 'Online',
+            # TODO:  file_ids
+            # TODO:  display_type
+          }
+          add_coll_info fields_to_add, sdb.coll_druids_from_rels_ext # defined in public_xml_fields
+          validation_messages = validate_item(druid, fields_to_add)
+          @validation_messages = validation_messages.join("\n") + "\n"
+          RecordMerger.merge_and_index(ckey, fields_to_add)
+        else
+          logger.info "indexing item #{druid}"
+          doc_hash = sdb.doc_hash
+          add_coll_info doc_hash, sdb.coll_druids_from_rels_ext # defined in public_xml_fields
 
-        validation_messages = validate_item(druid, doc_hash)
-        validation_messages.concat sdb.validate_mods(druid, doc_hash)
-        @validation_messages = validation_messages.join("\n") + "\n"
+          validation_messages = validate_item(druid, doc_hash)
+          validation_messages.concat sdb.validate_mods(druid, doc_hash)
+          @validation_messages = validation_messages.join("\n") + "\n"
 
-        solr_add(doc_hash, druid)
+          solr_add(doc_hash, druid)
+        end
         @success_count += 1
       rescue => e
         @error_count += 1
@@ -113,7 +129,9 @@ class Indexer < Harvestdor::Indexer
         fields_to_add = {
           :url_fulltext => "http://purl.stanford.edu/#{coll_druid_from_config}",
           :access_facet => 'Online',
-          :collection_type => 'Digital Collection'
+          :collection_type => 'Digital Collection',
+          # TODO:  display_type
+          # TODO:  druid
         }
         validation_messages = validate_collection(coll_druid_from_config, fields_to_add)
         @validation_messages = validation_messages.join("\n") + "\n"

@@ -68,21 +68,23 @@ describe Indexer do
   context "#index_item" do
     context "merge or not?" do
       it "uses RecordMerger if there is a catkey" do
-        pending "need to implement item level merge"
         ckey = '666'
-        SolrDocBuilder.any_instance.stub(:catkey).and_return(ckey)
-        RecordMerger.should_receive(:merge_and_index)
+        sdb = double
+        sdb.stub(:catkey).and_return(ckey)
+        sdb.stub(:coll_druids_from_rels_ext)
+        SolrDocBuilder.stub(:new).and_return(sdb)
+        RecordMerger.should_receive(:merge_and_index).with(ckey, instance_of(Hash))
         @indexer.index_item @fake_druid
       end
       it "does not use RecordMerger if there isn't a catkey" do
-        RecordMerger.should_not_receive(:merge_and_index)
         sdb = double
         sdb.stub(:catkey).and_return(nil)
         sdb.stub(:public_xml)
-        sdb.stub(:doc_hash).and_return({}) # speed up the test
+        sdb.stub(:doc_hash).and_return({})
         sdb.stub(:coll_druids_from_rels_ext)
         sdb.stub(:validate_mods).and_return([])
         SolrDocBuilder.stub(:new).and_return(sdb)
+        RecordMerger.should_not_receive(:merge_and_index)
         @indexer.solr_client.should_receive(:add)
         @indexer.index_item @fake_druid
       end
@@ -122,19 +124,29 @@ describe Indexer do
         Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(hash_including(:url_fulltext => "#{@yaml['purl']}/#{@fake_druid}"), @fake_druid)
         @indexer.index_item @fake_druid
       end
+    end # unmerged item
+
+    context "merged with marc" do
+      before(:each) do
+        @ickey = '999'
+        @sdb = double
+        @sdb.stub(:catkey).and_return(@ickey)
+        @sdb.stub(:coll_druids_from_rels_ext).and_return(['foo'])
+        SolrDocBuilder.stub(:new).and_return(@sdb)
+        @indexer.stub(:identity_md_obj_label).with('foo').and_return('bar')
+        @indexer.stub(:coll_catkey).and_return(nil)
+      end
+      it "should call RecordMerger.merge_and_index" do
+        RecordMerger.should_receive(:merge_and_index).with(@ickey, hash_including(:collection => ['foo'], :collection_with_title => ['foo-|-bar']))
+        @indexer.index_item @fake_druid
+      end
       it "validates the item doc via validate_item" do
         @indexer.should_receive(:validate_item)
         @indexer.index_item @fake_druid
       end
-      it "validates the item doc via SolrDocBuilder.validate_mods" do
-        SolrDocBuilder.any_instance.should_receive(:validate_mods)
+      it "should add a doc to Solr with item fields added" do
+        SolrjWrapper.any_instance.should_receive(:add_doc_to_ix).with(hash_including('collection', 'collection_with_title'), @ickey)
         @indexer.index_item @fake_druid
-      end
-    end # umerged item
-
-    context "merged with marc" do
-      it "does something" do
-        pending "item level merge to be implemented"
       end
     end # merged item
   end # index_item 
