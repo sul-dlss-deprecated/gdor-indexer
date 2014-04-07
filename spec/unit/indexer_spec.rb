@@ -75,9 +75,15 @@ describe Indexer do
         @indexer.index_item @fake_druid
       end
       it "does not use RecordMerger if there isn't a catkey" do
-        SolrDocBuilder.any_instance.stub(:catkey).and_return(nil)
         RecordMerger.should_not_receive(:merge_and_index)
-        SolrDocBuilder.any_instance.stub(:doc_hash).and_return({}) # speed up the test
+        sdb = double
+        sdb.stub(:catkey).and_return(nil)
+        sdb.stub(:public_xml)
+        sdb.stub(:doc_hash).and_return({}) # speed up the test
+        sdb.stub(:coll_druids_from_rels_ext)
+        sdb.stub(:validate_mods).and_return([])
+        SolrDocBuilder.stub(:new).and_return(sdb)
+        @indexer.solr_client.should_receive(:add)
         @indexer.index_item @fake_druid
       end
     end
@@ -88,6 +94,14 @@ describe Indexer do
       end
       it "should call solr_add" do
         Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(instance_of(Hash), @fake_druid)
+        @indexer.index_item @fake_druid
+      end
+      it "validates the item doc via validate_item" do
+        @indexer.should_receive(:validate_item)
+        @indexer.index_item @fake_druid
+      end
+      it "validates the item doc via SolrDocBuilder.validate_mods" do
+        SolrDocBuilder.any_instance.should_receive(:validate_mods)
         @indexer.index_item @fake_druid
       end
       it "should have fields populated from the MODS" do
@@ -200,13 +214,13 @@ describe Indexer do
                                                                                 :collection_type => "Digital Collection"))
         @indexer.index_coll_obj_per_config
       end
-      it "should add a doc to Solr with field collection_type" do
-        SolrjWrapper.any_instance.should_receive(:add_doc_to_ix).with(hash_including('collection_type'), @ckey)
-        @indexer.index_coll_obj_per_config
-      end
       it "validates the collection doc via validate_collection" do
         SolrDocBuilder.any_instance.stub(:doc_hash).and_return({}) # speed up the test
         @indexer.should_receive(:validate_collection)
+        @indexer.index_coll_obj_per_config
+      end
+      it "should add a doc to Solr with field collection_type" do
+        SolrjWrapper.any_instance.should_receive(:add_doc_to_ix).with(hash_including('collection_type'), @ckey)
         @indexer.index_coll_obj_per_config
       end
     end
