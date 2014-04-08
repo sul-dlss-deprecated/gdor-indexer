@@ -72,6 +72,8 @@ describe Indexer do
         sdb = double
         sdb.stub(:catkey).and_return(ckey)
         sdb.stub(:coll_druids_from_rels_ext)
+        sdb.stub(:public_xml)
+        sdb.stub(:display_type)
         SolrDocBuilder.stub(:new).and_return(sdb)
         RecordMerger.should_receive(:merge_and_index).with(ckey, instance_of(Hash))
         @indexer.index_item @fake_druid
@@ -82,6 +84,7 @@ describe Indexer do
         sdb.stub(:public_xml)
         sdb.stub(:doc_hash).and_return({})
         sdb.stub(:coll_druids_from_rels_ext)
+        sdb.stub(:display_type)
         sdb.stub(:validate_mods).and_return([])
         SolrDocBuilder.stub(:new).and_return(sdb)
         RecordMerger.should_not_receive(:merge_and_index)
@@ -94,16 +97,33 @@ describe Indexer do
       before(:each) do
         @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
       end
-      it "should call solr_add" do
+      it "calls Harvestdor::Indexer.solr_add" do
         Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(instance_of(Hash), @fake_druid)
         @indexer.index_item @fake_druid
       end
-      it "validates the item doc via validate_item" do
+      it "calls validate_item" do
         @indexer.should_receive(:validate_item)
         @indexer.index_item @fake_druid
       end
-      it "validates the item doc via SolrDocBuilder.validate_mods" do
+      it "calls SolrDocBuilder.validate_mods" do
         SolrDocBuilder.any_instance.should_receive(:validate_mods)
+        @indexer.index_item @fake_druid
+      end
+      it "calls add_coll_info" do
+        @indexer.should_receive(:add_coll_info)
+        @indexer.index_item @fake_druid
+      end
+      it "should have populated collection fields" do
+        sdb = double
+        sdb.stub(:catkey).and_return(nil)
+        sdb.stub(:doc_hash).and_return({})
+        sdb.stub(:display_type)
+        sdb.stub(:validate_mods).and_return([])
+        SolrDocBuilder.stub(:new).and_return(sdb)
+        sdb.stub(:coll_druids_from_rels_ext).and_return(['foo'])
+        @indexer.stub(:identity_md_obj_label).with('foo').and_return('bar')
+        Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(hash_including(:collection => ['foo'], 
+                                                                                        :collection_with_title => ['foo-|-bar']), @fake_druid)
         @indexer.index_item @fake_druid
       end
       it "should have fields populated from the MODS" do
@@ -113,15 +133,17 @@ describe Indexer do
         Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(hash_including(:title_245_search => title), @fake_druid)
         @indexer.index_item @fake_druid
       end
-      it "should have fields populated from the public_xml" do
-        cntnt_md_xml = "<contentMetadata type='image' objectId='#{@fake_druid}'></contentMetadata>"
-        ng_pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{cntnt_md_xml}</publicObject>")
-        @hdor_client.stub(:public_xml).and_return(ng_pub_xml)
-        Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(hash_including(:display_type => 'image'), @fake_druid)
-        @indexer.index_item @fake_druid
-      end
       it "should populate url_fulltext field with purl page url" do
         Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(hash_including(:url_fulltext => "#{@yaml['purl']}/#{@fake_druid}"), @fake_druid)
+        @indexer.index_item @fake_druid
+      end
+      it "should populate druid and access_facet fields" do
+        Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(hash_including(:druid => @fake_druid, :access_facet => 'Online'), @fake_druid)
+        @indexer.index_item @fake_druid
+      end
+      it "should populate display_type field by calling display_type method" do
+        SolrDocBuilder.any_instance.should_receive(:display_type).and_return("foo")
+        Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(hash_including(:display_type => "foo"), @fake_druid)
         @indexer.index_item @fake_druid
       end
     end # unmerged item
@@ -132,20 +154,30 @@ describe Indexer do
         @sdb = double
         @sdb.stub(:catkey).and_return(@ickey)
         @sdb.stub(:coll_druids_from_rels_ext).and_return(['foo'])
+        @sdb.stub(:display_type).and_return('fiddle')
         SolrDocBuilder.stub(:new).and_return(@sdb)
         @indexer.stub(:identity_md_obj_label).with('foo').and_return('bar')
         @indexer.stub(:coll_catkey).and_return(nil)
       end
-      it "should call RecordMerger.merge_and_index" do
-        RecordMerger.should_receive(:merge_and_index).with(@ickey, hash_including(:collection => ['foo'], :collection_with_title => ['foo-|-bar']))
+      it "calls RecordMerger.merge_and_index with gdor fields and item specific fields" do
+        RecordMerger.should_receive(:merge_and_index).with(@ickey, hash_including(:display_type => 'fiddle',
+                                                                                  :druid => @fake_druid,
+                                                                                  :url_fulltext => "#{@yaml['purl']}/#{@fake_druid}",
+                                                                                  :access_facet => 'Online',
+                                                                                  :collection => ['foo'],
+                                                                                  :collection_with_title => ['foo-|-bar'] ))
         @indexer.index_item @fake_druid
       end
-      it "validates the item doc via validate_item" do
+      it "calls add_coll_info" do
+        @indexer.should_receive(:add_coll_info)
+        @indexer.index_item @fake_druid
+      end
+      it "calls validate_item" do
         @indexer.should_receive(:validate_item)
         @indexer.index_item @fake_druid
       end
       it "should add a doc to Solr with item fields added" do
-        SolrjWrapper.any_instance.should_receive(:add_doc_to_ix).with(hash_including('collection', 'collection_with_title'), @ickey)
+        SolrjWrapper.any_instance.should_receive(:add_doc_to_ix).with(hash_including('display_type', 'druid', 'collection', 'collection_with_title'), @ickey)
         @indexer.index_item @fake_druid
       end
     end # merged item
@@ -179,18 +211,18 @@ describe Indexer do
         @indexer.solr_client.should_receive(:add)
         @indexer.index_coll_obj_per_config
       end
-      it "validates the collection doc via validate_collection" do
+      it "calls validate_collection" do
         SolrDocBuilder.any_instance.stub(:doc_hash).and_return({}) # speed up the test
         @indexer.should_receive(:validate_collection)
         @indexer.index_coll_obj_per_config
       end
-      it "validates the collection doc via SolrDocBuilder.validate_mods" do
+      it "calls SolrDocBuilder.validate_mods" do
         SolrDocBuilder.any_instance.stub(:doc_hash).and_return({}) # speed up the test
         SolrDocBuilder.any_instance.should_receive(:validate_mods)
         @indexer.index_coll_obj_per_config
       end
       context "format" do
-        it "should include formats from coll_formats_from_items when the druid matches" do
+        it "includes formats from coll_formats_from_items when the druid matches" do
           @indexer.stub(:coll_formats_from_items).and_return({@coll_druid_from_test_config => ['Image']})
           SolrDocBuilder.any_instance.stub(:doc_hash).and_return({})
           @indexer.solr_client.should_receive(:add).with(hash_including(:format => ['Image']))
@@ -209,20 +241,49 @@ describe Indexer do
           @indexer.index_coll_obj_per_config
         end
       end
+      context "display_type" do
+        it "includes display_types from coll_display_types_from_items when the druid matches" do
+          @indexer.stub(:coll_display_types_from_items).and_return({@coll_druid_from_test_config => ['image']})
+          SolrDocBuilder.any_instance.stub(:doc_hash).and_return({})
+          @indexer.solr_client.should_receive(:add).with(hash_including(:display_type => ['image']))
+          @indexer.index_coll_obj_per_config
+        end
+        it "does not include display_types from coll_display_types_from_items when the druid doesn't match" do
+          @indexer.stub(:coll_display_types_from_items).and_return({'foo' => ['image']})
+          SolrDocBuilder.any_instance.stub(:doc_hash).and_return({})
+          @indexer.solr_client.should_not_receive(:add).with(hash_including(:display_type => ['image']))
+          @indexer.index_coll_obj_per_config
+        end
+      end
+      it "populates druid and access_facet fields" do
+        Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(hash_including(:druid => @coll_druid_from_test_config, 
+                                                                                        :access_facet => 'Online'), 
+                                                                                        @coll_druid_from_test_config)
+        @indexer.index_coll_obj_per_config
+      end
+      it "populates url_fulltext field with purl page url" do
+        Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(hash_including(:url_fulltext => "#{@yaml['purl']}/#{@coll_druid_from_test_config}"), 
+                                                                                        @coll_druid_from_test_config)
+        @indexer.index_coll_obj_per_config
+      end
       it "collection_type should be 'Digital Collection'" do
         SolrDocBuilder.any_instance.stub(:doc_hash).and_return({}) # speed up the test
         @indexer.solr_client.should_receive(:add).with(hash_including(:collection_type => 'Digital Collection'))
         @indexer.index_coll_obj_per_config
       end
-    end # unmerged 
+    end # unmerged collection
 
     context "merged with marc" do
       before(:each) do
         @ckey = '666'
         @indexer.stub(:coll_catkey).and_return(@ckey)
       end
-      it "should call RecordMerger.merge_and_index" do
-        RecordMerger.should_receive(:merge_and_index).with(@ckey, hash_including(:url_fulltext, :access_facet => 'Online', 
+      it "should call RecordMerger.merge_and_index with gdor fields and collection specific fields" do
+        @indexer.stub(:coll_display_types_from_items).and_return({@coll_druid_from_test_config => ['image']})
+        RecordMerger.should_receive(:merge_and_index).with(@ckey, hash_including(:display_type => ['image'],
+                                                                                :druid => @coll_druid_from_test_config,
+                                                                                :url_fulltext => "#{@yaml['purl']}/#{@coll_druid_from_test_config}",
+                                                                                :access_facet => 'Online', 
                                                                                 :collection_type => "Digital Collection"))
         @indexer.index_coll_obj_per_config
       end
@@ -231,11 +292,13 @@ describe Indexer do
         @indexer.should_receive(:validate_collection)
         @indexer.index_coll_obj_per_config
       end
-      it "should add a doc to Solr with field collection_type" do
-        SolrjWrapper.any_instance.should_receive(:add_doc_to_ix).with(hash_including('collection_type'), @ckey)
+      it "should add a doc to Solr with gdor fields and collection specific fields" do
+        @indexer.stub(:coll_display_types_from_items).and_return({@coll_druid_from_test_config => ['image']})
+        SolrjWrapper.any_instance.should_receive(:add_doc_to_ix).with(
+                hash_including('druid', 'display_type', 'url_fulltext', 'access_facet', 'collection_type'), @ckey)
         @indexer.index_coll_obj_per_config
       end
-    end
+    end # merged collection
   end #  index_coll_obj_per_config
   
   it "druids method should call druids_via_oai method on harvestdor_client" do
@@ -243,7 +306,7 @@ describe Indexer do
     @indexer.druids
   end
   
-  context "#add_coll_info" do
+  context "#add_coll_info and supporting methods" do
     before(:all) do
       @coll_druids_array = [@coll_druid_from_test_config]
     end
@@ -253,6 +316,7 @@ describe Indexer do
       @indexer.add_coll_info(doc_hash, nil)
       doc_hash[:collection].should == nil
       doc_hash[:collection_with_title].should == nil
+      doc_hash[:display_type].should == nil
     end
     
     context "collection field" do
@@ -330,8 +394,44 @@ describe Indexer do
         @indexer.coll_formats_from_items[@coll_druid_from_test_config].should == ['Image', 'Video']
       end
     end # coll_formats_from_items
+    it "#cache_item_formats_for_collection doesn't allow duplicate values" do
+      indexer = Indexer.new(@config_yml_path, @solr_yml_path)
+      indexer.cache_item_formats_for_collection('foo', ['Image'])
+      indexer.cache_item_formats_for_collection('foo', ['Image', 'Video'])
+      indexer.cache_item_formats_for_collection('foo', ['Video'])
+      indexer.coll_formats_from_items['foo'].size.should == 2
+    end
+
+    context "#coll_display_types_from_items" do
+      before(:each) do
+        @hdor_client.stub(:public_xml).and_return(@ng_pub_xml)
+        @indexer.coll_display_types_from_items[@coll_druid_from_test_config] = []
+      end
+      it "gets single item display_type for single collection (and no dups)" do
+        @indexer.stub(:identity_md_obj_label)
+        doc_hash = {:display_type => 'image'}
+        @indexer.add_coll_info(doc_hash, @coll_druids_array)
+        doc_hash = {:display_type => 'image'}
+        @indexer.add_coll_info(doc_hash, @coll_druids_array)
+        @indexer.coll_display_types_from_items[@coll_druid_from_test_config].should == ['image']
+      end
+      it "gets multiple formats from multiple items for single collection" do
+        @indexer.stub(:identity_md_obj_label)
+        doc_hash = {:display_type => 'image'}
+        @indexer.add_coll_info(doc_hash, @coll_druids_array)
+        doc_hash = {:display_type => 'file'}
+        @indexer.add_coll_info(doc_hash, @coll_druids_array)
+        @indexer.coll_display_types_from_items[@coll_druid_from_test_config].should == ['image', 'file']
+      end
+    end # coll_display_types_from_items
+    it "#add_to_coll_display_types_from_item doesn't allow duplicate values" do
+      indexer = Indexer.new(@config_yml_path, @solr_yml_path)
+      indexer.add_to_coll_display_types_from_item('foo', 'image')
+      indexer.add_to_coll_display_types_from_item('foo', 'image')
+      indexer.coll_display_types_from_items['foo'].size.should == 1
+    end
   end #add_coll_info
-    
+
   it "solr_client should initialize the rsolr client using the options from the config" do
     indexer = Indexer.new(nil, @solr_yml_path, Confstruct::Configuration.new(:solr => { :url => 'http://localhost:2345', :a => 1 }) )
     RSolr.should_receive(:connect).with(hash_including(:url => 'http://solr.baseurl.org'))

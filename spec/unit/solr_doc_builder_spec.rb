@@ -29,19 +29,18 @@ describe SolrDocBuilder do
     it "id field should be set to druid for non-merged record" do
       @doc_hash[:id].should == @fake_druid
     end
-    it "should have a druid field" do
-      @doc_hash[:druid].should == @fake_druid
+    it "should not have the gdor fields set in indexer.rb" do
+      @doc_hash.key?(:druid).should == false
+      @doc_hash.key?(:access_facet).should == false
+      @doc_hash.key?(:url_fulltext).should == false
+      @doc_hash.key?(:display_type).should == false
     end
     it "should have the full MODS in the modsxml field for non-merged record" do
       # this fails with equivalent-xml 0.4.1 or 0.4.2, but passes with 0.4.0
       @doc_hash[:modsxml].should be_equivalent_to @mods_xml
     end 
-    it "should have an access_facet value of 'Online'" do
-      @doc_hash[:access_facet].should == 'Online'
-    end
-    it "should call the appropriate methods in public_xml_fields" do
+    it "should call image_ids in public_xml_fields" do
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-      sdb.should_receive(:display_type)
       sdb.should_receive(:image_ids)
       sdb.should_receive(:doc_hash_from_mods) # avoid expensive parsing unnec for this test
       sdb.doc_hash

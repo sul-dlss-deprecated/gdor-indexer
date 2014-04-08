@@ -85,31 +85,29 @@ class Indexer < Harvestdor::Indexer
     else
       begin
         sdb = SolrDocBuilder.new(druid, harvestdor_client, logger)
+        fields_to_add = {
+          :druid => druid,
+          :url_fulltext => "http://purl.stanford.edu/#{druid}",
+          :access_facet => 'Online',
+          :display_type => sdb.display_type,
+          # TODO:  file_ids
+        }
         ckey = sdb.catkey
         if ckey
           logger.debug "item #{druid} merged into #{ckey}"
-          fields_to_add = {
-            :druid => druid,
-            :url_fulltext => "http://purl.stanford.edu/#{druid}",
-            :access_facet => 'Online',
-            # TODO:  file_ids
-            # TODO:  display_type
-          }
           add_coll_info fields_to_add, sdb.coll_druids_from_rels_ext # defined in public_xml_fields
           validation_messages = validate_item(druid, fields_to_add)
-          @validation_messages = validation_messages.join("\n") + "\n"
           RecordMerger.merge_and_index(ckey, fields_to_add)
         else
           logger.info "indexing item #{druid}"
           doc_hash = sdb.doc_hash
+          doc_hash.combine fields_to_add
           add_coll_info doc_hash, sdb.coll_druids_from_rels_ext # defined in public_xml_fields
-
           validation_messages = validate_item(druid, doc_hash)
           validation_messages.concat sdb.validate_mods(druid, doc_hash)
-          @validation_messages = validation_messages.join("\n") + "\n"
-
           solr_add(doc_hash, druid)
         end
+        @validation_messages = validation_messages.join("\n") + "\n"
         @success_count += 1
       rescue => e
         @error_count += 1
@@ -124,35 +122,33 @@ class Indexer < Harvestdor::Indexer
   def index_coll_obj_per_config
     # we have already affirmed that coll_druid_from_config is a collection record in harvest_and_index method
     begin
+      coll_druid = coll_druid_from_config
+      fields_to_add = {
+        :druid => coll_druid,
+        :url_fulltext => "http://purl.stanford.edu/#{coll_druid}",
+        :access_facet => 'Online',
+        :collection_type => 'Digital Collection',
+        :display_type => coll_display_types_from_items[coll_druid]
+      }
       if coll_catkey
-        logger.debug "Merging collection object #{coll_druid_from_config} into #{coll_catkey}"
-        fields_to_add = {
-          :url_fulltext => "http://purl.stanford.edu/#{coll_druid_from_config}",
-          :access_facet => 'Online',
-          :collection_type => 'Digital Collection',
-          # TODO:  display_type
-          # TODO:  druid
-        }
-        validation_messages = validate_collection(coll_druid_from_config, fields_to_add)
-        @validation_messages = validation_messages.join("\n") + "\n"
+        logger.debug "Merging collection object #{coll_druid} into #{coll_catkey}"
+        validation_messages = validate_collection(coll_druid, fields_to_add)
         RecordMerger.merge_and_index(coll_catkey, fields_to_add)
       else
-        logger.info "Indexing collection object #{coll_druid_from_config}"
+        logger.info "Indexing collection object #{coll_druid}"
         doc_hash = coll_sdb.doc_hash
-        doc_hash[:collection_type] = 'Digital Collection'
+        doc_hash.combine fields_to_add
         # add item formats
-        addl_formats = coll_formats_from_items[coll_druid_from_config] # guaranteed to be Array or nil
+        addl_formats = coll_formats_from_items[coll_druid] # guaranteed to be Array or nil
         if addl_formats && !addl_formats.empty?
           addl_formats.concat(doc_hash[:format]) if doc_hash[:format] # doc_hash[:format] guaranteed to be Array
           doc_hash[:format] = addl_formats.uniq
         end
-
-        validation_messages = validate_collection(coll_druid_from_config, doc_hash)
-        validation_messages.concat coll_sdb.validate_mods(coll_druid_from_config, doc_hash)
-        @validation_messages = validation_messages.join("\n") + "\n"
-
-        solr_add(doc_hash, coll_druid_from_config) unless coll_druid_from_config.nil?
+        validation_messages = validate_collection(coll_druid, doc_hash)
+        validation_messages.concat coll_sdb.validate_mods(coll_druid, doc_hash)
+        solr_add(doc_hash, coll_druid) unless coll_druid.nil?
       end
+      @validation_messages = validation_messages.join("\n") + "\n"
       @success_count += 1
     rescue => e
       logger.error "Failed to merge collection object #{coll_druid_from_config}: #{e.message}"
@@ -170,7 +166,8 @@ class Indexer < Harvestdor::Indexer
       
       coll_druids.each { |coll_druid|  
         cache_coll_title coll_druid
-        cache_item_formats_for_collection coll_druid, doc_hash[:format]  
+        cache_item_formats_for_collection coll_druid, doc_hash[:format]
+        cache_display_type_for_collection coll_druid, doc_hash[:display_type]
         if coll_catkey
           doc_hash[:collection] << coll_catkey
         else
@@ -220,25 +217,40 @@ class Indexer < Harvestdor::Indexer
     ng_imd.xpath('identityMetadata/objectLabel').text
   end
   
-  # cache the format(s) of this object with a collection, so when the collection rec
-  # is being indexed, it gets all of the formats of the members
+  # cache the format(s) of this (item) object with a collection, so when the collection rec
+  # is being indexed, it can get all of the formats of the members
   def cache_item_formats_for_collection coll_druid, item_formats
-    coll_formats_from_items[coll_druid] ||= []
     if item_formats
       if item_formats.kind_of?(Array)
         item_formats.each do |item_format|
-          add_to_coll_formats_from_items coll_druid, item_format
+          add_to_coll_formats_from_item coll_druid, item_format
         end
       else
-        add_to_coll_formats_from_items coll_druid, item_formats
+        add_to_coll_formats_from_item coll_druid, item_formats
       end
     end
   end
 
   # add a format to the coll_formats_from_items array if it isn't already there
-  # @param <Object> a single format as a String or an Array of Strings for multiple formats
-  def add_to_coll_formats_from_items coll_druid, format
-    @coll_formats_from_items[coll_druid] << format if !@coll_formats_from_items[coll_druid].include? format
+  # @param <String> format a single format as a String
+  def add_to_coll_formats_from_item coll_druid, format
+    coll_formats_from_items[coll_druid] ||= [format]
+    coll_formats_from_items[coll_druid] << format if !coll_formats_from_items[coll_druid].include? format
+  end
+
+  # cache the display_type of this (item) object with a collection, so when the collection rec
+  # is being indexed, it can get all of the display_types of the members
+  def cache_display_type_for_collection coll_druid, display_type
+    if display_type && display_type.instance_of?(String)
+      add_to_coll_display_types_from_item coll_druid, display_type
+    end
+  end
+
+  # add a display_type to the coll_display_types_from_items array if it isn't already there
+  # @param <String>  display_type a single display_type as a String
+  def add_to_coll_display_types_from_item coll_druid, display_type
+    coll_display_types_from_items[coll_druid] ||= [display_type]
+    coll_display_types_from_items[coll_druid] << display_type if !coll_display_types_from_items[coll_druid].include? display_type
   end
 
   # called by indexing script (in bin directory)
@@ -263,6 +275,12 @@ class Indexer < Harvestdor::Indexer
     @coll_formats_from_items ||= {}
   end
   
+  # cache display_type from each item so we have this info for indexing collection record 
+  # @return [Hash<String, Array<String>>] collection druids as keys, array of item display_types as values
+  def coll_display_types_from_items
+    @coll_display_types_from_items ||= {}
+  end
+
   def solr_client
     @solr_client ||= RSolr.connect(Indexer.config.solr.to_hash)
   end

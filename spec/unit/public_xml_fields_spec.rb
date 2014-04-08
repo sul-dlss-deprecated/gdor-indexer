@@ -100,54 +100,55 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
 
     context "dor_content_type" do
       it "should be retreived from the <contentMetadata>" do
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
-        sdb.should_receive(:content_md)
-        sdb.dor_content_type
+        @sdb.should_receive(:content_md)
+        @sdb.dor_content_type
       end
       it "should be the value of the type attribute on <contentMetadata> element" do
         val = 'foo'
         cntnt_md_xml = "<contentMetadata type='#{val}'>#{@content_md_end}"
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
-        sdb.should_receive(:content_md).at_least(1).times.and_return(Nokogiri::XML(cntnt_md_xml).root)
-        sdb.dor_content_type.should == val
+        @sdb.should_receive(:content_md).at_least(1).times.and_return(Nokogiri::XML(cntnt_md_xml).root)
+        @sdb.dor_content_type.should == val
+      end
+      it "should log an error message if there is no content type" do
+        cntnt_md_xml = "#{@content_md_start}#{@content_md_end}"
+        @sdb.should_receive(:content_md).at_least(1).times.and_return(Nokogiri::XML(cntnt_md_xml).root)
+        @sdb.logger.should_receive(:error).with("#{@fake_druid} has no DOR content type (<contentMetadata> element may be missing type attribute)")
+        @sdb.dor_content_type
       end
     end
     
     context "display_type" do
       it "should not access the mods to determine the display_type" do
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
         @hdor_client.should_not_receive(:mods).with(@fake_druid)
-        sdb.should_receive(:coll_object?).and_return(false)
-        sdb.display_type
-      end
-      it "should be 'collection' if coll_object? and no add_display_type" do
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
-        sdb.should_receive(:coll_object?).and_return(true)
-        sdb.display_type.should == 'collection'
-      end
-      it "should be the value of dor_content_type if not coll_object?" do
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
-        sdb.should_receive(:coll_object?).and_return(false)
-        sdb.stub(:dor_content_type).and_return('bogus')
-        sdb.display_type.should == 'bogus'
-      end
-      it "should be hydrus_collection for config :add_display_type of 'hydrus' and coll_object?" do
-        Indexer.stub(:config).and_return({:add_display_type => 'hydrus'})
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
-        sdb.should_receive(:coll_object?).and_return(true)
-        sdb.display_type.should == 'hydrus_collection'
-      end
-      it "should be hydrus_object for config :add_display_type of 'hydrus' and not coll_object?" do
-        Indexer.stub(:config).and_return({:add_display_type => 'hydrus'})
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
-        sdb.should_receive(:coll_object?).and_return(false)
-        sdb.display_type.should == 'hydrus_object'
-      end
-      it "should log an error message if dor_content_type is nil" do
-        @sdb.stub(:dor_content_type).and_return(nil)
-        @sdb.logger.should_receive(:error).with("#{@fake_druid} has no DOR content type (<contentMetadata> element may be missing type attribute)")
-        @sdb.should_receive(:coll_object?).and_return(false)
         @sdb.display_type
+      end
+      it "'image' for dor_content_type 'image'" do
+        @sdb.stub(:dor_content_type).and_return('image')
+        @sdb.display_type.should == 'image'
+      end
+      it "'image' for dor_content_type 'manuscript'" do
+        @sdb.stub(:dor_content_type).and_return('manuscript')
+        @sdb.display_type.should == 'image'
+      end
+      it "'image' for dor_content_type 'map'" do
+        @sdb.stub(:dor_content_type).and_return('map')
+        @sdb.display_type.should == 'image'
+      end
+      it "'media' for dor_content_type 'media'" do
+        @sdb.stub(:dor_content_type).and_return('media')
+        @sdb.display_type.should == 'media'
+      end
+      it "'book' for dor_content_type 'book'" do
+        @sdb.stub(:dor_content_type).and_return('book')
+        @sdb.display_type.should == 'book'
+      end
+      it "'file' for unrecognized dor_content_type" do
+        @sdb.stub(:dor_content_type).and_return('foo')
+        @sdb.display_type.should == 'file'
+      end
+      it "should not be hydrus_xxx for config :add_display_type of 'hydrus'" do
+        Indexer.stub(:config).and_return({:add_display_type => 'hydrus'})
+        @sdb.display_type.should_not =~ /^hydrus/
       end
     end # display_type
     

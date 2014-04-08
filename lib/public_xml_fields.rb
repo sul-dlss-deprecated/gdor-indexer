@@ -13,17 +13,15 @@ module PublicXmlFields
   # @return String the string to pre-pend to the display_type value  (e.g. )
   # @return [String] 'collection' or DOR content type
   def display_type
-    disp_type_prefix = Indexer.config[:add_display_type]
-    if disp_type_prefix && coll_object?
-      "#{disp_type_prefix}_collection"
-    elsif disp_type_prefix
-      "#{disp_type_prefix}_object"
-    elsif coll_object?
-      'collection'
-    elsif dor_content_type
-      dor_content_type
-    else
-      logger.error "#{druid} has no DOR content type (<contentMetadata> element may be missing type attribute)"
+    case dor_content_type
+      when 'book'
+        'book'
+      when 'image', 'manuscript', 'map'
+        'image'
+      when 'media'
+        'media'
+      else
+        'file'
     end
   end
   
@@ -57,7 +55,6 @@ module PublicXmlFields
   # get the druids from isMemberOfCollection relationships in rels-ext from public_xml
   # @return [Array<String>] the druids (e.g. ww123yy1234) this object has isMemberOfColletion relationship with, or nil if none
   def coll_druids_from_rels_ext
-# TODO: create nom-xml terminology for rels-ext in harvestdor?
     @coll_druids_from_rels_ext ||= begin
       ns_hash = {'rdf' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#', 'fedora' => "info:fedora/fedora-system:def/relations-external#", '' => ''}
       is_member_of_nodes ||= public_xml.xpath('/publicObject/rdf:RDF/rdf:Description/fedora:isMemberOfCollection/@rdf:resource', ns_hash)
@@ -79,7 +76,11 @@ module PublicXmlFields
   #    https://consul.stanford.edu/display/chimera/Summary+of+Content+Types%2C+Resource+Types+and+their+behaviors
   # @return [String] 
   def dor_content_type
-    @dor_content_type ||= content_md ? content_md.xpath('@type').text : nil
+    @dor_content_type ||= begin
+      dct = content_md ? content_md.xpath('@type').text : nil
+      logger.error "#{druid} has no DOR content type (<contentMetadata> element may be missing type attribute)" if !dct || dct.empty?
+      dct
+    end
   end
   
   # the contentMetadata for this object, derived from the public_xml
