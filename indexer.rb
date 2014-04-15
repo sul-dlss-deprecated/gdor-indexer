@@ -27,11 +27,16 @@ class Indexer < Harvestdor::Indexer
     yield(Indexer.config) if block_given?
   end
 
+  # to allow class level access to config variables for record_merger and solr_doc_builder
+  #  (rather than passing a lot of params to constructor)
   def self.config
     @@config ||= Confstruct::Configuration.new()
   end
+  def config
+    Indexer.config
+  end
   def logger
-    @logger ||= load_logger(Indexer.config.log_dir ||= 'logs', Indexer.config.log_name)
+    @logger ||= load_logger(config.log_dir ||= 'logs', config.log_name)
   end
   def retries
     @retries
@@ -86,8 +91,8 @@ class Indexer < Harvestdor::Indexer
   
   def send_notifications
     total_objects = @success_count + @error_count
-    notifications = Indexer::config.notification ? Indexer::config.notification : 'gdor-indexing-notification@lists.stanford.edu'
-    subject = "#{Indexer.config.log_name} into Solr server #{Indexer.config[:solr][:url]} is ready"
+    notifications = config.notification ? config.notification : 'gdor-indexing-notification@lists.stanford.edu'
+    subject = "#{config.log_name} into Solr server #{config[:solr][:url]} is ready"
     body = "Successful count: #{@success_count}\n"
     if @found_in_solr_count == @success_count
       body += "Records verified in solr: #{@found_in_solr_count}\n"
@@ -99,7 +104,7 @@ class Indexer < Harvestdor::Indexer
     body += "Total records processed: #{total_objects}\n"
     body += "\n"
     require 'socket'
-    body += "full log is at gdor_indexer/shared/#{Indexer.config.log_dir}/#{Indexer.config.log_name} on #{Socket.gethostname}"
+    body += "full log is at gdor_indexer/shared/#{config.log_dir}/#{config.log_name} on #{Socket.gethostname}"
     body += "\n"
     body += @validation_messages
     opts = {}
@@ -209,8 +214,8 @@ class Indexer < Harvestdor::Indexer
   def coll_druid_from_config
     @coll_druid_from_config ||= begin
       druid = nil
-      if Indexer.config[:default_set].include? "is_member_of_collection_"
-        druid = Indexer.config[:default_set].gsub("is_member_of_collection_",'')
+      if config[:default_set].include? "is_member_of_collection_"
+        druid = config[:default_set].gsub("is_member_of_collection_",'')
       end
       druid
     end
@@ -315,8 +320,4 @@ class Indexer < Harvestdor::Indexer
     @coll_formats_from_items ||= {}
   end
   
-  def solr_client
-    @solr_client ||= RSolr.connect(Indexer.config.solr.to_hash)
-  end
-
 end
