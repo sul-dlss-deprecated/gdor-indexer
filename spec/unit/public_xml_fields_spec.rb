@@ -330,95 +330,31 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
         @sdb.stub(:content_md).and_return(ng_xml.root)
         @sdb.file_ids.should == nil
       end
-
-      # TODO:  multiple file elements in a single resource element
-
-    end # file_ids
-
-    context "image_ids" do
-      before(:each) do
-        @hdor_client = double
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
-        @hdor_client.stub(:public_xml).with(@fake_druid).and_return(nil)
-        @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-      end
       it "should be nil if there are no <resource> elements in the contentMetadata" do
-        ng_xml = Nokogiri::XML("#{@content_md_start}#{@content_md_end}")
+        ng_xml = Nokogiri::XML('<contentMetadata objectId="jy496kh1727" type="file"></contentMetadata>')
         @sdb.stub(:content_md).and_return(ng_xml.root)
-        @sdb.image_ids.should == nil
+        @sdb.file_ids.should == nil
       end
-      it "should ignore <resource> elements with attribute type other than 'image' or 'page'" do
-        ng_xml = Nokogiri::XML("#{@content_md_start}<resource type='blarg'><file id='foo'/></resource>#{@content_md_end}")
+      it "should be nil if there are no <file> elements in the contentMetadata" do
+        ng_xml = Nokogiri::XML('<contentMetadata objectId="jy496kh1727" type="file">
+          <resource sequence="1" id="jy496kh1727_1" type="file">
+            <label>Tape 1, Pass 1</label>
+          </resource>
+          <resource sequence="2" id="jy496kh1727_2" type="image">
+            <label>Image of media (1 of 3)</label>
+          </resource></contentMetadata>')
         @sdb.stub(:content_md).and_return(ng_xml.root)
-        @sdb.image_ids.should == nil
-      end
-      
-      # Addresses GRYPHONDOR-313: image resources from book pages not appearing in searchworks
-      it "should not ignore <resource> elements with attribute type of 'page'" do
-        ng_xml = Nokogiri::XML("#{@content_md_start}<resource type=\"page\" sequence=\"1\" id=\"ft092fb6660_1\">
-            <label>Image 1</label>
-            <file id=\"ft092fb6660_00_0001.jp2\" mimetype=\"image/jp2\" size=\"1884208\" preserve=\"no\" publish=\"yes\" shelve=\"yes\">
-              <imageData width=\"3184\" height=\"3122\"/>
-            </file>
-          </resource>#{@content_md_end}")
-        @sdb.stub(:content_md).and_return(ng_xml.root)
-        @sdb.image_ids.should == ['ft092fb6660_00_0001']
-      end
-      it "should only include image links for jp2s" do
-        dh051qf2834_page_resource = '<resource type="page" sequence="1" id="dh051qf2834_1">
-            <label>Image 1</label>
-            <file id="dh051qf2834_00_0001.jpg" mimetype="image/jpeg" size="1669550" preserve="yes" publish="no" shelve="no">
-              <checksum type="md5">dc725c103de7ac9e4da9a0b93f1127d2</checksum>
-              <checksum type="sha1">6a54da77d2196ce763c89f1a91e7df2f38196db0</checksum>
-              <imageData width="2370" height="3280"/>
-            </file>
-            <file id="dh051qf2834_04_0001.xml" mimetype="application/xml" size="9266" preserve="yes" publish="no" shelve="no">
-              <checksum type="md5">20f20a5802a819b0a704dd9f96378d19</checksum>
-              <checksum type="sha1">d666f254961a07eda5c6bda62a380efdc7cdce7a</checksum>
-            </file>
-            <file id="dh051qf2834_06_0001.pdf" mimetype="application/pdf" size="97507" preserve="yes" publish="yes" shelve="yes">
-              <checksum type="md5">c68c4469d27eec11efe5c226f8cf3618</checksum>
-              <checksum type="sha1">469fef84eddc9d02eb2774ff1f8f397e7605f11d</checksum>
-            </file>
-            <file id="dh051qf2834_00_0001.jp2" mimetype="image/jp2" size="1470534" preserve="no" publish="yes" shelve="yes">
-              <checksum type="md5">8bc3568fe35ec2d8c0cd3e9420a7ce56</checksum>
-              <checksum type="sha1">def4e03b88aaeefea362789f0ca38fc10467f7f3</checksum>
-              <imageData width="2370" height="3280"/>
-            </file>
-          </resource>'
-          ng_xml = Nokogiri::XML("#{@content_md_start}#{dh051qf2834_page_resource}#{@content_md_end}")
-          @sdb.stub(:content_md).and_return(ng_xml.root)
-          @sdb.image_ids.should == ['dh051qf2834_00_0001']
-      end
-      
-      it "should be ignore all but <file> element children of the image resource element" do
-        ng_xml = Nokogiri::XML("#{@content_md_start}<resource type='image'><label id='foo'>bar</label></resource>#{@content_md_end}")
-        @sdb.stub(:content_md).and_return(ng_xml.root)
-        @sdb.image_ids.should == nil
+        @sdb.file_ids.should == nil
       end
       it "should be nil if there are no id elements on file elements" do
         ng_xml = Nokogiri::XML("#{@content_md_start}<resource type='image'><file/></resource>#{@content_md_end}")
         @sdb.stub(:content_md).and_return(ng_xml.root)
-        @sdb.image_ids.should == nil
+        @sdb.file_ids.should == nil
       end
-      it "should be an Array of size one if there is a single <resource><file id='something' mimetype='image/jp2'> in the content metadata" do
-        ng_xml = Nokogiri::XML("#{@content_md_start}<resource type='image'><file id='foo' mimetype='image/jp2'/></resource>#{@content_md_end}")
-        @sdb.stub(:content_md).and_return(ng_xml.root)
-        @sdb.image_ids.should == ['foo']
-      end
-      it "should be the same size as the number of <resource><file id='something'> in the content metadata" do
-        ng_xml = Nokogiri::XML("#{@content_md_start}
-              <resource type='image'><file id='foo' mimetype='image/jp2'/></resource>
-              <resource type='image'><file id='bar' mimetype='image/jp2'/></resource>#{@content_md_end}")
-        @sdb.stub(:content_md).and_return(ng_xml.root)
-        @sdb.image_ids.should == ['foo', 'bar']
-      end
-      it "endings of .jp2 should be stripped" do
-        ng_xml = Nokogiri::XML("#{@content_md_start}<resource type='image'><file id='W188_000001_300.jp2' mimetype='image/jp2'/></resource>#{@content_md_end}")
-        @sdb.stub(:content_md).and_return(ng_xml.root)
-        @sdb.image_ids.should == ['W188_000001_300']
-      end
-    end # image_ids
+
+      # TODO:  multiple file elements in a single resource element
+
+    end # file_ids
     
   end # contentMetadata fields and methods
   

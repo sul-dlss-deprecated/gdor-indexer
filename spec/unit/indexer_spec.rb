@@ -74,6 +74,7 @@ describe Indexer do
         sdb.stub(:coll_druids_from_rels_ext)
         sdb.stub(:public_xml)
         sdb.stub(:display_type)
+        sdb.stub(:file_ids)
         SolrDocBuilder.stub(:new).and_return(sdb)
         RecordMerger.should_receive(:merge_and_index).with(ckey, instance_of(Hash))
         @indexer.index_item @fake_druid
@@ -85,6 +86,7 @@ describe Indexer do
         sdb.stub(:doc_hash).and_return({})
         sdb.stub(:coll_druids_from_rels_ext)
         sdb.stub(:display_type)
+        sdb.stub(:file_ids)
         sdb.stub(:validate_mods).and_return([])
         SolrDocBuilder.stub(:new).and_return(sdb)
         RecordMerger.should_not_receive(:merge_and_index)
@@ -118,6 +120,7 @@ describe Indexer do
         sdb.stub(:catkey).and_return(nil)
         sdb.stub(:doc_hash).and_return({})
         sdb.stub(:display_type)
+        sdb.stub(:file_ids)
         sdb.stub(:validate_mods).and_return([])
         SolrDocBuilder.stub(:new).and_return(sdb)
         sdb.stub(:coll_druids_from_rels_ext).and_return(['foo'])
@@ -146,6 +149,11 @@ describe Indexer do
         Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(hash_including(:display_type => "foo"), @fake_druid)
         @indexer.index_item @fake_druid
       end
+      it "should populate file_id field by calling file_ids method" do
+        SolrDocBuilder.any_instance.should_receive(:file_ids).at_least(1).times.and_return(["foo"])
+        Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(hash_including(:file_id => ["foo"]), @fake_druid)
+        @indexer.index_item @fake_druid
+      end
     end # unmerged item
 
     context "merged with marc" do
@@ -155,12 +163,14 @@ describe Indexer do
         @sdb.stub(:catkey).and_return(@ickey)
         @sdb.stub(:coll_druids_from_rels_ext).and_return(['foo'])
         @sdb.stub(:display_type).and_return('fiddle')
+        @sdb.stub(:file_ids).and_return(['dee', 'dum'])
         SolrDocBuilder.stub(:new).and_return(@sdb)
         @indexer.stub(:identity_md_obj_label).with('foo').and_return('bar')
         @indexer.stub(:coll_catkey).and_return(nil)
       end
       it "calls RecordMerger.merge_and_index with gdor fields and item specific fields" do
         RecordMerger.should_receive(:merge_and_index).with(@ickey, hash_including(:display_type => 'fiddle',
+                                                                                  :file_id => ['dee', 'dum'],
                                                                                   :druid => @fake_druid,
                                                                                   :url_fulltext => "#{@yaml['purl']}/#{@fake_druid}",
                                                                                   :access_facet => 'Online',
@@ -177,7 +187,7 @@ describe Indexer do
         @indexer.index_item @fake_druid
       end
       it "should add a doc to Solr with item fields added" do
-        SolrjWrapper.any_instance.should_receive(:add_doc_to_ix).with(hash_including('display_type', 'druid', 'collection', 'collection_with_title'), @ickey)
+        SolrjWrapper.any_instance.should_receive(:add_doc_to_ix).with(hash_including('display_type', 'file_id', 'druid', 'collection', 'collection_with_title'), @ickey)
         @indexer.index_item @fake_druid
       end
     end # merged item
@@ -432,12 +442,6 @@ describe Indexer do
     end
   end #add_coll_info
 
-  it "solr_client should initialize the rsolr client using the options from the config" do
-    indexer = Indexer.new(nil, @solr_yml_path, Confstruct::Configuration.new(:solr => { :url => 'http://localhost:2345', :a => 1 }) )
-    RSolr.should_receive(:connect).with(hash_including(:url => 'http://solr.baseurl.org'))
-    indexer.solr_client
-  end
-  
   context "#identity_md_obj_label" do
     before(:all) do
       @coll_title = "My Collection Has a Lovely Title"
@@ -526,7 +530,7 @@ describe Indexer do
       hash = {
         :collection => 'junk',
         :collection_with_title => "#{@coll_druid_from_test_config}-|-asdasdf",
-        :file_id => 'anything'
+        :file_id => ['anything']
       }
       @indexer.validate_item(@fake_druid, hash).first.should =~ /collection /
     end
@@ -534,7 +538,7 @@ describe Indexer do
       hash = {
         :collection => @coll_druid_from_test_config,
         :collection_with_title => nil,
-        :file_id => 'anything'
+        :file_id => ['anything']
       }
       @indexer.validate_item(@fake_druid, hash).first.should =~ /collection_with_title /
     end
@@ -542,7 +546,7 @@ describe Indexer do
       hash = {
         :collection => @coll_druid_from_test_config,
         :collection_with_title => "#{@coll_druid_from_test_config}-|-",
-        :file_id => 'anything'
+        :file_id => ['anything']
       }
       @indexer.validate_item(@fake_druid, hash).first.should =~ /collection_with_title /
     end
@@ -558,7 +562,7 @@ describe Indexer do
       hash = {
         :collection => @coll_druid_from_test_config,
         :collection_with_title => "#{@coll_druid_from_test_config}-|-asdasdf",
-        :file_id => 'anything'
+        :file_id => ['anything']
       }
       @indexer.validate_item(@fake_druid, hash).should == []
     end

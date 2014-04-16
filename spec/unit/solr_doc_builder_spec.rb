@@ -34,28 +34,12 @@ describe SolrDocBuilder do
       @doc_hash.key?(:access_facet).should == false
       @doc_hash.key?(:url_fulltext).should == false
       @doc_hash.key?(:display_type).should == false
+      @doc_hash.key?(:file_id).should == false
     end
     it "should have the full MODS in the modsxml field for non-merged record" do
       # this fails with equivalent-xml 0.4.1 or 0.4.2, but passes with 0.4.0
       @doc_hash[:modsxml].should be_equivalent_to @mods_xml
     end 
-    it "should call image_ids in public_xml_fields" do
-      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-      sdb.should_receive(:image_ids)
-      sdb.should_receive(:doc_hash_from_mods) # avoid expensive parsing unnec for this test
-      sdb.doc_hash
-    end
-    context "img_info field" do
-      it "should have img_info as an Array of file ids from content metadata" do
-        ng_xml = Nokogiri::XML("<contentMetadata type='image'>
-        <resource type='image'><file id='foo' mimetype='image/jp2'/></resource>
-        <resource type='image'><file id='bar' mimetype='image/jp2'/></resource></contentMetadata>")
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-        sdb.should_receive(:doc_hash_from_mods) # avoid expensive parsing unnec for this test
-        sdb.stub(:content_md).and_return(ng_xml.root)
-        sdb.doc_hash[:img_info].should == ['foo', 'bar']
-      end
-    end
     it "should call doc_hash_from_mods to populate hash fields from MODS" do
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
       sdb.should_receive(:doc_hash_from_mods)

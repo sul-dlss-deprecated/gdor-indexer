@@ -91,15 +91,18 @@ class Indexer < Harvestdor::Indexer
     else
       begin
         sdb = SolrDocBuilder.new(druid, harvestdor_client, logger)
+
         fields_to_add = {
           :druid => druid,
           :url_fulltext => "http://purl.stanford.edu/#{druid}",
           :access_facet => 'Online',
-          :display_type => sdb.display_type,
-          # TODO:  file_ids
+          :display_type => sdb.display_type,  # defined in public_xml_fields
         }
+        fields_to_add[:file_id] = sdb.file_ids unless !sdb.file_ids  # defined in public_xml_fields
+
         ckey = sdb.catkey
         if ckey
+          require 'record_merger'
           logger.debug "item #{druid} merged into #{ckey}"
           add_coll_info fields_to_add, sdb.coll_druids_from_rels_ext # defined in public_xml_fields
           validation_messages = validate_item(druid, fields_to_add)
@@ -137,6 +140,7 @@ class Indexer < Harvestdor::Indexer
         :display_type => coll_display_types_from_items[coll_druid]
       }
       if coll_catkey
+        require 'record_merger'
         logger.debug "Merging collection object #{coll_druid} into #{coll_catkey}"
         validation_messages = validate_collection(coll_druid, fields_to_add)
         RecordMerger.merge_and_index(coll_catkey, fields_to_add)
@@ -293,7 +297,7 @@ class Indexer < Harvestdor::Indexer
     result = validate_gdor_fields druid, doc_hash
     result << "#{druid} missing collection of harvest\n" if !doc_hash.field_present?(:collection, coll_druid_from_config)
     result << "#{druid} missing collection_with_title (or collection #{coll_druid_from_config} is missing title)\n" if !doc_hash.field_present?(:collection_with_title, Regexp.new("#{coll_druid_from_config}-\\|-.+"))
-    result << "#{druid} missing file_id\n" if !doc_hash.field_present?(:file_id)
+    result << "#{druid} missing file_id(s)\n" if !doc_hash.field_present?(:file_id)
     result
   end
   
