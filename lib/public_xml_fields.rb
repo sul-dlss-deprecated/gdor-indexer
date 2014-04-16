@@ -25,6 +25,28 @@ module PublicXmlFields
     end
   end
   
+  # the @id attribute of resource elements that match the display_type, including extension
+  # @return Array[<String>]
+  def file_ids
+    @file_ids ||= begin
+      ids = []
+      if content_md
+        if display_type == "image"
+          content_md.xpath('./resource[@type="image"]/file/@id').each { |node|
+            ids << node.text if !node.text.empty?
+          }
+        elsif display_type == "file"
+          content_md.xpath('./resource/file/@id').each { |node|
+            ids << node.text if !node.text.empty?
+          }
+        end
+      end
+      return nil if ids.empty?
+      ids
+    end
+  end
+
+#=begin  
   # Retrieve the image file ids from the contentMetadata: xpath  contentMetadata/resource[@type='image' or @type='page']/file/@id
   #  but with jp2 file extension stripped off.
   # @return [Array<String>] the ids of the image files, without file type extension (e.g. 'W188_000002_300')
@@ -40,6 +62,7 @@ module PublicXmlFields
       ids
     end
   end
+#=end
 
   # @return true if the identityMetadata has <objectType>collection</objectType>, false otherwise
   def coll_object?
