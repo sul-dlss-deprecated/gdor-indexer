@@ -2,136 +2,18 @@
 
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..'))         # Look in the root directory for .rb files
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))  # Look in the lib directory for .rb files
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'config'))  # Look in the config directory for .rb files
 
 require 'rubygems'
 require "bundler/setup"
 require 'trollop'
 require 'indexer'
-require 'record_merger'
-# require 'patches'
 
-
-
-###############################################################
-# Monkey patch for solrj_wrapper to fix solr4.4 issues. They are also fixed in the solr4.4 branch of solrj_wrapper
-class SolrWrapper
-  def initialize(solrj_jar_dir, solr_url, queue_size, num_threads, log_level=Logger::INFO, log_file=STDERR)
-    if not defined? JRUBY_VERSION
-      raise "SolrjWrapper only runs under jruby"
-    end
-    @logger = Logger.new(log_file)
-    @logger.level = log_level
-    load_solrj(solrj_jar_dir)
-    @query_server = org.apache.solr.client.solrj.impl.HttpSolrServer.new(solr_url)
-    @streaming_update_server = @query_server 
-  end
-end
-
-
-###############################################################
-# Monkey patch for Nokogiri to cache xpath contexts and make things faster under jRuby
-
-module Nokogiri
-  module XML
-    class Node
-      @context=nil
-      def xpath *paths
-        return NodeSet.new(document) unless document
-        paths, handler, ns, binds = extract_params(paths)
-        sets = paths.map { |path|
-          # if self.contexts[path]
-          #  ctx=self.contexts[path]
-          # else
-          if @context 
-
-            ctx=@context
-          else
-            ctx = XPathContext.new(self)
-            @context=ctx
-          end
-          ctx.register_namespaces(ns)
-          path = path.gsub(/xmlns:/, ' :') unless Nokogiri.uses_libxml?
-          binds.each do |key,value|
-            ctx.register_variable key.to_s, value
-          end if binds
-          ctx.evaluate(path, handler)
-        }
-        return sets.first if sets.length == 1
-        NodeSet.new(document) do |combined|
-          sets.each do |set|
-            set.each do |node|
-              combined << node
-            end
-          end
-        end
-      end
-    end
-  end
-end
-
-###############################################################
-# Monkey patch for OAI so we don't timeout
-module OAI
- class Client
-   # Do the actual HTTP get, following any temporary redirects
-   def get(uri)
-     max_retry=5
-     # response = @http_client.get uri
-#     if uri.to_s.include? '2013'       
- #    puts 'changing uri'
-  #   uri='https://dor-oaiprovider-prod.stanford.edu/oai?verb=ListRecords&metadataPrefix=mods&set='
-  # end
-     response = @http_client.get do |req|
-       req.url uri
-       req.options[:timeout] = 500           # open/read timeout in seconds
-       req.options[:open_timeout] = 500      # connection open timeout in seconds
-     end
-     if response.status == 500 
-       max_retry.times do
-       puts '500 from OAI provider for '+uri.to_s+', retrying in 5 seconds'
-       sleep(5)
-       response = @http_client.get do |req|
-          req.url uri
-          req.options[:timeout] = 500           # open/read timeout in seconds
-          req.options[:open_timeout] = 500      # connection open timeout in seconds
-        end
-        if response.status != 500
-          break;
-        end 
-       end
-     end
-     if not response.success?
-       raise 'OAI provider returned an error code:'+response.status.to_s+"\n"+response.body
-     end
-     response.body
-   end
- end
-end
-
-
-###############################################################
-# Local convenience methods
-def time
-  start = Time.now
-  yield
-  elapsed = Time.now - start
-  puts "This set took #{elapsed} seconds to run."
-end
-
-# Define the collections that this script knows how to harvest
-# @return Array
- def collections
-	config_dir = File.join(File.dirname(__FILE__), '..', 'config', 'collections')
-	files = Dir.glob("#{config_dir}/*.yml")
-	files.map! {|x| File.basename(x, ".yml") }
- end
-
+# use Trollop to declare options and help text.
 @opts = Trollop::options do
-  version "indexer v0.2.0 (c) 2012 Stanford University http://searchworks.stanford.edu"
+  version "indexer v0.2.0 (c) 2012-2014 Stanford University http://searchworks.stanford.edu"
   banner <<-EOM
-  The indexer script harvests records from SearchWorks OAI-PMH Provider
-  and maps them to records into SearchWorks' Solr instance.
+  The indexer script harvests records from SearchWorks OAI-PMH Provider,
+  maps them to Solr document hashes appropriate for SearchWorks, and writes them to Solr
   Usage:
     ./index [options] 
   where [options] are:
@@ -148,63 +30,25 @@ end
     :default => nil,
     :short => 'n'
   opt :all, "Index all collections"
+#  opt :set, 
+#    "Harvest results from the given set",
+#    :default => nil,
+#    :short => 's',
+#    :type => String
+#  opt :from, 
+#    "Filter results starting from the given date",
+#    :default => nil,
+#    :short => 'f',
+#    :type => String
+#  opt :until,
+#    "Filter results until the given date",
+#    :default => nil,
+#    :short => 'u',
+#    :type => String
 end
 
 # Trollop::die :collection, "must be a known collection. Possible values are: #{collections.inspect} You entered #{@opts[:collection]}" unless collections.include?@opts[:collection]
 
-# Get all of the collections into an Array
-@collections = []
-if @opts[:collection].instance_of?Array 
-  @collections = @opts[:collection] 
-else 
-  @collections << @opts[:collection]
-end
-
-@collections.each do |coll|
-  solr_config_path = File.join(File.dirname(__FILE__), "..", "config", "solr.yml")
-  config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "collections", "#{coll}.yml")
-  @indexer = Indexer.new(config_yml_path, solr_config_path)
-  puts "Indexing #{coll} into Solr server #{Indexer.config[:solr][:url]}"
-  puts "Logging output to #{Indexer.config[:log_dir]}/#{Indexer.config[:log_name]}"
-  time do
-    if @indexer.collection_is_mergable?
-      puts 'A collection record merge will happen!'
-    end
-    @indexer.harvest_and_index @opts[:nocommit]
-    
-  end
-  # puts "Indexing set objects only" if @indexer.config[:sets_only]
-end
-
-
-
-# opts = Trollop::options do
-#   version "indexer v0.2.0 (c) 2012 Stanford University http://searchworks.stanford.edu"
-#   banner <<-EOM
-# The indexer script harvests records from SearchWorks OAI-PMH Provider: 
-# #{@indexer.config[:oai_repository_url]}
-# and maps them to records into SearchWorks' Solr instance.
-# Usage:
-#   ./index [options] 
-# where [options] are:
-# EOM
-#   opt :set, 
-#     "Harvest results from the given set",
-#     :default => nil,
-#     :short => 's',
-#     :type => String
-#   opt :from, 
-#     "Filter results starting from the given date",
-#     :default => nil,
-#     :short => 'f',
-#     :type => String
-#   opt :until,
-#     "Filter results until the given date",
-#     :default => nil,
-#     :short => 'u',
-#     :type => String
-# end
-  
 # [:from, :until].each do |d| 
 #   if opts[d]
 #     begin
@@ -215,9 +59,8 @@ end
 #     end
 #   end
 # end
-# 
-# # If no set is specified, harvest the sets from the config file
-# 
+
+# If no set is specified, harvest the sets from the config file
 # if opts[:set]
 #   SearchWorksOaiHarvester::Harvester.new(SearchWorksOaiHarvester.oai_client, SearchWorksOaiHarvester.solr_client, opts).harvest
 # else
@@ -230,3 +73,42 @@ end
 # end
 # SearchWorksOaiHarvester.logger.info 'Commiting to Solr'
 # SearchWorksOaiHarvester.solr_client.commit
+
+
+# Get all of the specified collections (from the command line) into an Array
+@collections = []
+if @opts[:collection].instance_of?Array 
+  @collections = @opts[:collection] 
+else 
+  @collections << @opts[:collection]
+end
+
+# process each collection from the command line
+@collections.each do |coll|
+  solr_config_path = File.join(File.dirname(__FILE__), "..", "config", "solr.yml")
+  config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "collections", "#{coll}.yml")
+  @indexer = Indexer.new(config_yml_path, solr_config_path)
+  puts "Indexing #{coll} into Solr server #{Indexer.config[:solr][:url]}"
+  puts "Logging output to #{Indexer.config[:log_dir]}/#{Indexer.config[:log_name]}"
+  time do
+    if @indexer.collection_is_mergable?
+      puts 'A collection record merge will happen!'
+    end
+    @indexer.harvest_and_index @opts[:nocommit]
+  end
+end
+
+def time
+  start = Time.now
+  yield
+  elapsed = Time.now - start
+  puts "This set took #{elapsed} seconds to run."
+end
+
+# Define the collections that this script knows how to harvest per yml files in the config/collections directory
+# @return Array
+def collections
+	config_dir = File.join(File.dirname(__FILE__), '..', 'config', 'collections')
+	files = Dir.glob("#{config_dir}/*.yml")
+	files.map! {|x| File.basename(x, ".yml") }
+end
