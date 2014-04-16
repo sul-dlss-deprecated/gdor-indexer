@@ -359,37 +359,6 @@ class Indexer < Harvestdor::Indexer
     logger.info("Retry count: #{@retries}")
     logger.info("Total records processed: #{total_objects}")
   end
-  
-  def send_notifications
-    total_objects = @success_count + @error_count
-    notifications = config.notification ? config.notification : 'gdor-indexing-notification@lists.stanford.edu'
-    subject = "#{config.log_name} into Solr server #{config[:solr][:url]} is ready"
-    body = "Successful count: #{@success_count}\n"
-    if @found_in_solr_count == @success_count
-      body += "Records verified in solr: #{@found_in_solr_count}\n"
-    else
-      body += "Success Count and Solr count dont match, this might be a problem!\nRecords verified in solr: #{@found_in_solr_count}\n"
-    end
-    body += "Error count: #{@error_count}\n"
-    body += "Retry count: #{@retries}\n"
-    body += "Total records processed: #{total_objects}\n"
-    body += "\n"
-    require 'socket'
-    body += "full log is at gdor_indexer/shared/#{config.log_dir}/#{config.log_name} on #{Socket.gethostname}"
-    body += "\n"
-    body += @validation_messages
-    opts = {}
-    opts[:from_alias] = 'gryphondor'
-    opts[:server] = 'localhost'
-    opts[:from] = 'gryphondor@stanford.edu'
-    opts[:subject] = subject
-    opts[:body] = body
-    begin
-    send_email(notifications, opts)
-    rescue
-      logger.error('Failed to send email notification!')
-    end
-  end
 
   # email the results of indexing
   def email_results
