@@ -1,4 +1,4 @@
-# add the field_present? method to the Hash class
+# add the field_present? and combine methods to the Hash class
 class Hash  
 
   # looks for non-empty existence of field when exp_val is nil;
