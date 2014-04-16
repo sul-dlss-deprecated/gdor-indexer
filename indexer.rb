@@ -61,7 +61,7 @@ class Indexer < Harvestdor::Indexer
       if whitelist.empty?
         druids.threach(3) { |druid| index_item druid }
       else
-        logger.info("Using whitelist.")
+        logger.info("Using whitelist from #{config.whitelist}")
         whitelist.threach(3) { |druid| index_item druid }
       end
       index_coll_obj_per_config
