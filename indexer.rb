@@ -10,6 +10,8 @@ require 'net/smtp'
 # local files
 require 'solr_doc_builder'
 require 'hash_mixin'
+require 'nokogiri_xml_node_mixin'
+require 'oai_client_mixin'
 # Base class to harvest from DOR via harvestdor gem
 class Indexer < Harvestdor::Indexer
 
