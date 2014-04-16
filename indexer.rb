@@ -28,11 +28,16 @@ class Indexer < Harvestdor::Indexer
     yield(Indexer.config) if block_given?
   end
 
+  # to allow class level access to config variables for record_merger and solr_doc_builder
+  #  (rather than passing a lot of params to constructor)
   def self.config
     @@config ||= Confstruct::Configuration.new()
   end
+  def config
+    Indexer.config
+  end
   def logger
-    @logger ||= load_logger(Indexer.config.log_dir ||= 'logs', Indexer.config.log_name)
+    @logger ||= load_logger(config.log_dir ||= 'logs', config.log_name)
   end
   def retries
     @retries
@@ -194,8 +199,8 @@ class Indexer < Harvestdor::Indexer
   def coll_druid_from_config
     @coll_druid_from_config ||= begin
       druid = nil
-      if Indexer.config[:default_set].include? "is_member_of_collection_"
-        druid = Indexer.config[:default_set].gsub("is_member_of_collection_",'')
+      if config[:default_set].include? "is_member_of_collection_"
+        druid = config[:default_set].gsub("is_member_of_collection_",'')
       end
       druid
     end
@@ -282,10 +287,6 @@ class Indexer < Harvestdor::Indexer
     @coll_display_types_from_items ||= {}
   end
 
-  def solr_client
-    @solr_client ||= RSolr.connect(Indexer.config.solr.to_hash)
-  end
-
   # validate fields that should be in hash for any item object in SearchWorks Solr
   # @return [Array<String>] Array of messages suitable for notificaiton email and/or logs
   def validate_item druid, doc_hash
@@ -309,7 +310,7 @@ class Indexer < Harvestdor::Indexer
   def validate_gdor_fields druid, doc_hash
     result = []
     result << "#{druid} missing druid field\n" if !doc_hash.field_present?(:druid, druid)
-    result << "#{druid} missing url_fulltext for purl\n" if !doc_hash.field_present?(:url_fulltext, "#{Indexer.config.purl}/#{druid}")
+    result << "#{druid} missing url_fulltext for purl\n" if !doc_hash.field_present?(:url_fulltext, "#{config.purl}/#{druid}")
     result << "#{druid} missing access_facet 'Online'\n" if !doc_hash.field_present?(:access_facet, 'Online')
     result << "#{druid} missing or bad display_type, possibly caused by unrecognized @type attribute on <contentMetadata>\n" if !doc_hash.field_present?(:display_type, /(file)|(image)|(media)|(book)/)
     result
@@ -359,9 +360,40 @@ class Indexer < Harvestdor::Indexer
     logger.info("Total records processed: #{total_objects}")
   end
   
+  def send_notifications
+    total_objects = @success_count + @error_count
+    notifications = config.notification ? config.notification : 'gdor-indexing-notification@lists.stanford.edu'
+    subject = "#{config.log_name} into Solr server #{config[:solr][:url]} is ready"
+    body = "Successful count: #{@success_count}\n"
+    if @found_in_solr_count == @success_count
+      body += "Records verified in solr: #{@found_in_solr_count}\n"
+    else
+      body += "Success Count and Solr count dont match, this might be a problem!\nRecords verified in solr: #{@found_in_solr_count}\n"
+    end
+    body += "Error count: #{@error_count}\n"
+    body += "Retry count: #{@retries}\n"
+    body += "Total records processed: #{total_objects}\n"
+    body += "\n"
+    require 'socket'
+    body += "full log is at gdor_indexer/shared/#{config.log_dir}/#{config.log_name} on #{Socket.gethostname}"
+    body += "\n"
+    body += @validation_messages
+    opts = {}
+    opts[:from_alias] = 'gryphondor'
+    opts[:server] = 'localhost'
+    opts[:from] = 'gryphondor@stanford.edu'
+    opts[:subject] = subject
+    opts[:body] = body
+    begin
+    send_email(notifications, opts)
+    rescue
+      logger.error('Failed to send email notification!')
+    end
+  end
+
   # email the results of indexing
   def email_results
-    to_email = Indexer::config.notification ? Indexer::config.notification : 'gdor-indexing-notification@lists.stanford.edu'
+    to_email = config.notification ? config.notification : 'gdor-indexing-notification@lists.stanford.edu'
 
     total_objects = @success_count + @error_count
     
@@ -376,12 +408,12 @@ class Indexer < Harvestdor::Indexer
     body += "Total records processed: #{total_objects}\n"
     body += "\n"
     require 'socket'
-    body += "full log is at gdor_indexer/shared/#{Indexer.config.log_dir}/#{Indexer.config.log_name} on #{Socket.gethostname}"
+    body += "full log is at gdor_indexer/shared/#{config.log_dir}/#{config.log_name} on #{Socket.gethostname}"
     body += "\n"
     body += @validation_messages
 
     opts = {}
-    opts[:subject] = "#{Indexer.config.log_name} into Solr server #{Indexer.config[:solr][:url]} is finished"
+    opts[:subject] = "#{config.log_name} into Solr server #{config[:solr][:url]} is finished"
     opts[:body] = body
     begin
       send_email(to_email, opts)
