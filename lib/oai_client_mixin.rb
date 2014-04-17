@@ -4,27 +4,34 @@ module OAI
     
     # Do the actual HTTP get, following any temporary redirects
     def get(uri)
-      max_retry = 5
+      # open/read timeout in milliseconds
+      timeout_ms = Indexer.config.http_options.timeout 
+      timeout_ms ||= 500
+      # connection open timeout in milliseconds
+      conn_timeout_ms = Indexer.config.http_options.open_timeout 
+      conn_timeout_ms ||= 500
+
       response = @http_client.get do |req|
         req.url uri
-        req.options[:timeout] = 500           # open/read timeout in seconds
-        req.options[:open_timeout] = 500      # connection open timeout in seconds
+        req.options[:timeout] = timeout_ms
+        req.options[:open_timeout] = conn_timeout_ms
       end
 
+      max_retry = 5
       if response.status == 500 
         max_retry.times do
-          puts "500 from OAI provider for #{uri.to_s}, retrying in 5 seconds"
-          sleep(5)
+          puts "HTTP 500 error from OAI provider #{uri.to_s}, retrying in 3 seconds"
+          sleep(3)
           response = @http_client.get do |req|
             req.url uri
-            req.options[:timeout] = 500           # open/read timeout in seconds
-            req.options[:open_timeout] = 500      # connection open timeout in seconds
+            req.options[:timeout] = timeout_ms
+            req.options[:open_timeout] = conn_timeout_ms
           end
           if response.status != 500
             break;
           end 
-        end # max_retry
-      end # 500
+        end # max_retry.times
+      end # 500 response
 
       if not response.success?
         raise "OAI provider returned an error code: #{response.status.to_s} \n#{response.body}"
