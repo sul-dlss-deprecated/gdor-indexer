@@ -350,9 +350,9 @@ class Indexer < Harvestdor::Indexer
   def log_results
     total_objects = @success_count + @error_count
     logger.info("Avg solr commit time per object (successful): #{@total_time_to_solr/@success_count} seconds") unless (@total_time_to_solr == 0 || @success_count == 0)
-    logger.info("Avg solr commit time per object (all): #{@total_time_to_solr/total_objects} seconds") unless (@total_time_to_solr == 0 || @error_count == 0 || total_objects == 0)
+    logger.info("Avg solr commit time per object (all): #{@total_time_to_solr/total_objects} seconds") unless (@total_time_to_solr == 0 || total_objects == 0)
     logger.info("Avg parse time per object (successful): #{@total_time_to_parse/@success_count} seconds") unless (@total_time_to_parse == 0 || @success_count == 0)
-    logger.info("Avg parse time per object (all): #{@total_time_to_parse/total_objects} seconds") unless (@total_time_to_parse == 0 || @error_count == 0 || total_objects == 0)
+    logger.info("Avg parse time per object (all): #{@total_time_to_parse/total_objects} seconds") unless (@total_time_to_parse == 0 || total_objects == 0)
     logger.info("Avg complete index time per object (successful): #{@total_time/@success_count} seconds") unless (@success_count == 0)
     logger.info("Avg complete index time per object (all): #{@total_time/total_objects} seconds") unless (@error_count == 0 || total_objects == 0)
     logger.info("Successful count: #{@success_count}")
