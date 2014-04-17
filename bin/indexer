@@ -82,6 +82,12 @@ end
 # SearchWorksOaiHarvester.logger.info 'Commiting to Solr'
 # SearchWorksOaiHarvester.solr_client.commit
 
+def time
+  start = Time.now
+  yield
+  elapsed = Time.now - start
+  puts "This set took #{elapsed} seconds to run."
+end
 
 # Get all of the specified collections (from the command line) into an Array
 @collections = []
@@ -104,12 +110,5 @@ end
     end
     @indexer.harvest_and_index @opts[:nocommit]
   end
-end
-
-def time
-  start = Time.now
-  yield
-  elapsed = Time.now - start
-  puts "This set took #{elapsed} seconds to run."
 end
 
