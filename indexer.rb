@@ -388,7 +388,7 @@ class Indexer < Harvestdor::Indexer
     body += @validation_messages
 
     opts = {}
-    opts[:subject] = "#{config.log_name} into Solr server #{config[:solr][:url]} is finished"
+    opts[:subject] = "#{config.log_name.chomp('.log')} into Solr server #{config[:solr][:url]} is finished"
     opts[:body] = body
     begin
       send_email(to_email, opts)
