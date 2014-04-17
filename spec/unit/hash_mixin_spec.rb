@@ -31,8 +31,11 @@ describe Hash do
       it "false if hash[field] is an empty Array" do
         {:foo => []}.field_present?(:foo).should == false
       end
-      it "false if hash[field] is an Array with only empty string values" do
+      it "false if hash[field] is an Array with only empty String values" do
         {:foo => ["", ""]}.field_present?(:foo).should == false
+      end
+      it "false if hash[field] is an Array with only nil String values" do
+        {:foo => [nil]}.field_present?(:foo).should == false
       end
       it "true if hash[field] is a non-empty Array" do
         {:foo => ["a"]}.field_present?(:foo).should == true

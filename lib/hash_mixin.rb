@@ -8,7 +8,7 @@ class Hash
   def field_present? field, exp_val = nil
     if self[field] && (self[field].instance_of?(String) || self[field].instance_of?(Array)) && self[field].length > 0 
       actual = self[field]
-      return true if exp_val == nil && ( !actual.instance_of?(Array) || actual.index { |s| s.length > 0 } )
+      return true if exp_val == nil && ( !actual.instance_of?(Array) || actual.index { |s| s && s.length > 0 } )
       if exp_val.instance_of?(String)
         if actual.instance_of?(String)
           return true if actual == exp_val
