@@ -25,8 +25,8 @@ module PublicXmlFields
     end
   end
   
-  # the @id attribute of resource elements that match the display_type, including extension
-  # @return Array[<String>]
+  # the id attribute of resource/file elements that match the display_type, including extension
+  # @return Array[<String>] 
   def file_ids
     @file_ids ||= begin
       ids = []
