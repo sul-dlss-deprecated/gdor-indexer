@@ -366,34 +366,36 @@ class Indexer < Harvestdor::Indexer
     logger.info("Total records processed: #{total_objects}")
   end
 
-  # email the results of indexing
+  # email the results of indexing if we are on one of the harvestdor boxes
   def email_results
-    to_email = config.notification ? config.notification : 'gdor-indexing-notification@lists.stanford.edu'
+    if Socket.gethostname.index("harvestdor")
+      to_email = config.notification ? config.notification : 'gdor-indexing-notification@lists.stanford.edu'
 
-    total_objects = @success_count + @error_count
-    
-    body = "Successful count: #{@success_count}\n"
-    if @found_in_solr_count == @success_count
-      body += "Records verified in solr: #{@found_in_solr_count}\n"
-    else
-      body += "Success Count and Solr count dont match, this might be a problem!\nRecords verified in solr: #{@found_in_solr_count}\n"
-    end
-    body += "Error count: #{@error_count}\n"
-    body += "Retry count: #{@retries}\n"
-    body += "Total records processed: #{total_objects}\n"
-    body += "\n"
-    require 'socket'
-    body += "full log is at gdor_indexer/shared/#{config.log_dir}/#{config.log_name} on #{Socket.gethostname}"
-    body += "\n"
-    body += @validation_messages
+      total_objects = @success_count + @error_count
 
-    opts = {}
-    opts[:subject] = "#{config.log_name.chomp('.log')} into Solr server #{config[:solr][:url]} is finished"
-    opts[:body] = body
-    begin
-      send_email(to_email, opts)
-    rescue
-      logger.error('Failed to send email notification!')
+      body = "Successful count: #{@success_count}\n"
+      if @found_in_solr_count == @success_count
+        body += "Records verified in solr: #{@found_in_solr_count}\n"
+      else
+        body += "Success Count and Solr count dont match, this might be a problem!\nRecords verified in solr: #{@found_in_solr_count}\n"
+      end
+      body += "Error count: #{@error_count}\n"
+      body += "Retry count: #{@retries}\n"
+      body += "Total records processed: #{total_objects}\n"
+      body += "\n"
+      require 'socket'
+      body += "full log is at gdor_indexer/shared/#{config.log_dir}/#{config.log_name} on #{Socket.gethostname}"
+      body += "\n"
+      body += @validation_messages
+
+      opts = {}
+      opts[:subject] = "#{config.log_name.chomp('.log')} into Solr server #{config[:solr][:url]} is finished"
+      opts[:body] = body
+      begin
+        send_email(to_email, opts)
+      rescue
+        logger.error('Failed to send email notification!')
+      end
     end
   end
 
