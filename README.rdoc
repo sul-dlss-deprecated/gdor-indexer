@@ -18,4 +18,4 @@ set dist_dir to the path of the dist directory that is created, like dist_dir: .
 
 == Usage
 create a collection config file based on spec/config/walters_integration_spec.yml in the config/collections folder
-./bin/indexer -c {name of collection config file}
+./bin/indexer -c [name_of_collection_config_file]
