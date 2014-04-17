@@ -8,6 +8,14 @@ require "bundler/setup"
 require 'trollop'
 require 'indexer'
 
+# Define the collections that this script knows how to harvest per yml files in the config/collections directory
+# @return Array
+def collections
+	config_dir = File.join(File.dirname(__FILE__), '..', 'config', 'collections')
+	files = Dir.glob("#{config_dir}/*.yml")
+	files.map! {|x| File.basename(x, ".yml") }
+end
+
 # use Trollop to declare options and help text.
 @opts = Trollop::options do
   version "indexer v0.2.0 (c) 2012-2014 Stanford University http://searchworks.stanford.edu"
@@ -105,10 +113,3 @@ def time
   puts "This set took #{elapsed} seconds to run."
 end
 
-# Define the collections that this script knows how to harvest per yml files in the config/collections directory
-# @return Array
-def collections
-	config_dir = File.join(File.dirname(__FILE__), '..', 'config', 'collections')
-	files = Dir.glob("#{config_dir}/*.yml")
-	files.map! {|x| File.basename(x, ".yml") }
-end
