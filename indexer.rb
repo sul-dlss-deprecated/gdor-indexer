@@ -69,10 +69,6 @@ class Indexer < Harvestdor::Indexer
       index_coll_obj_per_config
     end
     
-    @total_time = elapsed_time(start_time)
-    logger.info("Finished harvest_and_index at #{Time.now}: final Solr commit returned")
-    logger.info("Total elapsed time for harvest and index: #{(@total_time/60.0)} minutes")
-
     if !nocommit && coll_sdb.coll_object?
       logger.info("Beginning Commit.")
       solr_client.commit
@@ -80,6 +76,10 @@ class Indexer < Harvestdor::Indexer
     elsif nocommit
       logger.info("Skipping commit per nocommit flag")
     end
+
+    @total_time = elapsed_time(start_time)
+    logger.info("Finished harvest_and_index at #{Time.now}")
+    logger.info("Total elapsed time for harvest and index: #{(@total_time/60.0)} minutes")
 
     log_results
     email_results
