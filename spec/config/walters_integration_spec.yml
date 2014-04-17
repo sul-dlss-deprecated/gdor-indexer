@@ -1,7 +1,7 @@
 # config for testing code
 
 # log_name: name of log file  (default: harvestdor.log)
-log_name: walters.log
+log_name: testcoll.log
 
 # log_dir:  directory for log file  (default logs, relative to harvestdor gem path)
 log_dir: spec/test_logs  
