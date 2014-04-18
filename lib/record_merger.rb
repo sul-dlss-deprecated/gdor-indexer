@@ -1,6 +1,5 @@
 require 'solrmarc_wrapper'
 require 'solrj_wrapper'
-require 'solrj_wrapper_mixin' # to fix solr4.4 issues. They are also fixed in the solr4.4 branch of solrj_wrapper
 
 class RecordMerger
   
