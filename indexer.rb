@@ -102,10 +102,10 @@ class Indexer < Harvestdor::Indexer
 
         ckey = sdb.catkey
         if ckey
-          require 'record_merger'
-          logger.debug "item #{druid} merged into #{ckey}"
+          logger.info "item #{druid} merged into #{ckey}"
           add_coll_info fields_to_add, sdb.coll_druids_from_rels_ext # defined in public_xml_fields
           @validation_messages = validate_item(druid, fields_to_add)
+          require 'record_merger'
           RecordMerger.merge_and_index(ckey, fields_to_add)
         else
           logger.info "indexing item #{druid}"
@@ -139,9 +139,9 @@ class Indexer < Harvestdor::Indexer
         :display_type => coll_display_types_from_items[coll_druid]
       }
       if coll_catkey
-        require 'record_merger'
-        logger.debug "Merging collection object #{coll_druid} into #{coll_catkey}"
+        logger.info "Collection object #{coll_druid} merged into #{coll_catkey}"
         @validation_messages = validate_collection(coll_druid, fields_to_add)
+        require 'record_merger'
         RecordMerger.merge_and_index(coll_catkey, fields_to_add)
       else
         logger.info "Indexing collection object #{coll_druid}"
@@ -159,7 +159,7 @@ class Indexer < Harvestdor::Indexer
       end
       @success_count += 1
     rescue => e
-      logger.error "Failed to merge collection object #{coll_druid_from_config}: #{e.message}"
+      logger.error "Failed to index collection object #{coll_druid_from_config}: #{e.message} #{e.backtrace}"
       @error_count += 1
     end
   end
@@ -350,22 +350,22 @@ class Indexer < Harvestdor::Indexer
     @record_count_msgs ||= begin
       msgs = []
       if @oai_harvest_count > 0
-        msgs << "OAI Records harvested count: #{@oai_harvest_count}"
+        msgs << "OAI Records harvested count (items only): #{@oai_harvest_count}"
       elsif @whitelist_count > 0
         msgs << "Whitelist count: #{@whitelist_count}"
       end
       if @oai_harvest_count == 0 && @whitelist_count == 0
-        msgs << "NOTE:  No item records harvested from OAI or on whitelist: this could be a problem!"
+        msgs << "WARNING:  No item records harvested from OAI or on whitelist: this could be a problem!"
       end
 
-      msgs << "Successful count: #{@success_count}"
+      msgs << "Successful count (items + coll record indexed w/o error): #{@success_count}"
       msgs << "Records verified in solr (items + coll record): #{num_found_in_solr}"
       if num_found_in_solr != @success_count
-        msgs << "NOTE:  Success Count and Solr count don't match: this might be a problem!"
+        msgs << "WARNING:  Success Count and Solr count don't match: this could be a problem!"
       end
 
-      msgs << "Error count: #{@error_count}"
-      msgs << "Retry count: #{@retries}"  # currently useless due to bug in harvestdor-indexer 0.0.12
+      msgs << "Error count (items + coll record w any error; may have indexed on retry if it was a timeout): #{@error_count}"
+#      msgs << "Retry count: #{@retries}"  # currently useless due to bug in harvestdor-indexer 0.0.12
       msgs << "Total records processed: #{@success_count + @error_count}"
       msgs
     end
