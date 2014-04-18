@@ -40,6 +40,7 @@ describe Indexer do
       @hdor_client.stub(:public_xml).with(@fake_druid).and_return(@ng_pub_xml)
       @coll_sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
       @coll_sdb.stub(:coll_object?).and_return(true)
+      @indexer.stub(:num_found_in_solr)
       @indexer.stub(:coll_sdb).and_return(@coll_sdb)
     end
     it "if coll rec from config harvested relationship isn't a coll rec per identity metadata, no further indexing should occur" do
@@ -52,14 +53,14 @@ describe Indexer do
       @indexer.harvest_and_index
     end
     it "should call index_item for each druid" do
-      Harvestdor::Indexer.any_instance.should_receive(:druids).and_return(['1', '2', '3'])
+      Harvestdor::Indexer.any_instance.should_receive(:druids).at_least(1).times.and_return(['1', '2', '3'])
       @indexer.should_receive(:index_item).with('1')
       @indexer.should_receive(:index_item).with('2')
       @indexer.should_receive(:index_item).with('3')
       @indexer.harvest_and_index(true) # nocommit for ease of testing
     end
     it "should call index_coll_obj_per_config once for the coll druid from the config file" do
-      Harvestdor::Indexer.any_instance.should_receive(:druids).and_return([])
+      Harvestdor::Indexer.any_instance.should_receive(:druids).at_least(1).times.and_return([])
       @indexer.should_receive(:index_coll_obj_per_config)
       @indexer.harvest_and_index(true) # nocommit for ease of testing
     end
@@ -459,7 +460,7 @@ describe Indexer do
     end
   end
   
-  context "#count_recs_in_solr" do
+  context "#num_found_in_solr" do
     before :each do 
       @collection_response = {'response' => {'numFound'=>'1','docs'=>[{'id'=>'dm212rn7381', 'url_fulltext' => ['http://purl.stanford.edu/dm212rn7381']}]}}
       @bad_collection_response = {'response' => {'numFound'=>'1','docs'=>[{'id'=>'dm212rn7381'}]}}
@@ -474,7 +475,7 @@ describe Indexer do
           @item_response
         end
       end
-      @indexer.count_recs_in_solr.should == 266
+      @indexer.num_found_in_solr.should == 266
     end
     it 'should verify the collection object has a purl' do
       @indexer.solr_client.stub(:get) do |wt, params|
@@ -483,10 +484,10 @@ describe Indexer do
         else
           @item_response
         end
-        @indexer.count_recs_in_solr.should == 265
+        @indexer.num_found_in_solr.should == 265
       end
     end
-  end # count_recs_in_solr
+  end # num_found_in_solr
 
   context "#validate_gdor_fields" do
     it "should return an empty Array when there are no problems" do

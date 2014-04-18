@@ -16,13 +16,15 @@ require 'oai_client_mixin'
 class Indexer < Harvestdor::Indexer
 
   def initialize yml_path, solr_config_path, options = {}
+    @oai_harvest_count = 0
+    @whitelist_count = 0
     @success_count = 0
     @error_count = 0
     @total_time_to_solr = 0
     @total_time_to_parse = 0
     @retries = 0
     @yml_path = yml_path
-    @validation_messages = ''
+    @validation_messages = []
     solr_config = YAML.load_file(solr_config_path) if solr_config_path && File.exists?(solr_config_path)
     Indexer.config.configure(YAML.load_file(yml_path)) if yml_path && File.exists?(yml_path)
     Indexer.config.configure options 
@@ -41,12 +43,6 @@ class Indexer < Harvestdor::Indexer
   def logger
     @logger ||= load_logger(config.log_dir ||= 'logs', config.log_name)
   end
-  def retries
-    @retries
-  end
-  def errors
-    @errors
-  end
   
   # per this Indexer's config options 
   #  harvest the druids via OAI
@@ -61,9 +57,11 @@ class Indexer < Harvestdor::Indexer
       logger.fatal("#{coll_druid_from_config} is not a collection object!! (per identityMetaadata)  Ending indexing.")
     else
       if whitelist.empty?
+        @oai_harvest_count = druids.size
         druids.threach(3) { |druid| index_item druid }
       else
         logger.info("Using whitelist from #{config.whitelist}")
+        @whitelist_count = whitelist.size
         whitelist.threach(3) { |druid| index_item druid }
       end
       index_coll_obj_per_config
@@ -72,7 +70,7 @@ class Indexer < Harvestdor::Indexer
     if !nocommit && coll_sdb.coll_object?
       logger.info("Beginning Commit.")
       solr_client.commit
-      count_recs_in_solr
+      logger.info("Finished Commit.")
     elsif nocommit
       logger.info("Skipping commit per nocommit flag")
     end
@@ -107,18 +105,17 @@ class Indexer < Harvestdor::Indexer
           require 'record_merger'
           logger.debug "item #{druid} merged into #{ckey}"
           add_coll_info fields_to_add, sdb.coll_druids_from_rels_ext # defined in public_xml_fields
-          validation_messages = validate_item(druid, fields_to_add)
+          @validation_messages = validate_item(druid, fields_to_add)
           RecordMerger.merge_and_index(ckey, fields_to_add)
         else
           logger.info "indexing item #{druid}"
           doc_hash = sdb.doc_hash
           doc_hash.combine fields_to_add
           add_coll_info doc_hash, sdb.coll_druids_from_rels_ext # defined in public_xml_fields
-          validation_messages = validate_item(druid, doc_hash)
-          validation_messages.concat sdb.validate_mods(druid, doc_hash)
+          @validation_messages = validate_item(druid, doc_hash)
+          @validation_messages.concat sdb.validate_mods(druid, doc_hash)
           solr_add(doc_hash, druid)
         end
-        @validation_messages = validation_messages.join("\n") + "\n"
         @success_count += 1
       rescue => e
         @error_count += 1
@@ -144,7 +141,7 @@ class Indexer < Harvestdor::Indexer
       if coll_catkey
         require 'record_merger'
         logger.debug "Merging collection object #{coll_druid} into #{coll_catkey}"
-        validation_messages = validate_collection(coll_druid, fields_to_add)
+        @validation_messages = validate_collection(coll_druid, fields_to_add)
         RecordMerger.merge_and_index(coll_catkey, fields_to_add)
       else
         logger.info "Indexing collection object #{coll_druid}"
@@ -156,11 +153,10 @@ class Indexer < Harvestdor::Indexer
           addl_formats.concat(doc_hash[:format]) if doc_hash[:format] # doc_hash[:format] guaranteed to be Array
           doc_hash[:format] = addl_formats.uniq
         end
-        validation_messages = validate_collection(coll_druid, doc_hash)
-        validation_messages.concat coll_sdb.validate_mods(coll_druid, doc_hash)
+        @validation_messages = validate_collection(coll_druid, doc_hash)
+        @validation_messages.concat coll_sdb.validate_mods(coll_druid, doc_hash)
         solr_add(doc_hash, coll_druid) unless coll_druid.nil?
       end
-      @validation_messages = validation_messages.join("\n") + "\n"
       @success_count += 1
     rescue => e
       logger.error "Failed to merge collection object #{coll_druid_from_config}: #{e.message}"
@@ -324,30 +320,62 @@ class Indexer < Harvestdor::Indexer
   
   # count the number of records in solr for this collection (and the collection record itself)
   #  and check for a purl in the collection record
-  def count_recs_in_solr
-    params = {:fl => 'id', :rows => 1000}
-    coll_rec_id = coll_catkey ? coll_catkey : coll_druid_from_config
-    params[:fq] = "collection:\"#{coll_rec_id}\""
-    params[:start] ||= 0
-    resp = solr_client.get 'select', :params => params
-    @found_in_solr_count = resp['response']['numFound'].to_i
+  def num_found_in_solr
+    @num_found_in_solr ||= begin
+      params = {:fl => 'id', :rows => 1000}
+      coll_rec_id = coll_catkey ? coll_catkey : coll_druid_from_config
+      params[:fq] = "collection:\"#{coll_rec_id}\""
+      params[:start] ||= 0
+      resp = solr_client.get 'select', :params => params
+      num_found = resp['response']['numFound'].to_i
 
-    # get the collection record too
-    params.delete(:fq)
-    params[:fl] = 'id, url_fulltext'
-    params[:qt] = 'document'
-    params[:id] = coll_rec_id
-    resp = solr_client.get 'select', :params => params
-    resp['response']['docs'].each do |doc|
-      if doc['url_fulltext'] and doc['url_fulltext'].to_s.include?('http://purl.stanford.edu/' + doc['id'])
-        @found_in_solr_count += 1
+      # get the collection record too
+      params.delete(:fq)
+      params[:fl] = 'id, url_fulltext'
+      params[:qt] = 'document'
+      params[:id] = coll_rec_id
+      resp = solr_client.get 'select', :params => params
+      resp['response']['docs'].each do |doc|
+        if doc['url_fulltext'] and doc['url_fulltext'].to_s.include?('http://purl.stanford.edu/' + doc['id'])
+          num_found += 1
+        end
       end
+      num_found
     end
-    @found_in_solr_count
+  end
+
+  # create messages about various record counts
+  # @return [Array<String>] Array of messages suitable for notificaiton email and/or logs
+  def record_count_msgs
+    @record_count_msgs ||= begin
+      msgs = []
+      if @oai_harvest_count > 0
+        msgs << "OAI Records harvested count: #{@oai_harvest_count}"
+      elsif @whitelist_count > 0
+        msgs << "Whitelist count: #{@whitelist_count}"
+      end
+      if @oai_harvest_count == 0 && @whitelist_count == 0
+        msgs << "NOTE:  No item records harvested from OAI or on whitelist: this could be a problem!"
+      end
+
+      msgs << "Successful count: #{@success_count}"
+      msgs << "Records verified in solr (items + coll record): #{num_found_in_solr}"
+      if num_found_in_solr != @success_count
+        msgs << "NOTE:  Success Count and Solr count don't match: this might be a problem!"
+      end
+
+      msgs << "Error count: #{@error_count}"
+      msgs << "Retry count: #{@retries}"  # currently useless due to bug in harvestdor-indexer 0.0.12
+      msgs << "Total records processed: #{@success_count + @error_count}"
+      msgs
+    end
   end
 
   # log details about the results of indexing
   def log_results
+    record_count_msgs.each { |msg|  
+      logger.info msg
+    }
     total_objects = @success_count + @error_count
     logger.info("Avg solr commit time per object (successful): #{@total_time_to_solr/@success_count} seconds") unless (@total_time_to_solr == 0 || @success_count == 0)
     logger.info("Avg solr commit time per object (all): #{@total_time_to_solr/total_objects} seconds") unless (@total_time_to_solr == 0 || total_objects == 0)
@@ -355,38 +383,20 @@ class Indexer < Harvestdor::Indexer
     logger.info("Avg parse time per object (all): #{@total_time_to_parse/total_objects} seconds") unless (@total_time_to_parse == 0 || total_objects == 0)
     logger.info("Avg complete index time per object (successful): #{@total_time/@success_count} seconds") unless (@total_time == 0 || @success_count == 0)
     logger.info("Avg complete index time per object (all): #{@total_time/total_objects} seconds") unless (@total_time == 0 || total_objects == 0)
-    logger.info("Successful count: #{@success_count}")
-    if @found_in_solr_count == @success_count
-      logger.info("Records verified in solr: #{@found_in_solr_count}")
-    else
-      logger.info("Success Count and Solr count dont match, this might be a problem! Records verified in solr: #{@found_in_solr_count}")
-    end
-    logger.info("Error count: #{@error_count}")
-    logger.info("Retry count: #{@retries}")
-    logger.info("Total records processed: #{total_objects}")
   end
 
   # email the results of indexing if we are on one of the harvestdor boxes
   def email_results
+    require 'socket'
     if Socket.gethostname.index("harvestdor")
       to_email = config.notification ? config.notification : 'gdor-indexing-notification@lists.stanford.edu'
 
-      total_objects = @success_count + @error_count
-
-      body = "Successful count: #{@success_count}\n"
-      if @found_in_solr_count == @success_count
-        body += "Records verified in solr: #{@found_in_solr_count}\n"
-      else
-        body += "Success Count and Solr count dont match, this might be a problem!\nRecords verified in solr: #{@found_in_solr_count}\n"
-      end
-      body += "Error count: #{@error_count}\n"
-      body += "Retry count: #{@retries}\n"
-      body += "Total records processed: #{total_objects}\n"
+      body = ""
+      body += record_count_msgs.join("\n") + "\n"
       body += "\n"
-      require 'socket'
       body += "full log is at gdor_indexer/shared/#{config.log_dir}/#{config.log_name} on #{Socket.gethostname}"
-      body += "\n"
-      body += @validation_messages
+      body += "\n"      
+      body += @validation_messages.join("\n") + "\n"
 
       opts = {}
       opts[:subject] = "#{config.log_name.chomp('.log')} into Solr server #{config[:solr][:url]} is finished"
