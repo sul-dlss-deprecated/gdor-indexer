@@ -77,7 +77,7 @@ class Indexer < Harvestdor::Indexer
 
     @total_time = elapsed_time(start_time)
     logger.info("Finished harvest_and_index at #{Time.now}")
-    logger.info("Total elapsed time for harvest and index: #{(@total_time/60)} minutes")
+    logger.info("Total elapsed time for harvest and index: #{(@total_time/60).round(2)} minutes")
 
     log_results
     email_results
@@ -377,12 +377,12 @@ class Indexer < Harvestdor::Indexer
       logger.info msg
     }
     total_objects = @success_count + @error_count
-    logger.info("Avg solr commit time per object (successful): #{@total_time_to_solr/@success_count} seconds") unless (@total_time_to_solr == 0 || @success_count == 0)
-    logger.info("Avg solr commit time per object (all): #{@total_time_to_solr/total_objects} seconds") unless (@total_time_to_solr == 0 || total_objects == 0)
-    logger.info("Avg parse time per object (successful): #{@total_time_to_parse/@success_count} seconds") unless (@total_time_to_parse == 0 || @success_count == 0)
-    logger.info("Avg parse time per object (all): #{@total_time_to_parse/total_objects} seconds") unless (@total_time_to_parse == 0 || total_objects == 0)
-    logger.info("Avg complete index time per object (successful): #{@total_time/@success_count} seconds") unless (@total_time == 0 || @success_count == 0)
-    logger.info("Avg complete index time per object (all): #{@total_time/total_objects} seconds") unless (@total_time == 0 || total_objects == 0)
+    logger.info("Avg solr commit time per object (successful): #{(@total_time_to_solr/@success_count).round(2)} seconds") unless (@total_time_to_solr == 0 || @success_count == 0)
+    logger.info("Avg solr commit time per object (all): #{(@total_time_to_solr/total_objects).round(2)} seconds") unless (@total_time_to_solr == 0 || total_objects == 0)
+    logger.info("Avg parse time per object (successful): #{(@total_time_to_parse/@success_count).round(2)} seconds") unless (@total_time_to_parse == 0 || @success_count == 0)
+    logger.info("Avg parse time per object (all): #{(@total_time_to_parse/total_objects).round(2)} seconds") unless (@total_time_to_parse == 0 || total_objects == 0)
+    logger.info("Avg complete index time per object (successful): #{(@total_time/@success_count).round(2)} seconds") unless (@total_time == 0 || @success_count == 0)
+    logger.info("Avg complete index time per object (all): #{(@total_time/total_objects).round(2)} seconds") unless (@total_time == 0 || total_objects == 0)
   end
 
   # email the results of indexing if we are on one of the harvestdor boxes
