@@ -138,7 +138,7 @@ DEPENDENCIES
   equivalent-xml (= 0.4.0)
   harvestdor
   harvestdor-indexer
-  holepicker (= 0.3.3)
+  holepicker (~> 0.3.3)
   jruby-openssl
   lyberteam-capistrano-devel (= 3.0.0.pre1)
   mail
