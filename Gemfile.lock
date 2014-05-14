@@ -47,9 +47,9 @@ GEM
       harvestdor
       rsolr
       stanford-mods
-    holepicker (0.3.1)
-      json (>= 1.7.7)
-      rainbow (>= 1.1.4)
+    holepicker (0.3.3)
+      json (~> 1.8)
+      rainbow (~> 2.0)
     i18n (0.6.9)
     iso-639 (0.2.4)
     jruby-openssl (0.9.4)
@@ -88,7 +88,7 @@ GEM
       faraday
       faraday_middleware
     polyglot (0.3.4)
-    rainbow (1.99.2)
+    rainbow (2.0.0)
     rake (10.2.1)
     rdoc (4.1.1)
       json (~> 1.4)
@@ -138,11 +138,12 @@ DEPENDENCIES
   equivalent-xml (= 0.4.0)
   harvestdor
   harvestdor-indexer
+  holepicker (= 0.3.3)
   jruby-openssl
   lyberteam-capistrano-devel (= 3.0.0.pre1)
   mail
   nokogiri
-  rainbow (< 2.0)
+  rainbow
   rake
   rdoc
   rsolr
