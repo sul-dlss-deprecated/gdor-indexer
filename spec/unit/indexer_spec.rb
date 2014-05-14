@@ -344,6 +344,13 @@ describe Indexer do
         @indexer.add_coll_info(doc_hash, [coll_druid1, coll_druid2])
         doc_hash[:collection].should == [coll_druid1, coll_druid2]
       end
+      it "should have the ckey when the collection record is merged" do
+        doc_hash = {}
+        @indexer.stub(:coll_catkey).and_return('666')
+        @indexer.add_coll_info(doc_hash, @coll_druids_array)
+        doc_hash[:collection].should == ['666']
+      end
+      # other tests show it uses druid when coll rec isn't merged
     end
 
     context "collection_with_title field" do
@@ -363,6 +370,15 @@ describe Indexer do
         @indexer.add_coll_info(doc_hash, [coll_druid1, coll_druid2])
         doc_hash[:collection_with_title].should == ["#{coll_druid1}-|-foo", "#{coll_druid2}-|-bar"]
       end
+      it "should have the ckey when the collection record is merged" do
+        coll_druid = 'aa000aa1234'
+        @indexer.should_receive(:identity_md_obj_label).with(coll_druid).and_return('zzz')
+        @indexer.stub(:coll_catkey).and_return('666')
+        doc_hash = {}
+        @indexer.add_coll_info(doc_hash, [coll_druid])
+        doc_hash[:collection_with_title].should == ['666-|-zzz']
+      end
+      # other tests show it uses druid when coll rec isn't merged
     end
     
     context "coll_druid_2_title_hash interactions" do

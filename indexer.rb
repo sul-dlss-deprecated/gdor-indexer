@@ -147,7 +147,7 @@ class Indexer < Harvestdor::Indexer
         logger.info "Indexing collection object #{coll_druid}"
         doc_hash = coll_sdb.doc_hash
         doc_hash.combine fields_to_add
-        # add item formats
+        # add item formats -- remove this!!!
         addl_formats = coll_formats_from_items[coll_druid] # guaranteed to be Array or nil
         if addl_formats && !addl_formats.empty?
           addl_formats.concat(doc_hash[:format]) if doc_hash[:format] # doc_hash[:format] guaranteed to be Array
@@ -178,10 +178,11 @@ class Indexer < Harvestdor::Indexer
         cache_display_type_for_collection coll_druid, doc_hash[:display_type]
         if coll_catkey
           doc_hash[:collection] << coll_catkey
+          doc_hash[:collection_with_title] << "#{coll_catkey}-|-#{coll_druid_2_title_hash[coll_druid]}"
         else
           doc_hash[:collection] << coll_druid
+          doc_hash[:collection_with_title] << "#{coll_druid}-|-#{coll_druid_2_title_hash[coll_druid]}"
         end
-        doc_hash[:collection_with_title] << "#{coll_druid}-|-#{coll_druid_2_title_hash[coll_druid]}"
       } 
     end
   end
