@@ -232,26 +232,6 @@ describe Indexer do
         SolrDocBuilder.any_instance.should_receive(:validate_mods)
         @indexer.index_coll_obj_per_config
       end
-      context "format" do
-        it "includes formats from coll_formats_from_items when the druid matches" do
-          @indexer.stub(:coll_formats_from_items).and_return({@coll_druid_from_test_config => ['Image']})
-          SolrDocBuilder.any_instance.stub(:doc_hash).and_return({})
-          @indexer.solr_client.should_receive(:add).with(hash_including(:format => ['Image']))
-          @indexer.index_coll_obj_per_config
-        end
-        it "should not include formats from coll_formats_from_items when the druid doesn't match" do
-          @indexer.stub(:coll_formats_from_items).and_return({'foo' => ['Image']})
-          SolrDocBuilder.any_instance.stub(:doc_hash).and_return({:format => ['Video']})
-          @indexer.solr_client.should_receive(:add).with(hash_including(:format => ['Video']))
-          @indexer.index_coll_obj_per_config
-        end
-        it "should not have duplicate format values" do
-          @indexer.stub(:coll_formats_from_items).and_return({@coll_druid_from_test_config => ['Image', 'Video', 'Image']})
-          SolrDocBuilder.any_instance.stub(:doc_hash).and_return({:format => ['Video']})
-          @indexer.solr_client.should_receive(:add).with(hash_including(:format => ['Image', 'Video']))
-          @indexer.index_coll_obj_per_config
-        end
-      end
       context "display_type" do
         it "includes display_types from coll_display_types_from_items when the druid matches" do
           @indexer.stub(:coll_display_types_from_items).and_return({@coll_druid_from_test_config => ['image']})
@@ -394,40 +374,6 @@ describe Indexer do
         @indexer.coll_druid_2_title_hash[@coll_druid_from_test_config].should == 'qqq'
       end
     end # coll_druid_2_title_hash
-
-    context "#coll_formats_from_items" do
-      before(:each) do
-        @hdor_client.stub(:public_xml).and_return(@ng_pub_xml)
-        @indexer.coll_formats_from_items[@coll_druid_from_test_config] = []
-      end
-      it "gets single item format for single collection" do
-        @indexer.stub(:identity_md_obj_label)
-        doc_hash = {:format => 'Image'}
-        @indexer.add_coll_info(doc_hash, @coll_druids_array)
-        @indexer.coll_formats_from_items[@coll_druid_from_test_config].should == ['Image']
-      end
-      it "gets multiple formats from single item for single collection" do
-        @indexer.stub(:identity_md_obj_label)
-        doc_hash = {:format => ['Image', 'Video']}
-        @indexer.add_coll_info(doc_hash, @coll_druids_array)
-        @indexer.coll_formats_from_items[@coll_druid_from_test_config].should == ['Image', 'Video']
-      end
-      it "gets multiple formats from multiple items for single collection" do
-        @indexer.stub(:identity_md_obj_label)
-        doc_hash = {:format => 'Image'}
-        @indexer.add_coll_info(doc_hash, @coll_druids_array)
-        doc_hash = {:format => 'Video'}
-        @indexer.add_coll_info(doc_hash, @coll_druids_array)
-        @indexer.coll_formats_from_items[@coll_druid_from_test_config].should == ['Image', 'Video']
-      end
-    end # coll_formats_from_items
-    it "#cache_item_formats_for_collection doesn't allow duplicate values" do
-      indexer = Indexer.new(@config_yml_path, @solr_yml_path)
-      indexer.cache_item_formats_for_collection('foo', ['Image'])
-      indexer.cache_item_formats_for_collection('foo', ['Image', 'Video'])
-      indexer.cache_item_formats_for_collection('foo', ['Video'])
-      indexer.coll_formats_from_items['foo'].size.should == 2
-    end
 
     context "#coll_display_types_from_items" do
       before(:each) do
