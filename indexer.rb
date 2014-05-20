@@ -169,13 +169,9 @@ class Indexer < Harvestdor::Indexer
       coll_druids.each { |coll_druid|  
         cache_coll_title coll_druid
         cache_display_type_for_collection coll_druid, doc_hash[:display_type]
-        if coll_catkey
-          doc_hash[:collection] << coll_catkey
-          doc_hash[:collection_with_title] << "#{coll_catkey}-|-#{coll_druid_2_title_hash[coll_druid]}"
-        else
-          doc_hash[:collection] << coll_druid
-          doc_hash[:collection_with_title] << "#{coll_druid}-|-#{coll_druid_2_title_hash[coll_druid]}"
-        end
+        coll_id = coll_catkey ? coll_catkey : coll_druid
+        doc_hash[:collection] << coll_id
+        doc_hash[:collection_with_title] << "#{coll_id}-|-#{coll_druid_2_title_hash[coll_druid]}"
       } 
     end
   end
@@ -209,7 +205,7 @@ class Indexer < Harvestdor::Indexer
     end
   end
   
-# FIXME:  move to public_xml_fields???
+# FIXME:  move to public_xml_fields???  push up to harvestdor-indexer?
   # given a druid, get its objectLabel from its purl page identityMetadata
   # @param [String] druid, e.g. ab123cd4567
   # @return [String] the value of the <objectLabel> element in the identityMetadata for the object
