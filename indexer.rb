@@ -147,12 +147,6 @@ class Indexer < Harvestdor::Indexer
         logger.info "Indexing collection object #{coll_druid}"
         doc_hash = coll_sdb.doc_hash
         doc_hash.combine fields_to_add
-        # add item formats -- remove this!!!
-        addl_formats = coll_formats_from_items[coll_druid] # guaranteed to be Array or nil
-        if addl_formats && !addl_formats.empty?
-          addl_formats.concat(doc_hash[:format]) if doc_hash[:format] # doc_hash[:format] guaranteed to be Array
-          doc_hash[:format] = addl_formats.uniq
-        end
         @validation_messages = validate_collection(coll_druid, doc_hash)
         @validation_messages.concat coll_sdb.validate_mods(coll_druid, doc_hash)
         solr_add(doc_hash, coll_druid) unless coll_druid.nil?
@@ -174,15 +168,10 @@ class Indexer < Harvestdor::Indexer
       
       coll_druids.each { |coll_druid|  
         cache_coll_title coll_druid
-        cache_item_formats_for_collection coll_druid, doc_hash[:format]
         cache_display_type_for_collection coll_druid, doc_hash[:display_type]
-        if coll_catkey
-          doc_hash[:collection] << coll_catkey
-          doc_hash[:collection_with_title] << "#{coll_catkey}-|-#{coll_druid_2_title_hash[coll_druid]}"
-        else
-          doc_hash[:collection] << coll_druid
-          doc_hash[:collection_with_title] << "#{coll_druid}-|-#{coll_druid_2_title_hash[coll_druid]}"
-        end
+        coll_id = coll_catkey ? coll_catkey : coll_druid
+        doc_hash[:collection] << coll_id
+        doc_hash[:collection_with_title] << "#{coll_id}-|-#{coll_druid_2_title_hash[coll_druid]}"
       } 
     end
   end
@@ -216,7 +205,7 @@ class Indexer < Harvestdor::Indexer
     end
   end
   
-# FIXME:  move to public_xml_fields???
+# FIXME:  move to public_xml_fields???  push up to harvestdor-indexer?
   # given a druid, get its objectLabel from its purl page identityMetadata
   # @param [String] druid, e.g. ab123cd4567
   # @return [String] the value of the <objectLabel> element in the identityMetadata for the object
@@ -226,27 +215,6 @@ class Indexer < Harvestdor::Indexer
     ng_imd.xpath('identityMetadata/objectLabel').text
   end
   
-  # cache the format(s) of this (item) object with a collection, so when the collection rec
-  # is being indexed, it can get all of the formats of the members
-  def cache_item_formats_for_collection coll_druid, item_formats
-    if item_formats
-      if item_formats.kind_of?(Array)
-        item_formats.each do |item_format|
-          add_to_coll_formats_from_item coll_druid, item_format
-        end
-      else
-        add_to_coll_formats_from_item coll_druid, item_formats
-      end
-    end
-  end
-
-  # add a format to the coll_formats_from_items array if it isn't already there
-  # @param <String> format a single format as a String
-  def add_to_coll_formats_from_item coll_druid, format
-    coll_formats_from_items[coll_druid] ||= [format]
-    coll_formats_from_items[coll_druid] << format if !coll_formats_from_items[coll_druid].include? format
-  end
-
   # cache the display_type of this (item) object with a collection, so when the collection rec
   # is being indexed, it can get all of the display_types of the members
   def cache_display_type_for_collection coll_druid, display_type
@@ -278,12 +246,6 @@ class Indexer < Harvestdor::Indexer
     @coll_druid_2_title_hash ||= {}
   end
 
-  # cache formats from each item so we have this info for indexing collection record 
-  # @return [Hash<String, Array<String>>] collection druids as keys, array of item formats as values
-  def coll_formats_from_items
-    @coll_formats_from_items ||= {}
-  end
-  
   # cache display_type from each item so we have this info for indexing collection record 
   # @return [Hash<String, Array<String>>] collection druids as keys, array of item display_types as values
   def coll_display_types_from_items
