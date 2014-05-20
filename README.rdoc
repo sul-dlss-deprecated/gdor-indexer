@@ -1,5 +1,7 @@
 = gdor-indexer
 
+{<img src="https://gemnasium.com/sul-dlss/gdor-indexer.png" alt="Dependency Status" />}[https://gemnasium.com/sul-dlss/gdor-indexer] 
+
 Code to harvest DOR druids via OAI, mods from PURL, and use it to index items into the Searchworks index.
 
 Relationship used for OAI harvest:  "is_member_of_collection_ww121ss5000"
@@ -7,9 +9,9 @@ Relationship used for OAI harvest:  "is_member_of_collection_ww121ss5000"
 
 == install steps
 
-You must use jruby in 1.9 compatibility mode to run this app. Version 1.6.8 is known to work. An rvmrc file with the below is known to work :
-export JRUBY_OPTS="--1.9"
-rvm use jruby-1.6.8
+You must use jruby in 1.9 compatibility mode to run this app. Version 1.7.9 is known to work. An rvmrc file with the below is known to work :
+# export JRUBY_OPTS="--1.9"  # this no longer needed, as it is the default
+rvm use jruby-1.7.9
 
 You must also clone the solrmarc code from git (for merged records)
 clone /afs/ir/dev/dlss/git/searchworks/solrmarc-sw.git
