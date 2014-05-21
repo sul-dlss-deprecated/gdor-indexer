@@ -40,8 +40,14 @@ class Indexer < Harvestdor::Indexer
   def config
     Indexer.config
   end
+  def self.logger
+    dir = config.log_dir ||= 'logs'
+    fname = config.log_name
+    Dir.mkdir(dir) unless File.directory?(dir)
+    @@logger ||= Logger.new(File.join(dir, config.log_name), 'daily')
+  end  
   def logger
-    @logger ||= load_logger(config.log_dir ||= 'logs', config.log_name)
+    @logger = Indexer.logger
   end
   
   # per this Indexer's config options 
