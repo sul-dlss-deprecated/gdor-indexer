@@ -72,10 +72,12 @@ describe Indexer do
         ckey = '666'
         sdb = double
         sdb.stub(:catkey).and_return(ckey)
+        sdb.stub(:doc_hash).and_return({})
         sdb.stub(:coll_druids_from_rels_ext)
         sdb.stub(:public_xml)
         sdb.stub(:display_type)
         sdb.stub(:file_ids)
+        sdb.stub(:validate_mods).and_return([])
         SolrDocBuilder.stub(:new).and_return(sdb)
         RecordMerger.should_receive(:merge_and_index).with(ckey, instance_of(Hash))
         @indexer.index_item @fake_druid
@@ -269,11 +271,14 @@ describe Indexer do
         @sdb = double
         @sdb.stub(:catkey).and_return(@ickey)
         @sdb.stub(:coll_druids_from_rels_ext).and_return(['foo'])
+        @sdb.stub(:doc_hash).and_return({})
         @sdb.stub(:display_type).and_return('fiddle')
         @sdb.stub(:file_ids).and_return(['dee', 'dum'])
+        @sdb.stub(:validate_mods).and_return([])
         SolrDocBuilder.stub(:new).and_return(@sdb)
         @indexer.stub(:identity_md_obj_label).with('foo').and_return('bar')
         @indexer.stub(:coll_catkey).and_return(nil)
+        Indexer.config[:merge_policy] = nil
       end
       it "calls RecordMerger.merge_and_index with gdor fields and item specific fields" do
         RecordMerger.should_receive(:merge_and_index).with(@ickey, hash_including(:display_type => 'fiddle',
