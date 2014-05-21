@@ -107,22 +107,33 @@ class Indexer < Harvestdor::Indexer
         fields_to_add[:file_id] = sdb.file_ids unless !sdb.file_ids  # defined in public_xml_fields
 
         ckey = sdb.catkey
-        if ckey
+        if ckey && config.merge_policy == 'never'
+          logger.warn("#{druid} indexed from MODS; has ckey #{ckey} but merge_policy is 'never'")
+        elsif ckey
           logger.info "item #{druid} merged into #{ckey}"
           add_coll_info fields_to_add, sdb.coll_druids_from_rels_ext # defined in public_xml_fields
           @validation_messages = validate_item(druid, fields_to_add)
           require 'record_merger'
-          RecordMerger.merge_and_index(ckey, fields_to_add)
-        else
-          logger.info "indexing item #{druid}"
-          doc_hash = sdb.doc_hash
-          doc_hash.combine fields_to_add
-          add_coll_info doc_hash, sdb.coll_druids_from_rels_ext # defined in public_xml_fields
-          @validation_messages = validate_item(druid, doc_hash)
-          @validation_messages.concat sdb.validate_mods(druid, doc_hash)
-          solr_add(doc_hash, druid)
+          merged = RecordMerger.merge_and_index(ckey, fields_to_add)
         end
-        @success_count += 1
+        
+        if merged
+          @success_count += 1
+        else
+          if !ckey && !merged && config.merge_policy == 'always'
+            logger.error("#{druid} NOT INDEXED:  no ckey found and merge_policy set to 'always'")
+            @error_count += 1
+          elsif !ckey || ( !merged && config.merge_policy != 'always' )
+            logger.info "indexing item #{druid}"
+            doc_hash = sdb.doc_hash
+            doc_hash.combine fields_to_add
+            add_coll_info doc_hash, sdb.coll_druids_from_rels_ext # defined in public_xml_fields
+            @validation_messages = validate_item(druid, doc_hash)
+            @validation_messages.concat sdb.validate_mods(druid, doc_hash)
+            solr_add(doc_hash, druid)
+            @success_count += 1
+          end
+        end
       rescue => e
         @error_count += 1
         logger.error "Failed to index item #{druid}: #{e.message} #{e.backtrace}"

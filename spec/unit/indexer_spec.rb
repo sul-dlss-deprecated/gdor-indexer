@@ -94,7 +94,113 @@ describe Indexer do
         @indexer.solr_client.should_receive(:add)
         @indexer.index_item @fake_druid
       end
-    end
+      context "config.merge_policy" do
+        before(:each) do
+          @sdb = double
+          @sdb.stub(:coll_druids_from_rels_ext)
+          @sdb.stub(:public_xml)
+          @sdb.stub(:display_type)
+          @sdb.stub(:file_ids)
+          # for unmerged items only
+          @sdb.stub(:doc_hash).and_return({})
+          @sdb.stub(:validate_mods).and_return([])
+        end
+        context "have catkey" do
+          before(:each) do
+            @ckey = '666'
+            @sdb.stub(:catkey).and_return(@ckey)
+            SolrDocBuilder.stub(:new).and_return(@sdb)
+          end
+          context "merge_policy 'always'" do
+            it "uses RecordMerger if SW Solr index has record" do
+              Indexer.config[:merge_policy] = 'always'
+              RecordMerger.should_receive(:merge_and_index).with(@ckey, instance_of(Hash))
+              @indexer.index_item @fake_druid
+            end
+            it "fails with error message if no record in SW Solr index" do
+              Indexer.config[:merge_policy] = 'always'
+              RecordMerger.should_receive(:fetch_sw_solr_input_doc).with(@ckey).and_return(nil)
+              RecordMerger.should_receive(:merge_and_index).with(@ckey, instance_of(Hash)).and_call_original
+              @indexer.logger.should_receive(:error).with("oo000oo0000 NOT INDEXED:  MARC record #{@ckey} not found in SW Solr index (may be shadowed in Symphony)")
+              @indexer.solr_client.should_not_receive(:add)
+              @indexer.index_item @fake_druid
+            end
+          end
+          context "merge_policy 'when_possible'" do
+            it "uses RecordMerger if SW Solr index has record" do
+              Indexer.config[:merge_policy] = 'when_possible'
+              RecordMerger.should_receive(:merge_and_index).with(@ckey, instance_of(Hash))
+              @indexer.index_item @fake_druid
+            end
+            it "falls back to MODS with error message if no record in SW Solr index" do
+              Indexer.config[:merge_policy] = 'when_possible'
+              RecordMerger.stub(:fetch_sw_solr_input_doc).with(@ckey).and_return(nil)
+              RecordMerger.should_receive(:merge_and_index).with(@ckey, instance_of(Hash)).and_call_original
+              @indexer.logger.should_receive(:error).with("oo000oo0000 indexed from MODS:  MARC record #{@ckey} not found in SW Solr index (may be shadowed in Symphony)")
+              @indexer.solr_client.should_receive(:add)
+              @indexer.index_item @fake_druid
+            end
+          end
+          context "merge_policy 'never'" do
+            it "does not use RecordMerger and prints warning message" do
+              Indexer.config[:merge_policy] = 'never'
+              RecordMerger.should_not_receive(:merge_and_index)
+              @indexer.logger.should_receive(:warn).with("oo000oo0000 indexed from MODS; has ckey #{@ckey} but merge_policy is 'never'")
+              @indexer.solr_client.should_receive(:add)
+              @indexer.index_item @fake_druid
+            end
+          end
+          context "merge_policy not set" do
+            it "uses RecordMerger if SW Solr index has record" do
+              Indexer.config[:merge_policy] = nil
+              RecordMerger.should_receive(:merge_and_index).with(@ckey, instance_of(Hash))
+              @indexer.index_item @fake_druid
+            end
+            it "falls back to MODS with error message if no record in SW Solr index" do
+              Indexer.config[:merge_policy] = nil
+              RecordMerger.stub(:fetch_sw_solr_input_doc).with(@ckey).and_return(nil)
+              RecordMerger.should_receive(:merge_and_index).with(@ckey, instance_of(Hash)).and_call_original
+              @indexer.logger.should_receive(:error).with("oo000oo0000 indexed from MODS:  MARC record #{@ckey} not found in SW Solr index (may be shadowed in Symphony)")
+              @indexer.solr_client.should_receive(:add)
+              @indexer.index_item @fake_druid
+            end
+          end
+        end # have catkey
+        context "no catkey" do
+          before(:each) do
+            @sdb.stub(:catkey).and_return(nil)
+            SolrDocBuilder.stub(:new).and_return(@sdb)
+          end
+          it "merge_policy 'always' doesn't use the MODS and prints error message" do
+            Indexer.config[:merge_policy] = 'always'
+            RecordMerger.should_not_receive(:merge_and_index)
+            @indexer.logger.should_receive(:error).with("oo000oo0000 NOT INDEXED:  no ckey found and merge_policy set to 'always'")
+            @indexer.solr_client.should_not_receive(:add)
+            @indexer.index_item @fake_druid
+          end
+          it "merge_policy 'when_possible' uses the MODS without error message" do
+            Indexer.config[:merge_policy] = 'when_possible'
+            RecordMerger.should_not_receive(:merge_and_index)
+            @indexer.logger.should_not_receive(:error)
+            @indexer.solr_client.should_receive(:add)
+            @indexer.index_item @fake_druid
+          end
+          it "merge_policy 'never' uses the MODS without error message" do
+            Indexer.config[:merge_policy] = 'never'
+            RecordMerger.should_not_receive(:merge_and_index)
+            @indexer.logger.should_not_receive(:error)
+            @indexer.solr_client.should_receive(:add)
+            @indexer.index_item @fake_druid
+          end
+          it "merge_policy not set uses the MODS without error message" do
+            RecordMerger.should_not_receive(:merge_and_index)
+            @indexer.logger.should_not_receive(:error)
+            @indexer.solr_client.should_receive(:add)
+            @indexer.index_item @fake_druid
+          end
+        end # no catkey        
+      end # config.merge_policy
+    end # merge or not?
 
     context "unmerged" do
       before(:each) do

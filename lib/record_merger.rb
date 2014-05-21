@@ -28,8 +28,17 @@ class RecordMerger
   # @param [Hash<String, Object>] doc_hash_to_add - the keys are Solr field names, the values are either String or an Array of Strings
   def self.merge_and_index catkey, doc_hash_to_add
     doc = RecordMerger.fetch_sw_solr_input_doc catkey
+    if !doc
+      if Indexer.config.merge_policy == 'always'
+        Indexer.logger.error("#{doc_hash_to_add[:druid]} NOT INDEXED:  MARC record #{catkey} not found in SW Solr index (may be shadowed in Symphony)")
+      else
+        Indexer.logger.error("#{doc_hash_to_add[:druid]} indexed from MODS:  MARC record #{catkey} not found in SW Solr index (may be shadowed in Symphony)")
+      end
+      return false
+    end
     add_hash_to_solr_input_doc(doc, doc_hash_to_add)
     solrj.add_doc_to_ix(doc, catkey)
+    true
   end
   
   # cache SolrJWrapper object at class level
