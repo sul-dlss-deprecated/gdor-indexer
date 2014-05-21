@@ -18,8 +18,6 @@ module PublicXmlFields
         'book'
       when 'image', 'manuscript', 'map'
         'image'
-      when 'media'
-        'media'
       else
         'file'
     end
