@@ -123,23 +123,8 @@ describe Indexer do
               Indexer.config[:merge_policy] = 'always'
               RecordMerger.should_receive(:fetch_sw_solr_input_doc).with(@ckey).and_return(nil)
               RecordMerger.should_receive(:merge_and_index).with(@ckey, instance_of(Hash)).and_call_original
-              @indexer.logger.should_receive(:error).with("#{@fake_druid} NOT INDEXED:  MARC record #{@ckey} not found in SW Solr index (may be shadowed in Symphony)")
+              @indexer.logger.should_receive(:error).with("#{@fake_druid} NOT INDEXED:  MARC record #{@ckey} not found in SW Solr index (may be shadowed in Symphony) and merge_policy set to 'always'")
               @indexer.solr_client.should_not_receive(:add)
-              @indexer.index_item @fake_druid
-            end
-          end
-          context "merge_policy 'when_possible'" do
-            it "uses RecordMerger if SW Solr index has record" do
-              Indexer.config[:merge_policy] = 'when_possible'
-              RecordMerger.should_receive(:merge_and_index).with(@ckey, instance_of(Hash))
-              @indexer.index_item @fake_druid
-            end
-            it "falls back to MODS with error message if no record in SW Solr index" do
-              Indexer.config[:merge_policy] = 'when_possible'
-              RecordMerger.stub(:fetch_sw_solr_input_doc).with(@ckey).and_return(nil)
-              RecordMerger.should_receive(:merge_and_index).with(@ckey, instance_of(Hash)).and_call_original
-              @indexer.logger.should_receive(:error).with("#{@fake_druid} indexed from MODS:  MARC record #{@ckey} not found in SW Solr index (may be shadowed in Symphony)")
-              @indexer.solr_client.should_receive(:add)
               @indexer.index_item @fake_druid
             end
           end
@@ -147,7 +132,7 @@ describe Indexer do
             it "does not use RecordMerger and prints warning message" do
               Indexer.config[:merge_policy] = 'never'
               RecordMerger.should_not_receive(:merge_and_index)
-              @indexer.logger.should_receive(:warn).with("#{@fake_druid} indexed from MODS; has ckey #{@ckey} but merge_policy is 'never'")
+              @indexer.logger.should_receive(:warn).with("#{@fake_druid} to be indexed from MODS; has ckey #{@ckey} but merge_policy is 'never'")
               @indexer.solr_client.should_receive(:add)
               @indexer.index_item @fake_druid
             end
@@ -162,7 +147,7 @@ describe Indexer do
               Indexer.config[:merge_policy] = nil
               RecordMerger.stub(:fetch_sw_solr_input_doc).with(@ckey).and_return(nil)
               RecordMerger.should_receive(:merge_and_index).with(@ckey, instance_of(Hash)).and_call_original
-              @indexer.logger.should_receive(:error).with("#{@fake_druid} indexed from MODS:  MARC record #{@ckey} not found in SW Solr index (may be shadowed in Symphony)")
+              @indexer.logger.should_receive(:error).with("#{@fake_druid} to be indexed from MODS:  MARC record #{@ckey} not found in SW Solr index (may be shadowed in Symphony)")
               @indexer.solr_client.should_receive(:add)
               @indexer.index_item @fake_druid
             end
@@ -180,13 +165,6 @@ describe Indexer do
             @indexer.solr_client.should_not_receive(:add)
             @indexer.index_item @fake_druid
           end
-          it "merge_policy 'when_possible' uses the MODS without error message" do
-            Indexer.config[:merge_policy] = 'when_possible'
-            RecordMerger.should_not_receive(:merge_and_index)
-            @indexer.logger.should_not_receive(:error)
-            @indexer.solr_client.should_receive(:add)
-            @indexer.index_item @fake_druid
-          end
           it "merge_policy 'never' uses the MODS without error message" do
             Indexer.config[:merge_policy] = 'never'
             RecordMerger.should_not_receive(:merge_and_index)
@@ -200,7 +178,7 @@ describe Indexer do
             @indexer.solr_client.should_receive(:add)
             @indexer.index_item @fake_druid
           end
-        end # no catkey        
+        end # no catkey
       end # config.merge_policy
     end # merge or not?
 
