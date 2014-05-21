@@ -159,21 +159,28 @@ class Indexer < Harvestdor::Indexer
         :display_type => coll_display_types_from_items[coll_druid]
       }
       if coll_catkey
-        logger.info "Collection object #{coll_druid} merged into #{coll_catkey}"
         @validation_messages = validate_collection(coll_druid, fields_to_add)
         require 'record_merger'
-        RecordMerger.merge_and_index(coll_catkey, fields_to_add)
-      else
-        logger.info "Indexing collection object #{coll_druid}"
+        merged = RecordMerger.merge_and_index(coll_catkey, fields_to_add)
+        if merged
+          logger.info "Collection object #{coll_druid} merged into #{coll_catkey}"
+          @success_count += 1
+        else
+          logger.error("#{coll_druid} to be indexed from MODS:  MARC record #{coll_catkey} not found in SW Solr index (may be shadowed in Symphony)")
+        end
+      end
+        
+      if !coll_catkey || !merged
+        logger.info "Indexing collection object #{coll_druid} (unmerged)"
         doc_hash = coll_sdb.doc_hash
         doc_hash.combine fields_to_add
         @validation_messages = validate_collection(coll_druid, doc_hash)
         @validation_messages.concat coll_sdb.validate_mods(coll_druid, doc_hash)
         solr_add(doc_hash, coll_druid) unless coll_druid.nil?
+        @success_count += 1
       end
-      @success_count += 1
     rescue => e
-      logger.error "Failed to index collection object #{coll_druid_from_config}: #{e.message} #{e.backtrace}"
+      logger.error "Failed to index collection object #{coll_druid}: #{e.message} #{e.backtrace}"
       @error_count += 1
     end
   end
