@@ -28,7 +28,6 @@ end
 # testing
 group :test do
 	gem 'rspec'
-#	gem 'ruby-debug19'
 	gem 'simplecov', :require => false
 	gem 'simplecov-rcov', :require => false
 #  gem 'jettywrapper'

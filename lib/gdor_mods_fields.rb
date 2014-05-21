@@ -72,10 +72,8 @@ module GdorModsFields
     vals = @smods_rec.format ? @smods_rec.format : []
     return vals.uniq if !vals.empty?
 
-    if not @smods_rec.typeOfResource or @smods_rec.typeOfResource.length == 0
-      @logger.warn "#{@druid} has no valid typeOfResource"
-      []
-    end
+    @logger.warn "#{@druid} has no valid SearchWorks format - check <typeOfResource> and other implicated MODS elements"
+    []
   end
 
 protected
