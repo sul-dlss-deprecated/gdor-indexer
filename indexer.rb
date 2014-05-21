@@ -40,14 +40,8 @@ class Indexer < Harvestdor::Indexer
   def config
     Indexer.config
   end
-  def self.logger
-    dir = config.log_dir ||= 'logs'
-    fname = config.log_name
-    Dir.mkdir(dir) unless File.directory?(dir)
-    @@logger ||= Logger.new(File.join(dir, config.log_name), 'daily')
-  end  
   def logger
-    @logger = Indexer.logger
+    @logger ||= load_logger(config.log_dir ||= 'logs', config.log_name)
   end
   
   # per this Indexer's config options 
@@ -115,6 +109,13 @@ class Indexer < Harvestdor::Indexer
           @validation_messages = validate_item(druid, fields_to_add)
           require 'record_merger'
           merged = RecordMerger.merge_and_index(ckey, fields_to_add)
+          if !merged
+            if config.merge_policy == 'always'
+              logger.error("#{druid} NOT INDEXED:  MARC record #{ckey} not found in SW Solr index (may be shadowed in Symphony)")
+            else
+              logger.error("#{druid} indexed from MODS:  MARC record #{ckey} not found in SW Solr index (may be shadowed in Symphony)")
+            end
+          end
         end
         
         if merged
