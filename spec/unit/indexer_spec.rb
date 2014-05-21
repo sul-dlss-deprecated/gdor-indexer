@@ -121,7 +121,7 @@ describe Indexer do
               Indexer.config[:merge_policy] = 'always'
               RecordMerger.should_receive(:fetch_sw_solr_input_doc).with(@ckey).and_return(nil)
               RecordMerger.should_receive(:merge_and_index).with(@ckey, instance_of(Hash)).and_call_original
-              @indexer.logger.should_receive(:error).with("oo000oo0000 NOT INDEXED:  MARC record #{@ckey} not found in SW Solr index (may be shadowed in Symphony)")
+              @indexer.logger.should_receive(:error).with("#{@fake_druid} NOT INDEXED:  MARC record #{@ckey} not found in SW Solr index (may be shadowed in Symphony)")
               @indexer.solr_client.should_not_receive(:add)
               @indexer.index_item @fake_druid
             end
@@ -136,7 +136,7 @@ describe Indexer do
               Indexer.config[:merge_policy] = 'when_possible'
               RecordMerger.stub(:fetch_sw_solr_input_doc).with(@ckey).and_return(nil)
               RecordMerger.should_receive(:merge_and_index).with(@ckey, instance_of(Hash)).and_call_original
-              @indexer.logger.should_receive(:error).with("oo000oo0000 indexed from MODS:  MARC record #{@ckey} not found in SW Solr index (may be shadowed in Symphony)")
+              @indexer.logger.should_receive(:error).with("#{@fake_druid} indexed from MODS:  MARC record #{@ckey} not found in SW Solr index (may be shadowed in Symphony)")
               @indexer.solr_client.should_receive(:add)
               @indexer.index_item @fake_druid
             end
@@ -145,7 +145,7 @@ describe Indexer do
             it "does not use RecordMerger and prints warning message" do
               Indexer.config[:merge_policy] = 'never'
               RecordMerger.should_not_receive(:merge_and_index)
-              @indexer.logger.should_receive(:warn).with("oo000oo0000 indexed from MODS; has ckey #{@ckey} but merge_policy is 'never'")
+              @indexer.logger.should_receive(:warn).with("#{@fake_druid} indexed from MODS; has ckey #{@ckey} but merge_policy is 'never'")
               @indexer.solr_client.should_receive(:add)
               @indexer.index_item @fake_druid
             end
@@ -160,7 +160,7 @@ describe Indexer do
               Indexer.config[:merge_policy] = nil
               RecordMerger.stub(:fetch_sw_solr_input_doc).with(@ckey).and_return(nil)
               RecordMerger.should_receive(:merge_and_index).with(@ckey, instance_of(Hash)).and_call_original
-              @indexer.logger.should_receive(:error).with("oo000oo0000 indexed from MODS:  MARC record #{@ckey} not found in SW Solr index (may be shadowed in Symphony)")
+              @indexer.logger.should_receive(:error).with("#{@fake_druid} indexed from MODS:  MARC record #{@ckey} not found in SW Solr index (may be shadowed in Symphony)")
               @indexer.solr_client.should_receive(:add)
               @indexer.index_item @fake_druid
             end
@@ -174,7 +174,7 @@ describe Indexer do
           it "merge_policy 'always' doesn't use the MODS and prints error message" do
             Indexer.config[:merge_policy] = 'always'
             RecordMerger.should_not_receive(:merge_and_index)
-            @indexer.logger.should_receive(:error).with("oo000oo0000 NOT INDEXED:  no ckey found and merge_policy set to 'always'")
+            @indexer.logger.should_receive(:error).with("#{@fake_druid} NOT INDEXED:  no ckey found and merge_policy set to 'always'")
             @indexer.solr_client.should_not_receive(:add)
             @indexer.index_item @fake_druid
           end
