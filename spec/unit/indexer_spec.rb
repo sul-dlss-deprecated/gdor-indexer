@@ -578,15 +578,30 @@ describe Indexer do
   
   context "#num_found_in_solr" do
     before :each do 
-      @collection_response = {'response' => {'numFound'=>'1','docs'=>[{'id'=>'dm212rn7381', 'url_fulltext' => ['http://purl.stanford.edu/dm212rn7381']}]}}
+      @unmerged_collection_response = {'response' => {'numFound'=>'1','docs'=>[{'id'=>'dm212rn7381', 'url_fulltext' => ['http://purl.stanford.edu/dm212rn7381']}]}}
+      @merged_collection_response = {'response' => {'numFound'=>'1','docs'=>[{'id'=>'666', 'url_fulltext' => ['http://purl.stanford.edu/dm212rn7381']}]}}
       @bad_collection_response = {'response' => {'numFound'=>'1','docs'=>[{'id'=>'dm212rn7381'}]}}
       @item_response = {'response' => {'numFound'=>'265','docs'=>[{'id'=>'dm212rn7381'}]}}
     end
 
-    it 'should count the items and the collection object in the solr index after indexing' do
+    it 'should count the items and the collection object in the solr index after indexing (merged)' do
+      @indexer.stub(:coll_catkey).and_return("666")
+      @indexer.stub(:coll_druid_from_config).and_return('dm212rn7381')
       @indexer.solr_client.stub(:get) do |wt, params|
-        if params[:params][:fl].include?('url_full')
-          @collection_response
+        if params[:params][:fl].include?('url_fulltext')
+          @merged_collection_response
+        else
+          @item_response
+        end
+      end
+      @indexer.num_found_in_solr.should == 266
+    end
+    it 'should count the items and the collection object in the solr index after indexing (unmerged)' do
+      @indexer.stub(:coll_catkey).and_return(nil)
+      @indexer.stub(:coll_druid_from_config).and_return('dm212rn7381')
+      @indexer.solr_client.stub(:get) do |wt, params|
+        if params[:params][:fl].include?('url_fulltext')
+          @unmerged_collection_response
         else
           @item_response
         end
