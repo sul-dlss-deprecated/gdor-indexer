@@ -326,7 +326,7 @@ class Indexer < Harvestdor::Indexer
       params[:id] = coll_rec_id
       resp = solr_client.get 'select', :params => params
       resp['response']['docs'].each do |doc|
-        if doc['url_fulltext'] and doc['url_fulltext'].to_s.include?('http://purl.stanford.edu/' + doc['id'])
+        if doc['url_fulltext'] and doc['url_fulltext'].to_s.include?('http://purl.stanford.edu/' + coll_druid_from_config)
           num_found += 1
         end
       end
