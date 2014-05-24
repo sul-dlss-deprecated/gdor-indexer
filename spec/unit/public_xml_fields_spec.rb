@@ -134,9 +134,9 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
         @sdb.stub(:dor_content_type).and_return('map')
         @sdb.display_type.should == 'image'
       end
-      it "'media' for dor_content_type 'media'" do
+      it "'file' for dor_content_type 'media'" do
         @sdb.stub(:dor_content_type).and_return('media')
-        @sdb.display_type.should == 'media'
+        @sdb.display_type.should == 'file'
       end
       it "'book' for dor_content_type 'book'" do
         @sdb.stub(:dor_content_type).and_return('book')
@@ -315,7 +315,7 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
         @sdb.stub(:content_md).and_return(ng_xml.root)
         @sdb.file_ids.should == nil
       end
-      it "should be nil for media display_type" do
+      it "should be id attrib of file elements for media display_type" do
         ng_xml = Nokogiri::XML('<contentMetadata objectId="jy496kh1727" type="media">
           <resource sequence="1" id="jy496kh1727_1" type="audio">
             <label>Tape 1, Pass 1</label>
@@ -328,7 +328,7 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
             </file>
           </resource></contentMetadata>')
         @sdb.stub(:content_md).and_return(ng_xml.root)
-        @sdb.file_ids.should == nil
+        @sdb.file_ids.should == ["jy496kh1727_sl.mp3", "jy496kh1727_img_1.jp2"]
       end
       it "should be nil if there are no <resource> elements in the contentMetadata" do
         ng_xml = Nokogiri::XML('<contentMetadata objectId="jy496kh1727" type="file"></contentMetadata>')
