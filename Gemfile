@@ -33,7 +33,7 @@ end
 
 group :deployment do
   gem "capistrano", '~> 3.2'
-  gem 'capistrano-bundler', '~> 1.1'
+  gem 'capistrano-bundler'
   gem 'capistrano-rvm'    # gdor-indexer needs jruby until merge-manager
   gem "lyberteam-capistrano-devel", '3.0.0.pre1'
   gem 'rainbow' # for color output

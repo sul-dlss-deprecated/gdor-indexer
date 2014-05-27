@@ -142,7 +142,7 @@ PLATFORMS
 DEPENDENCIES
   activesupport
   capistrano (~> 3.2)
-  capistrano-bundler (~> 1.1)
+  capistrano-bundler
   capistrano-rvm
   equivalent-xml (= 0.4.0)
   harvestdor
