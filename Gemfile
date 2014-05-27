@@ -13,7 +13,7 @@ gem 'trollop'
 gem 'solrmarc_wrapper'
 gem 'solrj_wrapper', :git => "https://github.com/sul-dlss/solrj_wrapper.git", :branch => "solr4.4"
 gem 'threach'
-gem 'activesupport', '~> 3'
+gem 'activesupport'
 gem 'mail'
 
 # documentation
