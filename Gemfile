@@ -13,10 +13,8 @@ gem 'trollop'
 gem 'solrmarc_wrapper'
 gem 'solrj_wrapper', :git => "https://github.com/sul-dlss/solrj_wrapper.git", :branch => "solr4.4"
 gem 'threach'
-gem 'activesupport', '~> 3.0.0'
+gem 'activesupport', '~> 3'
 gem 'mail'
-# avoid "Can't download latest data file: A JSON text must at least contain two octets!" error from holepicker
-gem 'holepicker', '~> 0.3.3'
 
 
 # documentation
@@ -35,7 +33,7 @@ group :test do
 end
 
 group :deployment do
-  gem "capistrano", '~> 3.0'
+  gem "capistrano", '~> 3.2'
   gem 'capistrano-bundler', '~> 1.1'
   gem 'capistrano-rvm'    # gdor-indexer needs jruby until merge-manager
   gem "lyberteam-capistrano-devel", '3.0.0.pre1'
