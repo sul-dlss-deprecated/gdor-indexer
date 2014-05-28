@@ -15,6 +15,7 @@ gem 'solrj_wrapper', :git => "https://github.com/sul-dlss/solrj_wrapper.git", :b
 gem 'threach'
 gem 'activesupport'
 gem 'mail'
+gem 'faraday', '~>0.8.9' # 0.9.0 doesn't play nicely with oai gem
 
 # documentation
 group :doc do
