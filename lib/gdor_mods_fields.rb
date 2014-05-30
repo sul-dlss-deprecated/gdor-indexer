@@ -69,11 +69,27 @@ module GdorModsFields
   # via stanford-mods gem
   # @return [Array<String>] value(s) in the SearchWorks controlled vocabulary, or []
   def format
-    vals = @smods_rec.format ? @smods_rec.format : []
-    return vals.uniq if !vals.empty?
+    vals = @smods_rec.format
+    if vals.empty?
+      @logger.warn "#{@druid} has no valid SearchWorks format - check <typeOfResource> and other implicated MODS elements"
+    end
+    vals
+  end
+  
+  # call stanford-mods format_main to get results
+  # @return [Array<String>] value(s) in the SearchWorks controlled vocabulary, or []
+  def format_main_ssim
+    vals = @smods_rec.format_main
+    if vals.empty?
+      @logger.warn "#{@druid} has no valid SearchWorks Resource Type - check <typeOfResource> and other implicated MODS elements"
+    end
+    vals
+  end
 
-    @logger.warn "#{@druid} has no valid SearchWorks format - check <typeOfResource> and other implicated MODS elements"
-    []
+  # call stanford-mods sw_genre to get results
+  # @return [Array<String>] value(s) 
+  def genre_ssim
+    @smods_rec.sw_genre
   end
 
 protected

@@ -819,13 +819,45 @@ describe GdorModsFields do
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
       sdb.smods_rec.should_receive(:format).and_call_original
-      sdb.smods_rec.format.should == ['Image']
+      sdb.format.should == ['Image']
     end
-    it "should return nothing if there is no format info" do
+    it "should return empty Array and log warning if there is no value" do
       @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-      sdb.smods_rec.format.should == []
+      sdb.logger.should_receive(:warn).with("#{@fake_druid} has no valid SearchWorks format - check <typeOfResource> and other implicated MODS elements")
+      sdb.format.should == []
     end
   end # context format
+
+  context "format_main_ssim" do
+    it "should get format_main_ssim from call to stanford-mods searchworks format_main method " do
+      m = "<mods #{@ns_decl}><typeOfResource>still image</typeOfResouce></mods>"
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+      sdb.smods_rec.should_receive(:format_main).and_call_original
+      sdb.format_main_ssim.should == ['Image']
+    end
+    it "should return empty Array and log warning if there is no value" do
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+      sdb.logger.should_receive(:warn).with("#{@fake_druid} has no valid SearchWorks Resource Type - check <typeOfResource> and other implicated MODS elements")
+      sdb.format_main_ssim.should == []
+    end
+  end # context format_main_ssim
+
+  context "genre_ssim" do
+    it "should get genre_ssim from call to stanford-mods searchworks sw_genre method " do
+      m = "<mods #{@ns_decl}><genre>technical report</genre></mods>"
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+      sdb.smods_rec.should_receive(:sw_genre).and_call_original
+      sdb.genre_ssim.should == ['Technical report']
+    end
+    it "should return empty Array if there is no value" do
+      @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+      sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+      sdb.genre_ssim.should == []
+    end
+  end # context genre_ssim
 
 end
