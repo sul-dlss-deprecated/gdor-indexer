@@ -36,7 +36,7 @@ class RecordMerger
   
   # cache SolrJWrapper object at class level
   def self.solrj
-    @@solrj ||= SolrjWrapper.new('../solrmarc-sw/lib/solrj-lib', Indexer.config.solr.url, 1, 1)
+    @@solrj ||= SolrjWrapper.new('../solrmarc-sw/lib/solrj-lib', Indexer.config.solr.url)
   end
   
   # cache SolrmarcWrapper object at class level

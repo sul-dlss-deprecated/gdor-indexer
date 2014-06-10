@@ -11,11 +11,11 @@ gem 'rake'
 gem 'rsolr'
 gem 'trollop'
 gem 'solrmarc_wrapper'
-gem 'solrj_wrapper', :git => "https://github.com/sul-dlss/solrj_wrapper.git", :branch => "solr4.4"
+gem 'solrj_wrapper'
 gem 'threach'
 gem 'activesupport'
 gem 'mail'
-gem 'faraday', '~>0.8.9' # 0.9.0 doesn't play nicely with oai gem
+gem 'faraday', '~>0.8.9' # 0.9.0 doesn't play nicely with oai/harvestdor gem
 
 # documentation
 group :doc do
