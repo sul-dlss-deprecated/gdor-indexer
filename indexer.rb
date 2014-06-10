@@ -24,6 +24,7 @@ class Indexer < Harvestdor::Indexer
     @total_time_to_parse = 0
     @retries = 0
     @yml_path = yml_path
+    @druids_failed_to_ix = []
     @validation_messages = []
     solr_config = YAML.load_file(solr_config_path) if solr_config_path && File.exists?(solr_config_path)
     Indexer.config.configure(YAML.load_file(yml_path)) if yml_path && File.exists?(yml_path)
@@ -139,6 +140,7 @@ class Indexer < Harvestdor::Indexer
         end
       rescue => e
         @error_count += 1
+        @druids_failed_to_ix << druid
         logger.error "Failed to index item #{druid}: #{e.message} #{e.backtrace}"
       end
     end
@@ -182,6 +184,7 @@ class Indexer < Harvestdor::Indexer
     rescue => e
       logger.error "Failed to index collection object #{coll_druid}: #{e.message} #{e.backtrace}"
       @error_count += 1
+      @druids_failed_to_ix << coll_druid
     end
   end
 
@@ -385,7 +388,10 @@ class Indexer < Harvestdor::Indexer
       body += record_count_msgs.join("\n") + "\n"
       body += "\n"
       body += "full log is at gdor_indexer/shared/#{config.log_dir}/#{config.log_name} on #{Socket.gethostname}"
-      body += "\n"      
+      body += "\n"
+      if @druids_failed_to_ix.size > 0
+        body += "records that may have failed to index (merged recs as druids, not ckeys): \n" + @druids_failed_to_ix.join("\n") + "\n"
+      end
       body += @validation_messages.join("\n") + "\n"
 
       opts = {}

@@ -719,4 +719,17 @@ describe Indexer do
     end
   end # validate_collection
 
+  context "#email_results" do
+    require 'socket'
+    before(:each) do
+      allow(Socket).to receive(:gethostname).and_return("harvestdor-specs")
+    end
+    it "email includes failed to index druids" do
+      allow(@indexer).to receive(:record_count_msgs).and_return([])
+      @indexer.instance_variable_set(:@druids_failed_to_ix, ['a', 'b'])
+      allow(@indexer).to receive(:send_email).with(instance_of(String), 
+        hash_including(:body => "\n\nfull log is at gdor_indexer/shared/spec/test_logs/testcoll.log on harvestdor-specs\nrecords that may have failed to index (merged recs as druids, not ckeys): \na\nb\n\n"))
+      @indexer.send(:email_results)
+    end
+  end
 end
