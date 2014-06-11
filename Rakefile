@@ -32,6 +32,10 @@ RSpec::Core::RakeTask.new(:rspec) do |spec|
   spec.rspec_opts = ["-c", "-f progress", "--tty", "-r ./spec/spec_helper.rb"]
 end
 
+RSpec::Core::RakeTask.new(:rspec_wip) do |spec|
+  spec.rspec_opts = ["-c", "-f d", "--tty", "-r ./spec/spec_helper.rb", "-t wip"]
+end
+
 # Use yard to build docs
 begin
   project_root = File.expand_path(File.dirname(__FILE__))
