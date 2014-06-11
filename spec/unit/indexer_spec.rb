@@ -416,6 +416,23 @@ describe Indexer do
         @indexer.solr_client.should_receive(:add).with(hash_including(:collection_type => 'Digital Collection'))
         @indexer.index_coll_obj_per_config
       end
+      context "add format Manuscript/Archive" do
+        it "no other formats" do
+          allow_any_instance_of(SolrDocBuilder).to receive(:doc_hash).and_return({})
+          expect(@indexer.solr_client).to receive(:add).with(hash_including(:format => 'Manuscript/Archive'))
+          @indexer.index_coll_obj_per_config
+        end
+        it "other formats present" do
+          allow_any_instance_of(SolrDocBuilder).to receive(:doc_hash).and_return({:format => ['Image', 'Video']})
+          expect(@indexer.solr_client).to receive(:add).with(hash_including(:format => ['Image', 'Video', 'Manuscript/Archive']))
+          @indexer.index_coll_obj_per_config
+        end
+        it "already has format Manuscript/Archive" do
+          allow_any_instance_of(SolrDocBuilder).to receive(:doc_hash).and_return({:format => 'Manuscript/Archive'})
+          expect(@indexer.solr_client).to receive(:add).with(hash_including(:format => ['Manuscript/Archive']))
+          @indexer.index_coll_obj_per_config
+        end
+      end
     end # unmerged collection
 
     context "merged with marc" do
@@ -425,23 +442,60 @@ describe Indexer do
       end
       it "should call RecordMerger.merge_and_index with gdor fields and collection specific fields" do
         @indexer.stub(:coll_display_types_from_items).and_return({@coll_druid_from_test_config => ['image']})
-        RecordMerger.should_receive(:merge_and_index).with(@ckey, hash_including(:display_type => ['image'],
+        expect(RecordMerger).to receive(:merge_and_index).with(@ckey, hash_including(:display_type => ['image'],
                                                                                 :druid => @coll_druid_from_test_config,
                                                                                 :url_fulltext => "#{@yaml['purl']}/#{@coll_druid_from_test_config}",
                                                                                 :access_facet => 'Online', 
-                                                                                :collection_type => "Digital Collection"))
+                                                                                :collection_type => "Digital Collection",
+                                                                                :format => "Manuscript/Archive"))
+        @indexer.index_coll_obj_per_config
+      end
+      it "should call RecordMerger.add_hash_to_solr_input_doc with gdor fields and collection specific fields" do
+        @indexer.stub(:coll_display_types_from_items).and_return({@coll_druid_from_test_config => ['image']})
+        allow(RecordMerger).to receive(:merge_and_index).and_call_original
+        expect(RecordMerger).to receive(:add_hash_to_solr_input_doc).with(anything, 
+                                                                          hash_including(:display_type => ['image'],
+                                                                                :druid => @coll_druid_from_test_config,
+                                                                                :url_fulltext => "#{@yaml['purl']}/#{@coll_druid_from_test_config}",
+                                                                                :access_facet => 'Online', 
+                                                                                :collection_type => "Digital Collection",
+                                                                                :format => "Manuscript/Archive"))
         @indexer.index_coll_obj_per_config
       end
       it "validates the collection doc via validate_collection" do
         SolrDocBuilder.any_instance.stub(:doc_hash).and_return({}) # speed up the test
-        @indexer.should_receive(:validate_collection)
+        expect(@indexer).to receive(:validate_collection)
         @indexer.index_coll_obj_per_config
       end
       it "should add a doc to Solr with gdor fields and collection specific fields" do
         @indexer.stub(:coll_display_types_from_items).and_return({@coll_druid_from_test_config => ['image']})
-        SolrjWrapper.any_instance.should_receive(:add_doc_to_ix).with(
-                hash_including('druid', 'display_type', 'url_fulltext', 'access_facet', 'collection_type'), @ckey)
+        expect_any_instance_of(SolrjWrapper).to receive(:add_doc_to_ix).with(
+                hash_including('druid', 'display_type', 'url_fulltext', 'access_facet', 'collection_type', 'format'), @ckey)
         @indexer.index_coll_obj_per_config
+      end
+      context "add format Manuscript/Archive" do
+        before(:each) do
+          @solr_input_doc = RecordMerger.fetch_sw_solr_input_doc @key
+          allow(@indexer).to receive(:coll_display_types_from_items).and_return({@coll_druid_from_test_config => ['image']})
+        end
+        it "no other formats" do
+          expect_any_instance_of(SolrjWrapper).to receive(:add_doc_to_ix) do | sid_arg, ckey_arg |
+            expect(sid_arg["format"].getValue).to eq('Manuscript/Archive')
+          end
+          @indexer.index_coll_obj_per_config
+        end
+        it "other formats present" do
+          expect_any_instance_of(SolrjWrapper).to receive(:add_doc_to_ix) do | sid_arg, ckey_arg |
+            expect(sid_arg["format"].getValue).to eq(['Image', 'Video', 'Manuscript/Archive'])
+          end
+          @indexer.index_coll_obj_per_config
+        end
+        it "already has format Manuscript/Archive" do
+          expect_any_instance_of(SolrjWrapper).to receive(:add_doc_to_ix) do | sid_arg, ckey_arg |
+            expect(sid_arg["format"].getValue).to eq('Manuscript/Archive')
+          end
+          @indexer.index_coll_obj_per_config
+        end
       end
     end # merged collection
   end #  index_coll_obj_per_config

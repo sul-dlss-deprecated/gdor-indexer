@@ -158,7 +158,8 @@ class Indexer < Harvestdor::Indexer
         :url_fulltext => "http://purl.stanford.edu/#{coll_druid}",
         :access_facet => 'Online',
         :collection_type => 'Digital Collection',
-        :display_type => coll_display_types_from_items[coll_druid]
+        :display_type => coll_display_types_from_items[coll_druid],
+        :format => 'Manuscript/Archive'  # per INDEX-12, add this format to all collection records (does not add dups)
       }
       if coll_catkey
         @validation_messages = validate_collection(coll_druid, fields_to_add)
