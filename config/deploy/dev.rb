@@ -36,6 +36,6 @@ Capistrano::OneTimeKey.generate_one_time_key!
 # keys: %w(/home/user_name/.ssh/id_rsa),
 # forward_agent: false,
 # auth_methods: %w(publickey password)
-# # password: 'please use keys'
+# password: 'please use keys'
 # }
 # setting per server overrides global ssh_options
