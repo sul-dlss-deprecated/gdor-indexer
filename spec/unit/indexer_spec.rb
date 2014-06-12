@@ -777,12 +777,38 @@ describe Indexer do
     require 'socket'
     before(:each) do
       allow(Socket).to receive(:gethostname).and_return("harvestdor-specs")
-    end
-    it "email includes failed to index druids" do
       allow(@indexer).to receive(:record_count_msgs).and_return([])
+    end
+    it "email body includes coll id" do
+      expect(@indexer).to receive(:send_email) do | email, hash |
+        expect(hash[:body]).to match /testcoll indexed coll record is: ww121ss5000/
+      end
+      @indexer.send(:email_results)
+    end
+    it "email body includes coll title" do
+      allow(@indexer).to receive(:coll_druid_2_title_hash).and_return({'ww121ss5000'=>"foo"})
+      expect(@indexer).to receive(:send_email) do | email, hash |
+        expect(hash[:body]).to match /testcoll indexed coll record is: ww121ss5000/
+      end
+      @indexer.send(:email_results)
+    end
+    it "email body includes Solr url for items" do
+      expect(@indexer).to receive(:send_email) do | email, hash |
+        expect(hash[:body]).to match /Solr query for items: http:\/\/solr.baseurl.org\/select?fq=collection:ww121ss5000&fl=id,title_245a_display/
+      end
+      @indexer.send(:email_results)
+    end
+    it "email body includes failed to index druids" do
       @indexer.instance_variable_set(:@druids_failed_to_ix, ['a', 'b'])
-      allow(@indexer).to receive(:send_email).with(instance_of(String), 
-        hash_including(:body => "\n\nfull log is at gdor_indexer/shared/spec/test_logs/testcoll.log on harvestdor-specs\nrecords that may have failed to index (merged recs as druids, not ckeys): \na\nb\n\n"))
+      expect(@indexer).to receive(:send_email) do | email, hash |
+        expect(hash[:body]).to match /records that may have failed to index (merged recs as druids, not ckeys): \na\nb\n\n/
+      end
+      @indexer.send(:email_results)
+    end
+    it "email includes reference to full log" do
+      expect(@indexer).to receive(:send_email) do | email, hash |
+        expect(hash[:body]).to match /full log is at gdor_indexer\/shared\/spec\/test_logs\/testcoll.log on harvestdor-specs/
+      end
       @indexer.send(:email_results)
     end
   end

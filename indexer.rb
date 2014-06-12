@@ -384,15 +384,25 @@ class Indexer < Harvestdor::Indexer
     require 'socket'
     if Socket.gethostname.index("harvestdor")
       to_email = config.notification ? config.notification : 'gdor-indexing-notification@lists.stanford.edu'
+      
+      coll_rec_id = coll_catkey ? coll_catkey : coll_druid_from_config
 
-      body = ""
-      body += record_count_msgs.join("\n") + "\n"
+      body = "#{config.log_name.chomp('.log')} indexed coll record is: #{coll_rec_id}\n"
+      body += "coll title: #{coll_druid_2_title_hash[coll_druid_from_config]}\n"
+      body += "Solr query for items: #{config[:solr][:url]}/select?fq=collection:#{coll_rec_id}&fl=id,title_245a_display\n"
+
+      body += "\n" + record_count_msgs.join("\n") + "\n"
+
+      if @druids_failed_to_ix.size > 0
+        body += "\n"
+        body += "records that may have failed to index (merged recs as druids, not ckeys): \n"
+        body += @druids_failed_to_ix.join("\n") + "\n"
+      end
+
       body += "\n"
       body += "full log is at gdor_indexer/shared/#{config.log_dir}/#{config.log_name} on #{Socket.gethostname}"
       body += "\n"
-      if @druids_failed_to_ix.size > 0
-        body += "records that may have failed to index (merged recs as druids, not ckeys): \n" + @druids_failed_to_ix.join("\n") + "\n"
-      end
+      
       body += @validation_messages.join("\n") + "\n"
 
       opts = {}
