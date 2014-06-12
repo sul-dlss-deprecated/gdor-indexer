@@ -763,10 +763,10 @@ describe Indexer do
       @indexer.validate_collection(@fake_druid, {})
     end
     it "should have a value if collection_type is missing" do
-      @indexer.validate_collection(@fake_druid, {:format => 'Manuscript/Archive'}).first.should =~ /collection_type/
+      @indexer.validate_collection(@fake_druid, {:format => 'Archive/Manuscript'}).first.should =~ /collection_type/
     end
     it "should have a value if collection_type is not 'Digital Collection'" do
-      @indexer.validate_collection(@fake_druid, {:collection_type => 'lalalalala', :format => 'Manuscript/Archive'}).first.should =~ /collection_type/
+      @indexer.validate_collection(@fake_druid, {:collection_type => 'lalalalala', :format => 'Archive/Manuscript'}).first.should =~ /collection_type/
     end
     it "should have a value if format is missing" do
       @indexer.validate_collection(@fake_druid, {:collection_type => 'Digital Collection'}).first.should =~ /format/
@@ -775,7 +775,7 @@ describe Indexer do
       @indexer.validate_collection(@fake_druid, {:format => 'lalalalala', :collection_type => 'Digital Collection'}).first.should =~ /format/
     end
     it "should not have a value if gdor_fields, collection_type and format are ok" do
-      @indexer.validate_collection(@fake_druid, {:collection_type => 'Digital Collection', :format => 'Manuscript/Archive'}).should == []
+      @indexer.validate_collection(@fake_druid, {:collection_type => 'Digital Collection', :format => 'Archive/Manuscript'}).should == []
     end
   end # validate_collection
 

@@ -298,7 +298,7 @@ class Indexer < Harvestdor::Indexer
   def validate_collection druid, doc_hash
     result = validate_gdor_fields druid, doc_hash
     result << "#{druid} missing collection_type 'Digital Collection'\n" if !doc_hash.field_present?(:collection_type, 'Digital Collection')
-    result << "#{druid} missing format 'Manuscript/Archive'\n" if !doc_hash.field_present?(:format, 'Manuscript/Archive')
+    result << "#{druid} missing format 'Manuscript/Archive'\n" if !doc_hash.field_present?(:format, 'Archive/Manuscript')
     result
   end
 
