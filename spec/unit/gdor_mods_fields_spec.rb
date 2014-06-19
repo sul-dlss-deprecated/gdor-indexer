@@ -595,7 +595,6 @@ describe GdorModsFields do
         doc_hash[:pub_date_sort].should == '1800'
         doc_hash[:publication_year_isi].should == '1800'
         doc_hash[:pub_year_tisim].should == '1800' # date slider
-        doc_hash[:pub_date_group_facet].should == ["More than 50 years ago"]
         doc_hash[:pub_date_display].should == '13th century AH / 19th CE'
         doc_hash[:imprint_display].should == '13th century AH / 19th CE'
       end
@@ -628,30 +627,6 @@ describe GdorModsFields do
           @sdb.doc_hash_from_mods[:pub_date_sort].should == '0900'
         end
       end # pub_date_sort
-
-      context "pub_date_group_facet integration tests" do
-        it 'should generate the groups' do
-          m = "<mods #{@ns_decl}><originInfo>
-                <dateCreated>1904</dateCreated>
-              </originInfo></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-          doc_hash = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash_from_mods
-          doc_hash[:pub_date_group_facet].should == ['More than 50 years ago']
-        end
-        it 'should work for a modern date too' do
-          m = "<mods #{@ns_decl}><originInfo>
-                <dateIssued>2012</dateIssued>
-              </originInfo></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-          doc_hash = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash_from_mods
-          doc_hash[:pub_date_group_facet].should == ['Last 3 years']
-        end
-        it 'should be missing for a missing date' do
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
-          doc_hash = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash_from_mods
-          doc_hash[:pub_date_groups_facet].should == nil
-        end
-      end # context pub date groups
 
       context "pub_year_tisim for date slider" do
         it "should take single dateCreated" do

@@ -47,7 +47,6 @@ module GdorModsFields
       :pub_date_sort =>  @smods_rec.pub_date_sort,
       :imprint_display =>  @smods_rec.pub_date_display,
       :pub_date =>  @smods_rec.pub_date_facet,
-      :pub_date_group_facet =>  @smods_rec.pub_date_groups(@smods_rec.pub_year), # pub_date_group_facet is deprecated
       :pub_date_display =>  @smods_rec.pub_date_display, # pub_date_display may be deprecated
       
       :all_search => @smods_rec.text.gsub(/\s+/, ' ') 
