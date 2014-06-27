@@ -1,16 +1,16 @@
 GIT
   remote: https://github.com/sul-dlss/stanford-mods.git
-  revision: f225a294d5301118e988ddaf47f0ca5b4cf7dedf
+  revision: a3b2e259dc8a18cd977224d61a206a4d3437bf0b
   branch: new-formats
   specs:
-    stanford-mods (0.0.27)
+    stanford-mods (1.0.0)
       mods
 
 GEM
   remote: https://rubygems.org/
   remote: http://sul-gems.stanford.edu/
   specs:
-    activesupport (4.1.1)
+    activesupport (4.1.2)
       i18n (~> 0.6, >= 0.6.9)
       json (~> 1.7, >= 1.7.7)
       minitest (~> 5.1)
@@ -72,7 +72,7 @@ GEM
       treetop (~> 1.4.8)
     mime-types (1.25.1)
     mini_portile (0.6.0)
-    minitest (5.3.4)
+    minitest (5.3.5)
     mods (0.0.23)
       iso-639
       nokogiri
@@ -131,7 +131,7 @@ GEM
       polyglot
       polyglot (>= 0.3.1)
     trollop (2.0)
-    tzinfo (1.2.0)
+    tzinfo (1.2.1)
       thread_safe (~> 0.1)
     yard (0.8.7.4)
 
