@@ -220,7 +220,7 @@ describe Indexer do
         title = 'fake title in mods'
         ng_mods = Nokogiri::XML("<mods #{@ns_decl}><titleInfo><title>#{title}</title></titleInfo></mods>")
         @hdor_client.stub(:mods).with(@fake_druid).and_return(ng_mods)
-        Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(hash_including(:title_245_search => title), @fake_druid)
+        Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(hash_including(:title_display => title), @fake_druid)
         @indexer.index_item @fake_druid
       end
       it "should populate url_fulltext field with purl page url" do

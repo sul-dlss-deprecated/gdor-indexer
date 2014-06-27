@@ -12,7 +12,7 @@ module GdorModsFields
       :title_variant_search => @smods_rec.sw_addl_titles,
       :title_sort => @smods_rec.sw_sort_title,
       :title_245a_display => @smods_rec.sw_short_title,
-      :title_display => @smods_rec.sw_full_title,
+      :title_display => @smods_rec.sw_title_display,
       :title_full_display => @smods_rec.sw_full_title,
       
       # author fields
