@@ -179,6 +179,7 @@ describe GdorModsFields do
         smr = sdb.smods_rec
         smr.should_receive(:sw_short_title).at_least(:once)
         smr.should_receive(:sw_full_title).at_least(:once)
+        smr.should_receive(:sw_title_display)
         smr.should_receive(:sw_addl_titles)
         smr.should_receive(:sw_sort_title)
         sdb.doc_hash_from_mods
@@ -188,7 +189,7 @@ describe GdorModsFields do
           @title_doc_hash[:title_245a_search].should == "The Jerk"
         end
         it "title_245_search" do
-          @title_doc_hash[:title_245_search].should == "The Jerk is whom?"
+          @title_doc_hash[:title_245_search].should == "The Jerk : is whom?"
         end
         it "title_variant_search" do
           @title_doc_hash[:title_variant_search].should == ["Joke", "Alternative"]
@@ -199,7 +200,7 @@ describe GdorModsFields do
       end
       context "display fields" do
         it "title_display" do
-          @title_doc_hash[:title_display].should == "The Jerk is whom?"
+          @title_doc_hash[:title_display].should == "The Jerk : is whom"
         end
         it "title_245a_display" do
           @title_doc_hash[:title_245a_display].should == "The Jerk"
@@ -208,9 +209,9 @@ describe GdorModsFields do
           @title_doc_hash[:title_245c_display].should == nil
         end
         it "title_full_display" do
-          @title_doc_hash[:title_full_display].should == "The Jerk is whom?"
+          @title_doc_hash[:title_full_display].should == "The Jerk : is whom?"
         end
-        it 'should remove trailing commas in full titles' do
+        it 'should remove trailing commas in title_display' do
           title_mods = "<mods #{@ns_decl}>
           <titleInfo><title>Jerk</title><nonSort>The</nonSort><subTitle>is whom,</subTitle></titleInfo>
           <titleInfo><title>Joke</title></titleInfo>
@@ -220,7 +221,7 @@ describe GdorModsFields do
           @hdor_client.stub(:mods).with(@fake_druid).and_return(ng_title_mods)
           @title_doc_hash = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash_from_mods
           @title_doc_hash
-          @title_doc_hash[:title_full_display].should == "The Jerk is whom"
+          @title_doc_hash[:title_display].should == "The Jerk : is whom"
         end
         it "title_variant_display should not be populated - it is a copy field" do
           @title_doc_hash[:title_variant_display].should == nil
