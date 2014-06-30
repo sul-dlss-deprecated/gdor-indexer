@@ -200,7 +200,7 @@ describe GdorModsFields do
       end
       context "display fields" do
         it "title_display" do
-          @title_doc_hash[:title_display].should == "The Jerk : is whom"
+          @title_doc_hash[:title_display].should == "The Jerk : is whom?"
         end
         it "title_245a_display" do
           @title_doc_hash[:title_245a_display].should == "The Jerk"
