@@ -241,6 +241,10 @@ describe Indexer do
         Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(hash_including(:file_id => ["foo"]), @fake_druid)
         @indexer.index_item @fake_druid
       end
+      it "should populate building_facet field with Stanford Digital Repository" do
+        Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(hash_including(:building_facet => 'Stanford Digital Repository'), @fake_druid)
+        @indexer.index_item @fake_druid
+      end
     end # unmerged item
 
     context "merged with marc" do
@@ -265,7 +269,8 @@ describe Indexer do
                                                                                   :url_fulltext => "#{@yaml['purl']}/#{@fake_druid}",
                                                                                   :access_facet => 'Online',
                                                                                   :collection => ['foo'],
-                                                                                  :collection_with_title => ['foo-|-bar'] ))
+                                                                                  :collection_with_title => ['foo-|-bar'],
+                                                                                  :building_facet => 'Stanford Digital Repository' ))
         @indexer.index_item @fake_druid
       end
       it "calls add_coll_info" do
@@ -277,7 +282,7 @@ describe Indexer do
         @indexer.index_item @fake_druid
       end
       it "should add a doc to Solr with item fields added" do
-        SolrjWrapper.any_instance.should_receive(:add_doc_to_ix).with(hash_including('display_type', 'file_id', 'druid', 'collection', 'collection_with_title'), @ickey)
+        SolrjWrapper.any_instance.should_receive(:add_doc_to_ix).with(hash_including('display_type', 'file_id', 'druid', 'collection', 'collection_with_title', 'building_facet'), @ickey)
         @indexer.index_item @fake_druid
       end
     end # merged item
@@ -433,6 +438,11 @@ describe Indexer do
           @indexer.index_coll_obj_per_config
         end
       end
+      it "populates building_facet field with Stanford Digital Repository" do
+        Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(hash_including(:building_facet => 'Stanford Digital Repository'), 
+                                                                                        @coll_druid_from_test_config)
+        @indexer.index_coll_obj_per_config
+      end
     end # unmerged collection
 
     context "merged with marc" do
@@ -447,7 +457,8 @@ describe Indexer do
                                                                                 :url_fulltext => "#{@yaml['purl']}/#{@coll_druid_from_test_config}",
                                                                                 :access_facet => 'Online', 
                                                                                 :collection_type => "Digital Collection",
-                                                                                :format => "Archive/Manuscript"))
+                                                                                :format => "Archive/Manuscript",
+                                                                                :building_facet => 'Stanford Digital Repository'))
         @indexer.index_coll_obj_per_config
       end
       it "should call RecordMerger.add_hash_to_solr_input_doc with gdor fields and collection specific fields" do
@@ -459,7 +470,8 @@ describe Indexer do
                                                                                 :url_fulltext => "#{@yaml['purl']}/#{@coll_druid_from_test_config}",
                                                                                 :access_facet => 'Online', 
                                                                                 :collection_type => "Digital Collection",
-                                                                                :format => "Archive/Manuscript"))
+                                                                                :format => "Archive/Manuscript",
+                                                                                :building_facet => 'Stanford Digital Repository'))
         @indexer.index_coll_obj_per_config
       end
       it "validates the collection doc via validate_collection" do
@@ -470,7 +482,7 @@ describe Indexer do
       it "should add a doc to Solr with gdor fields and collection specific fields" do
         @indexer.stub(:coll_display_types_from_items).and_return({@coll_druid_from_test_config => ['image']})
         expect_any_instance_of(SolrjWrapper).to receive(:add_doc_to_ix).with(
-                hash_including('druid', 'display_type', 'url_fulltext', 'access_facet', 'collection_type', 'format'), @ckey)
+                hash_including('druid', 'display_type', 'url_fulltext', 'access_facet', 'collection_type', 'format', 'building_facet'), @ckey)
         @indexer.index_coll_obj_per_config
       end
       context "add format Archive/Manuscript" do
@@ -680,18 +692,20 @@ describe Indexer do
         :access_facet => 'Online',
         :druid => @fake_druid,
         :url_fulltext => "#{@yaml['purl']}/#{@fake_druid}",
-        :display_type => 'image'}
+        :display_type => 'image',
+        :building_facet => 'Stanford Digital Repository'}
       @indexer.validate_gdor_fields(@fake_druid, hash).should == []
     end
     it "should have a value for each missing field" do
-      @indexer.validate_gdor_fields(@fake_druid, {}).length.should == 4
+      @indexer.validate_gdor_fields(@fake_druid, {}).length.should == 5
     end
     it "should have a value for an unrecognized display_type" do
       hash = {
         :access_facet => 'Online',
         :druid => @fake_druid,
         :url_fulltext => "#{@yaml['purl']}/#{@fake_druid}",
-        :display_type => 'zzzz'}
+        :display_type => 'zzzz', 
+        :building_facet => 'Stanford Digital Repository'}
       @indexer.validate_gdor_fields(@fake_druid, hash).first.should =~ /display_type/
     end
     it "should have a value for access_facet other than 'Online'" do
@@ -699,8 +713,18 @@ describe Indexer do
         :access_facet => 'BAD',
         :druid => @fake_druid,
         :url_fulltext => "#{@yaml['purl']}/#{@fake_druid}",
-        :display_type => 'image'}
+        :display_type => 'image', 
+        :building_facet => 'Stanford Digital Repository'}
         @indexer.validate_gdor_fields(@fake_druid, hash).first.should =~ /access_facet/
+    end
+    it "should have a value for building_facet other than 'Stanford Digital Repository'" do
+      hash = {
+        :access_facet => 'Online',
+        :druid => @fake_druid,
+        :url_fulltext => "#{@yaml['purl']}/#{@fake_druid}",
+        :display_type => 'image',
+        :building_facet => 'WRONG'}
+        @indexer.validate_gdor_fields(@fake_druid, hash).first.should =~ /building_facet/
     end
   end # validate_gdor_fields
 

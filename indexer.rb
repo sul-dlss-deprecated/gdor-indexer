@@ -98,6 +98,7 @@ class Indexer < Harvestdor::Indexer
           :url_fulltext => "http://purl.stanford.edu/#{druid}",
           :access_facet => 'Online',
           :display_type => sdb.display_type,  # defined in public_xml_fields
+          :building_facet => 'Stanford Digital Repository'  # INDEX-53 add building_facet = Stanford Digital Repository here for item
         }
         fields_to_add[:file_id] = sdb.file_ids unless !sdb.file_ids  # defined in public_xml_fields
 
@@ -159,7 +160,8 @@ class Indexer < Harvestdor::Indexer
         :access_facet => 'Online',
         :collection_type => 'Digital Collection',
         :display_type => coll_display_types_from_items[coll_druid],
-        :format => 'Archive/Manuscript'  # per INDEX-12, add this format to all collection records (does not add dups)
+        :format => 'Archive/Manuscript',  # per INDEX-12, add this format to all collection records (does not add dups)
+        :building_facet => 'Stanford Digital Repository'  # INDEX-53 add building_facet = Stanford Digital Repository here for collection
       }
       if coll_catkey
         @validation_messages = validate_collection(coll_druid, fields_to_add)
@@ -310,6 +312,7 @@ class Indexer < Harvestdor::Indexer
     result << "#{druid} missing url_fulltext for purl\n" if !doc_hash.field_present?(:url_fulltext, "#{config.purl}/#{druid}")
     result << "#{druid} missing access_facet 'Online'\n" if !doc_hash.field_present?(:access_facet, 'Online')
     result << "#{druid} missing or bad display_type, possibly caused by unrecognized @type attribute on <contentMetadata>\n" if !doc_hash.field_present?(:display_type, /(file)|(image)|(media)|(book)/)
+    result << "#{druid} missing building_facet 'Stanford Digital Repository'\n" if !doc_hash.field_present?(:building_facet, 'Stanford Digital Repository')
     result
   end
   
