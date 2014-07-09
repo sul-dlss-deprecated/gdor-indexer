@@ -160,7 +160,7 @@ class Indexer < Harvestdor::Indexer
         :access_facet => 'Online',
         :collection_type => 'Digital Collection',
         :display_type => coll_display_types_from_items[coll_druid],
-        :format => 'Archive/Manuscript',  # per INDEX-12, add this format to all collection records (does not add dups)
+        :format_main_ssim => 'Archive/Manuscript',  # per INDEX-12, add this format to all collection records (does not add dups)
         :building_facet => 'Stanford Digital Repository'  # INDEX-53 add building_facet = Stanford Digital Repository here for collection
       }
       if coll_catkey

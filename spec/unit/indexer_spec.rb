@@ -424,17 +424,17 @@ describe Indexer do
       context "add format Archive/Manuscript" do
         it "no other formats" do
           allow_any_instance_of(SolrDocBuilder).to receive(:doc_hash).and_return({})
-          expect(@indexer.solr_client).to receive(:add).with(hash_including(:format => 'Archive/Manuscript'))
+          expect(@indexer.solr_client).to receive(:add).with(hash_including(:format_main_ssim => 'Archive/Manuscript'))
           @indexer.index_coll_obj_per_config
         end
         it "other formats present" do
-          allow_any_instance_of(SolrDocBuilder).to receive(:doc_hash).and_return({:format => ['Image', 'Video']})
-          expect(@indexer.solr_client).to receive(:add).with(hash_including(:format => ['Image', 'Video', 'Archive/Manuscript']))
+          allow_any_instance_of(SolrDocBuilder).to receive(:doc_hash).and_return({:format_main_ssim => ['Image', 'Video']})
+          expect(@indexer.solr_client).to receive(:add).with(hash_including(:format_main_ssim => ['Image', 'Video', 'Archive/Manuscript']))
           @indexer.index_coll_obj_per_config
         end
         it "already has format Archive/Manuscript" do
-          allow_any_instance_of(SolrDocBuilder).to receive(:doc_hash).and_return({:format => 'Archive/Manuscript'})
-          expect(@indexer.solr_client).to receive(:add).with(hash_including(:format => ['Archive/Manuscript']))
+          allow_any_instance_of(SolrDocBuilder).to receive(:doc_hash).and_return({:format_main_ssim => 'Archive/Manuscript'})
+          expect(@indexer.solr_client).to receive(:add).with(hash_including(:format_main_ssim => ['Archive/Manuscript']))
           @indexer.index_coll_obj_per_config
         end
       end
@@ -457,7 +457,7 @@ describe Indexer do
                                                                                 :url_fulltext => "#{@yaml['purl']}/#{@coll_druid_from_test_config}",
                                                                                 :access_facet => 'Online', 
                                                                                 :collection_type => "Digital Collection",
-                                                                                :format => "Archive/Manuscript",
+                                                                                :format_main_ssim => "Archive/Manuscript",
                                                                                 :building_facet => 'Stanford Digital Repository'))
         @indexer.index_coll_obj_per_config
       end
@@ -470,7 +470,7 @@ describe Indexer do
                                                                                 :url_fulltext => "#{@yaml['purl']}/#{@coll_druid_from_test_config}",
                                                                                 :access_facet => 'Online', 
                                                                                 :collection_type => "Digital Collection",
-                                                                                :format => "Archive/Manuscript",
+                                                                                :format_main_ssim => "Archive/Manuscript",
                                                                                 :building_facet => 'Stanford Digital Repository'))
         @indexer.index_coll_obj_per_config
       end
