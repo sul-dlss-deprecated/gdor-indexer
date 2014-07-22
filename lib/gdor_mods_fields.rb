@@ -36,6 +36,9 @@ module GdorModsFields
       :geographic_facet => @smods_rec.geographic_facet,
       :era_facet => @smods_rec.era_facet,
 
+      :format_main_ssim => format_main_ssim,
+      :format => format, # for backwards compatibility
+
       :language => @smods_rec.sw_language_facet,
       :physical =>  @smods_rec.term_values([:physical_description, :extent]),
       :summary_search => @smods_rec.term_values(:abstract),

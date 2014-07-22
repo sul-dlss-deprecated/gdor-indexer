@@ -161,6 +161,51 @@ describe GdorModsFields do
       end      
     end
 
+    context "format fields" do
+      context "format_main_ssim" do
+        it "should call #format_main_ssim method" do
+          m = "<mods #{@ns_decl}><note>nope</typeOfResource></mods>"
+          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+          expect(sdb).to receive(:format_main_ssim)
+          sdb.doc_hash_from_mods[:format_main_ssim]
+        end
+        it "should have a value when MODS data provides" do
+          m = "<mods #{@ns_decl}><typeOfResource>software, multimedia</typeOfResource><genre>dataset</genre></mods>"
+          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+          sdb.doc_hash_from_mods[:format_main_ssim].should == ['Dataset']
+        end
+        it "should return empty Array if there is no value" do
+          m = "<mods #{@ns_decl}><note>nope</typeOfResource></mods>"
+          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+          sdb.doc_hash_from_mods[:format_main_ssim].should == []
+        end
+      end
+      context "format Solr field" do
+        it "should call #format method" do
+          m = "<mods #{@ns_decl}><note>nope</typeOfResource></mods>"
+          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+          expect(sdb).to receive(:format)
+          sdb.doc_hash_from_mods[:format]
+        end
+        it "should have a value when MODS data provides" do
+          m = "<mods #{@ns_decl}><typeOfResource>software, multimedia</typeOfResource></mods>"
+          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+          sdb.doc_hash_from_mods[:format].should == ['Computer File']
+        end
+        it "should return empty Array if there is no value" do
+          m = "<mods #{@ns_decl}><note>nope</typeOfResource></mods>"
+          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
+          sdb.doc_hash_from_mods[:format].should == []
+        end
+      end
+    end
+
     context "title fields" do
       before(:all) do
         title_mods = "<mods #{@ns_decl}>
@@ -320,17 +365,18 @@ describe GdorModsFields do
         @s_title = 'title in subject'
         @topic = 'topic'
         m = "<mods #{@ns_decl}>
-        <genre>#{@genre}</genre>
-        <subject><cartographics><coordinates>#{@cart_coord}</coordinates></cartographics></subject>
-        <subject><genre>#{@s_genre}</genre></subject>
-        <subject><geographic>#{@geo}</geographic></subject>
-        <subject><geographicCode authority='iso3166'>#{@geo_code}</geographicCode></subject>
-        <subject><hierarchicalGeographic><country>#{@hier_geo_country}</country></hierarchicalGeographic></subject>
-        <subject><name><namePart>#{@s_name}</namePart></name></subject>
-        <subject><occupation>#{@occupation}</occupation></subject>
-        <subject><temporal>#{@temporal}</temporal></subject>
-        <subject><titleInfo><title>#{@s_title}</title></titleInfo></subject>
-        <subject><topic>#{@topic}</topic></subject>      
+          <genre>#{@genre}</genre>
+          <subject><cartographics><coordinates>#{@cart_coord}</coordinates></cartographics></subject>
+          <subject><genre>#{@s_genre}</genre></subject>
+          <subject><geographic>#{@geo}</geographic></subject>
+          <subject><geographicCode authority='iso3166'>#{@geo_code}</geographicCode></subject>
+          <subject><hierarchicalGeographic><country>#{@hier_geo_country}</country></hierarchicalGeographic></subject>
+          <subject><name><namePart>#{@s_name}</namePart></name></subject>
+          <subject><occupation>#{@occupation}</occupation></subject>
+          <subject><temporal>#{@temporal}</temporal></subject>
+          <subject><titleInfo><title>#{@s_title}</title></titleInfo></subject>
+          <subject><topic>#{@topic}</topic></subject>
+          <typeOfResource>still image</typeOfResource>
         </mods>"
         @ng_subject_mods = Nokogiri::XML(m)
         m_no_subject = "<mods #{@ns_decl}><note>notit</note></mods>"
@@ -789,7 +835,7 @@ describe GdorModsFields do
     end # publication date fields
   end # doc_hash_from_mods
 
-  context "format" do
+  context "#format" do
     it "should get format from call to stanford-mods searchworks format method " do
       m = "<mods #{@ns_decl}><typeOfResource>still image</typeOfResouce></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
@@ -803,9 +849,9 @@ describe GdorModsFields do
       sdb.logger.should_receive(:warn).with("#{@fake_druid} has no valid SearchWorks format - check <typeOfResource> and other implicated MODS elements")
       sdb.format.should == []
     end
-  end # context format
+  end # context #format
 
-  context "format_main_ssim" do
+  context "#format_main_ssim" do
     it "should get format_main_ssim from call to stanford-mods searchworks format_main method " do
       m = "<mods #{@ns_decl}><typeOfResource>still image</typeOfResouce></mods>"
       @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
