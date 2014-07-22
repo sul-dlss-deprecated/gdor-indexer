@@ -39,7 +39,6 @@ class SolrDocBuilder
         :id => @druid, 
         :modsxml => "#{@smods_rec.to_xml}",
       }
-      @doc_hash[:format] = format # defined in gdor_mods_fields
       hash_from_mods = doc_hash_from_mods # defined in gdor_mods_fields
       @doc_hash.merge!(hash_from_mods) if hash_from_mods
     end
@@ -51,7 +50,8 @@ class SolrDocBuilder
   def validate_mods druid = @druid, doc_fields_hash = doc_hash
     result = []
     result << "#{druid} missing modsxml\n" if !doc_fields_hash.field_present?(:modsxml)
-    result << "#{druid} missing format\n" if !doc_fields_hash.field_present?(:format)
+    result << "#{druid} missing format_main_ssim\n" if !doc_fields_hash.field_present?(:format_main_ssim)
+    result << "#{druid} missing format\n" if !doc_fields_hash.field_present?(:format) # for backwards compatibility
     result << "#{druid} missing title\n" if !doc_fields_hash.field_present?(:title_display)
     result << "#{druid} missing pub year for date slider\n" if !doc_hash.field_present?(:pub_year_tisim)
     result << "#{druid} missing author\n" if !doc_fields_hash.field_present?(:author_person_display)

@@ -53,18 +53,19 @@ describe SolrDocBuilder do
           :title_display => 'title',
           :pub_year_tisim => 'some year',
           :author_person_display => 'author',
+          :format_main_ssim => 'Image',
           :format => 'Image',
           :language => 'English'
         })
         sdb.validate_mods.length.should == 0
       end
-      it 'should have validation messages for an incomplete record' do
+      it 'should have validation messages for each missing field' do
         sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
         # note that passing in args this time
         doc_hash = {
-          :modsxml => 'whatever',
+          :id => 'whatever',
         }
-        sdb.validate_mods('druid', doc_hash).length.should > 0
+        sdb.validate_mods('druid', doc_hash).length.should == 7
       end
     end  
   end # doc hash
