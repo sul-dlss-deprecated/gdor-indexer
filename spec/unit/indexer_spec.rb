@@ -202,7 +202,7 @@ describe Indexer do
         @indexer.should_receive(:add_coll_info)
         @indexer.index_item @fake_druid
       end
-      it "should have populated collection fields" do
+      it "should have fields populated from the collection record" do
         sdb = double
         sdb.stub(:catkey).and_return(nil)
         sdb.stub(:doc_hash).and_return({})
@@ -421,18 +421,18 @@ describe Indexer do
         @indexer.solr_client.should_receive(:add).with(hash_including(:collection_type => 'Digital Collection'))
         @indexer.index_coll_obj_per_config
       end
-      context "add format Archive/Manuscript" do
-        it "no other formats" do
+      context "add format_main_ssim Archive/Manuscript" do
+        it "no other values" do
           allow_any_instance_of(SolrDocBuilder).to receive(:doc_hash).and_return({})
           expect(@indexer.solr_client).to receive(:add).with(hash_including(:format_main_ssim => 'Archive/Manuscript'))
           @indexer.index_coll_obj_per_config
         end
-        it "other formats present" do
+        it "other values present" do
           allow_any_instance_of(SolrDocBuilder).to receive(:doc_hash).and_return({:format_main_ssim => ['Image', 'Video']})
           expect(@indexer.solr_client).to receive(:add).with(hash_including(:format_main_ssim => ['Image', 'Video', 'Archive/Manuscript']))
           @indexer.index_coll_obj_per_config
         end
-        it "already has format Archive/Manuscript" do
+        it "already has values Archive/Manuscript" do
           allow_any_instance_of(SolrDocBuilder).to receive(:doc_hash).and_return({:format_main_ssim => 'Archive/Manuscript'})
           expect(@indexer.solr_client).to receive(:add).with(hash_including(:format_main_ssim => ['Archive/Manuscript']))
           @indexer.index_coll_obj_per_config
@@ -485,26 +485,26 @@ describe Indexer do
                 hash_including('druid', 'display_type', 'url_fulltext', 'access_facet', 'collection_type', 'format', 'building_facet'), @ckey)
         @indexer.index_coll_obj_per_config
       end
-      context "add format Archive/Manuscript" do
+      context "add format_main_ssim Archive/Manuscript" do
         before(:each) do
           @solr_input_doc = RecordMerger.fetch_sw_solr_input_doc @key
           allow(@indexer).to receive(:coll_display_types_from_items).and_return({@coll_druid_from_test_config => ['image']})
         end
-        it "no other formats" do
+        it "no other values" do
           expect_any_instance_of(SolrjWrapper).to receive(:add_doc_to_ix) do | sid_arg, ckey_arg |
-            expect(sid_arg["format"].getValue).to eq('Archive/Manuscript')
+            expect(sid_arg["format_main_ssim"].getValue).to eq('Archive/Manuscript')
           end
           @indexer.index_coll_obj_per_config
         end
-        it "other formats present" do
+        it "other values present" do
           expect_any_instance_of(SolrjWrapper).to receive(:add_doc_to_ix) do | sid_arg, ckey_arg |
-            expect(sid_arg["format"].getValue).to eq(['Image', 'Video', 'Archive/Manuscript'])
+            expect(sid_arg["format_main_ssim"].getValue).to eq(['Image', 'Video', 'Archive/Manuscript'])
           end
           @indexer.index_coll_obj_per_config
         end
-        it "already has format Archive/Manuscript" do
+        it "already has value Archive/Manuscript" do
           expect_any_instance_of(SolrjWrapper).to receive(:add_doc_to_ix) do | sid_arg, ckey_arg |
-            expect(sid_arg["format"].getValue).to eq('Archive/Manuscript')
+            expect(sid_arg["format_main_ssim"].getValue).to eq('Archive/Manuscript')
           end
           @indexer.index_coll_obj_per_config
         end
@@ -787,19 +787,19 @@ describe Indexer do
       @indexer.validate_collection(@fake_druid, {})
     end
     it "should have a value if collection_type is missing" do
-      @indexer.validate_collection(@fake_druid, {:format => 'Archive/Manuscript'}).first.should =~ /collection_type/
+      @indexer.validate_collection(@fake_druid, {:format_main_ssim => 'Archive/Manuscript'}).first.should =~ /collection_type/
     end
     it "should have a value if collection_type is not 'Digital Collection'" do
-      @indexer.validate_collection(@fake_druid, {:collection_type => 'lalalalala', :format => 'Archive/Manuscript'}).first.should =~ /collection_type/
+      @indexer.validate_collection(@fake_druid, {:collection_type => 'lalalalala', :format_main_ssim => 'Archive/Manuscript'}).first.should =~ /collection_type/
     end
-    it "should have a value if format is missing" do
-      @indexer.validate_collection(@fake_druid, {:collection_type => 'Digital Collection'}).first.should =~ /format/
+    it "should have a value if format_main_ssim is missing" do
+      @indexer.validate_collection(@fake_druid, {:collection_type => 'Digital Collection'}).first.should =~ /format_main_ssim/
     end
-    it "should have a value if format doesn't include 'Manuscript/Archive'" do
-      @indexer.validate_collection(@fake_druid, {:format => 'lalalalala', :collection_type => 'Digital Collection'}).first.should =~ /format/
+    it "should have a value if format_main_ssim doesn't include 'Archive/Manuscript'" do
+      @indexer.validate_collection(@fake_druid, {:format_main_ssim => 'lalalalala', :collection_type => 'Digital Collection'}).first.should =~ /format_main_ssim/
     end
-    it "should not have a value if gdor_fields, collection_type and format are ok" do
-      @indexer.validate_collection(@fake_druid, {:collection_type => 'Digital Collection', :format => 'Archive/Manuscript'}).should == []
+    it "should not have a value if gdor_fields, collection_type and format_main_ssim are ok" do
+      @indexer.validate_collection(@fake_druid, {:collection_type => 'Digital Collection', :format_main_ssim => 'Archive/Manuscript'}).should == []
     end
   end # validate_collection
 
