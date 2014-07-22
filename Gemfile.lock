@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/sul-dlss/stanford-mods.git
-  revision: 5221729d73e4ee90eef8a4d73d49dd0898138917
+  revision: d9d3cf61f1337da875d18bf331d963dfbf35b282
   branch: new-formats
   specs:
     stanford-mods (1.0.1)
@@ -10,7 +10,7 @@ GEM
   remote: https://rubygems.org/
   remote: http://sul-gems.stanford.edu/
   specs:
-    activesupport (4.1.2)
+    activesupport (4.1.4)
       i18n (~> 0.6, >= 0.6.9)
       json (~> 1.7, >= 1.7.7)
       minitest (~> 5.1)
@@ -56,8 +56,8 @@ GEM
     holepicker (0.3.3)
       json (~> 1.8)
       rainbow (~> 2.0)
-    i18n (0.6.9)
-    iso-639 (0.2.4)
+    i18n (0.6.11)
+    iso-639 (0.2.5)
     jruby-openssl (0.9.5-java)
     json (1.8.1)
     json (1.8.1-java)
@@ -70,7 +70,7 @@ GEM
       mime-types (>= 1.16, < 3)
     mime-types (2.3)
     mini_portile (0.6.0)
-    minitest (5.3.5)
+    minitest (5.4.0)
     mods (0.0.23)
       iso-639
       nokogiri
@@ -80,9 +80,9 @@ GEM
     net-scp (1.2.1)
       net-ssh (>= 2.6.5)
     net-ssh (2.9.1)
-    nokogiri (1.6.2.1)
+    nokogiri (1.6.3.1)
       mini_portile (= 0.6.0)
-    nokogiri (1.6.2.1-java)
+    nokogiri (1.6.3.1-java)
     nom-xml (0.5.1)
       activesupport
       i18n
