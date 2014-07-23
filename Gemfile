@@ -4,7 +4,7 @@ source "http://sul-gems.stanford.edu"
 # sul-gems
 gem 'harvestdor-indexer'
 gem 'harvestdor'
-gem 'stanford-mods', :git => "https://github.com/sul-dlss/stanford-mods.git", :branch => "new-formats"
+gem 'stanford-mods'
 gem 'jruby-openssl'
 gem 'nokogiri'
 gem 'rake'

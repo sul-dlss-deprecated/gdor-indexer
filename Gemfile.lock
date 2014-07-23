@@ -1,11 +1,3 @@
-GIT
-  remote: https://github.com/sul-dlss/stanford-mods.git
-  revision: d9d3cf61f1337da875d18bf331d963dfbf35b282
-  branch: new-formats
-  specs:
-    stanford-mods (1.0.1)
-      mods
-
 GEM
   remote: https://rubygems.org/
   remote: http://sul-gems.stanford.edu/
@@ -118,6 +110,8 @@ GEM
       colorize
       net-scp (>= 1.1.2)
       net-ssh (>= 2.8.0)
+    stanford-mods (1.0.2)
+      mods
     threach (0.2.0)
     thread_safe (0.3.4)
     thread_safe (0.3.4-java)
@@ -152,7 +146,7 @@ DEPENDENCIES
   simplecov-rcov
   solrj_wrapper
   solrmarc_wrapper
-  stanford-mods!
+  stanford-mods
   threach
   trollop
   yard
