@@ -41,7 +41,8 @@ oai_repository_url: https://dor-oaiprovider-prod.stanford.edu/oai
 http_options:
   ssl:
     verify: false
-  # open/read timeout in milliseconds
-  timeout: 500
-  # connection open timeout in milliseconds
-  open_timeout: 500
+  request:
+    # open/read timeout in seconds
+    timeout: 120
+    # connection open timeout in seconds
+    open_timeout: 120

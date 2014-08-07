@@ -2,8 +2,8 @@ source 'https://rubygems.org'
 source "http://sul-gems.stanford.edu"
 
 # sul-gems
-gem 'harvestdor-indexer'
-gem 'harvestdor'
+gem 'harvestdor-indexer', '>=0.0.13'
+gem 'harvestdor', '>=0.0.14'
 gem 'stanford-mods'
 gem 'jruby-openssl'
 gem 'nokogiri'
@@ -15,7 +15,6 @@ gem 'solrj_wrapper'
 gem 'threach'
 gem 'activesupport'
 gem 'mail'
-gem 'faraday', '~>0.8.9' # 0.9.0 doesn't play nicely with oai/harvestdor gem
 
 # documentation
 group :doc do
