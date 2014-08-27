@@ -73,7 +73,7 @@ module GdorModsFields
   def format
     vals = @smods_rec.format
     if vals.empty?
-      @logger.warn "#{@druid} has no valid SearchWorks format - check <typeOfResource> and other implicated MODS elements"
+      @logger.warn "#{@druid} has no SearchWorks format from MODS - check <typeOfResource> and other implicated MODS elements"
     end
     vals
   end
@@ -83,7 +83,7 @@ module GdorModsFields
   def format_main_ssim
     vals = @smods_rec.format_main
     if vals.empty?
-      @logger.warn "#{@druid} has no valid SearchWorks Resource Type - check <typeOfResource> and other implicated MODS elements"
+      @logger.warn "#{@druid} has no SearchWorks Resource Type from MODS - check <typeOfResource> and other implicated MODS elements"
     end
     vals
   end

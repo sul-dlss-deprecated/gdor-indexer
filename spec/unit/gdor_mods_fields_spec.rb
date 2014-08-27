@@ -846,7 +846,7 @@ describe GdorModsFields do
     it "should return empty Array and log warning if there is no value" do
       @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-      sdb.logger.should_receive(:warn).with("#{@fake_druid} has no valid SearchWorks format - check <typeOfResource> and other implicated MODS elements")
+      sdb.logger.should_receive(:warn).with("#{@fake_druid} has no SearchWorks format from MODS - check <typeOfResource> and other implicated MODS elements")
       sdb.format.should == []
     end
   end # context #format
@@ -862,7 +862,7 @@ describe GdorModsFields do
     it "should return empty Array and log warning if there is no value" do
       @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
       sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-      sdb.logger.should_receive(:warn).with("#{@fake_druid} has no valid SearchWorks Resource Type - check <typeOfResource> and other implicated MODS elements")
+      sdb.logger.should_receive(:warn).with("#{@fake_druid} has no SearchWorks Resource Type from MODS - check <typeOfResource> and other implicated MODS elements")
       sdb.format_main_ssim.should == []
     end
   end # context format_main_ssim
