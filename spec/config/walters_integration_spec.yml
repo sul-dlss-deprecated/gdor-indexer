@@ -21,22 +21,6 @@ solrmarc:
 # purl: url for the DOR purl server (used to get ContentMetadata, etc.)
 purl: http://purl.stanford.edu
 
-# ---------- OAI harvesting parameters -----------
-
-# oai_client_debug:  true for OAI::Client debug mode  (default: false)
-
-# oai_repository_url:  URL of the OAI data provider
-oai_repository_url: https://dor-oaiprovider-prod.stanford.edu/oai
-
-# default_metadata_prefix:  default metadata prefix to be used for harvesting  (default: mods)
-#   can be overridden on calls to harvest_ids and harvest_records
-
-# default_from_date:  default from date for harvest  (default: nil)
-#   can be overridden on calls to harvest_ids and harvest_records
-
-# default_until_date:  default until date for harvest  (default: nil)
-#   can be overridden on calls to harvest_ids and harvest_records
-
 # Additional options to pass to Faraday http client (https://github.com/technoweenie/faraday)
 http_options:
   ssl:

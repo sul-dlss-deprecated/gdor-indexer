@@ -12,11 +12,14 @@ require 'solr_doc_builder'
 require 'hash_mixin'
 require 'nokogiri_xml_node_mixin'
 require 'oai_client_mixin'
+require 'dor-fetcher'
+
 # Base class to harvest from DOR via harvestdor gem
 class Indexer < Harvestdor::Indexer
+  attr_accessor :dor_fetcher_client
 
-  def initialize yml_path, solr_config_path, options = {}
-    @oai_harvest_count = 0
+  def initialize yml_path, client_config_path, solr_config_path, options = {}
+    @dor_fetcher_count = 0
     @whitelist_count = 0
     @success_count = 0
     @error_count = 0
@@ -26,10 +29,13 @@ class Indexer < Harvestdor::Indexer
     @yml_path = yml_path
     @druids_failed_to_ix = []
     @validation_messages = []
+    @collection = File.basename(yml_path, ".yml")
     solr_config = YAML.load_file(solr_config_path) if solr_config_path && File.exists?(solr_config_path)
     Indexer.config.configure(YAML.load_file(yml_path)) if yml_path && File.exists?(yml_path)
     Indexer.config.configure options 
     Indexer.config[:solr] = {:url => solr_config["solr"]["url"], :read_timeout => 3600, :open_timeout => 3600}
+    client_config = YAML.load_file(client_config_path) if client_config_path && File.exists?(client_config_path)
+    @dor_fetcher_client=DorFetcher::Client.new({:service_url => client_config["dor_fetcher_service_url"]})
     yield(Indexer.config) if block_given?
   end
 
@@ -46,7 +52,7 @@ class Indexer < Harvestdor::Indexer
   end
   
   # per this Indexer's config options 
-  #  harvest the druids via OAI
+  #  harvest the druids via DorFetcher
   #   create a Solr document for each druid suitable for SearchWorks and
   #   write the result to the SearchWorks Solr index
   #  (all members of the collection + coll rec itself)
@@ -58,7 +64,7 @@ class Indexer < Harvestdor::Indexer
       logger.fatal("#{coll_druid_from_config} is not a collection object!! (per identityMetaadata)  Ending indexing.")
     else
       if whitelist.empty?
-        @oai_harvest_count = druids.size
+        @dor_fetcher_count = druids.size
         druids.threach(3) { |druid| index_item druid }
       else
         logger.info("Using whitelist from #{config.whitelist}")
@@ -348,13 +354,13 @@ class Indexer < Harvestdor::Indexer
   def record_count_msgs
     @record_count_msgs ||= begin
       msgs = []
-      if @oai_harvest_count > 0
-        msgs << "OAI Records harvested count (items only): #{@oai_harvest_count}"
+      if @dor_fetcher_count > 0
+        msgs << "DOR Fetcher Records harvested count (items only): #{@dor_fetcher_count}"
       elsif @whitelist_count > 0
         msgs << "Whitelist count: #{@whitelist_count}"
       end
-      if @oai_harvest_count == 0 && @whitelist_count == 0
-        msgs << "WARNING:  No item records harvested from OAI or on whitelist: this could be a problem!"
+      if @dor_fetcher_count == 0 && @whitelist_count == 0
+        msgs << "WARNING:  No item records harvested using DorFetcher or on whitelist: this could be a problem!"
       end
 
       msgs << "Successful count (items + coll record indexed w/o error): #{@success_count}"

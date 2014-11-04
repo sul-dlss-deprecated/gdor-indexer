@@ -7,6 +7,7 @@ describe Indexer do
   before(:all) do
     @config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "walters_integration_spec.yml")
     @solr_yml_path = File.join(File.dirname(__FILE__), "..", "config", "solr.yml")
+    @client_config_path = File.join(File.dirname(__FILE__), "..", "config", "dor-fetcher-client.yml")
     require 'yaml'
     @yaml = YAML.load_file(@config_yml_path)
     @ns_decl = "xmlns='#{Mods::MODS_NS}'"
@@ -16,7 +17,7 @@ describe Indexer do
     @ng_pub_xml = Nokogiri::XML("<publicObject id='druid#{@fake_druid}'></publicObject>")
   end
   before(:each) do
-    @indexer = Indexer.new(@config_yml_path, @solr_yml_path)
+    @indexer = Indexer.new(@config_yml_path, @client_config_path, @solr_yml_path)
     @hdor_client = @indexer.send(:harvestdor_client)
     @hdor_client.stub(:public_xml).and_return(@ng_pub_xml)
   end
@@ -512,10 +513,10 @@ describe Indexer do
     end # merged collection
   end #  index_coll_obj_per_config
   
-  it "druids method should call druids_via_oai method on harvestdor_client" do
-    @hdor_client.should_receive(:druids_via_oai).and_return []
-    @indexer.druids
-  end
+  # it "druids method should call druids_via_oai method on harvestdor_client" do
+  #   @hdor_client.should_receive(:druids_via_oai).and_return []
+  #   @indexer.druids
+  # end
   
   context "#add_coll_info and supporting methods" do
     before(:all) do
@@ -618,7 +619,7 @@ describe Indexer do
       end
     end # coll_display_types_from_items
     it "#add_to_coll_display_types_from_item doesn't allow duplicate values" do
-      indexer = Indexer.new(@config_yml_path, @solr_yml_path)
+      indexer = Indexer.new(@config_yml_path, @client_config_path, @solr_yml_path)
       indexer.add_to_coll_display_types_from_item('foo', 'image')
       indexer.add_to_coll_display_types_from_item('foo', 'image')
       indexer.coll_display_types_from_items['foo'].size.should == 1

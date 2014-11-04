@@ -163,7 +163,8 @@ describe SolrDocBuilder do
     before(:all) do
       config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "walters_integration_spec.yml")
       solr_yml_path = File.join(File.dirname(__FILE__), "..", "config", "solr.yml")
-      @indexer = Indexer.new(config_yml_path, solr_yml_path)
+      client_config_path = File.join(File.dirname(__FILE__), "..", "config", "dor-fetcher-client.yml")
+      @indexer = Indexer.new(config_yml_path, client_config_path, solr_yml_path)
       @real_hdor_client = @indexer.send(:harvestdor_client)
     end
     

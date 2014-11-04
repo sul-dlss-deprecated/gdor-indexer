@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 
 # sul-gems
-gem 'harvestdor-indexer', '>=0.0.13'
+gem 'harvestdor-indexer', '>=1.0.0'
 gem 'harvestdor', '>=0.0.14'
 gem 'stanford-mods'
 gem 'jruby-openssl'
