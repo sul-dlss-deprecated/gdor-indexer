@@ -513,11 +513,6 @@ describe Indexer do
     end # merged collection
   end #  index_coll_obj_per_config
   
-  # it "druids method should call druids_via_oai method on harvestdor_client" do
-  #   @hdor_client.should_receive(:druids_via_oai).and_return []
-  #   @indexer.druids
-  # end
-  
   context "#add_coll_info and supporting methods" do
     before(:all) do
       @coll_druids_array = [@coll_druid_from_test_config]
