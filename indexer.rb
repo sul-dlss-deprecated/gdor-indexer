@@ -18,6 +18,8 @@ require 'dor-fetcher'
 class Indexer < Harvestdor::Indexer
   attr_accessor :dor_fetcher_client
 
+  # Initialize with configuration files
+  # @param yml_path [String] /path/to
   def initialize yml_path, client_config_path, solr_config_path, options = {}
     @dor_fetcher_count = 0
     @whitelist_count = 0
@@ -31,39 +33,29 @@ class Indexer < Harvestdor::Indexer
     @validation_messages = []
     @collection = File.basename(yml_path, ".yml")
     solr_config = YAML.load_file(solr_config_path) if solr_config_path && File.exists?(solr_config_path)
-    Indexer.config.configure(YAML.load_file(yml_path)) if yml_path && File.exists?(yml_path)
-    Indexer.config.configure options 
+    @@config ||= Confstruct::Configuration.new()
+    @@config.configure(YAML.load_file(yml_path)) if yml_path && File.exists?(yml_path)
+    # Indexer.config.configure options
     Indexer.config[:solr] = {:url => solr_config["solr"]["url"], :read_timeout => 3600, :open_timeout => 3600}
     client_config = YAML.load_file(client_config_path) if client_config_path && File.exists?(client_config_path)
-    @dor_fetcher_client=DorFetcher::Client.new({:service_url => client_config["dor_fetcher_service_url"]})
+    @dor_fetcher_client=DorFetcher::Client.new({:service_url => client_config["dor_fetcher_service_url"], :skip_heartbeat => true, :ignore_ssl => true})
     yield(Indexer.config) if block_given?
   end
 
-  # to allow class level access to config variables for record_merger and solr_doc_builder
-  #  (rather than passing a lot of params to constructor)
-  def self.config
-    @@config ||= Confstruct::Configuration.new()
-  end
-  def config
-    Indexer.config
-  end
-  def logger
-    @logger ||= load_logger(config.log_dir ||= 'logs', config.log_name)
-  end
-  
-  # per this Indexer's config options 
+  # per this Indexer's config options
   #  harvest the druids via DorFetcher
   #   create a Solr document for each druid suitable for SearchWorks and
   #   write the result to the SearchWorks Solr index
   #  (all members of the collection + coll rec itself)
   def harvest_and_index(nocommit = false)
-    start_time=Time.now 
+    start_time=Time.now
     logger.info("Started harvest_and_index at #{start_time}")
 
     if !coll_sdb.coll_object?
       logger.fatal("#{coll_druid_from_config} is not a collection object!! (per identityMetaadata)  Ending indexing.")
     else
       if whitelist.empty?
+        logger.debug("Whitelist is empty")
         @dor_fetcher_count = druids.size
         druids.threach(3) { |druid| index_item druid }
       else
@@ -73,7 +65,7 @@ class Indexer < Harvestdor::Indexer
       end
       index_coll_obj_per_config
     end
-    
+
     if !nocommit && coll_sdb.coll_object?
       logger.info("Beginning Commit.")
       solr_client.commit
@@ -89,8 +81,8 @@ class Indexer < Harvestdor::Indexer
     log_results
     email_results
   end
-  
-  # create Solr doc for the druid and add it to Solr, unless it is on the blacklist.  
+
+  # create Solr doc for the druid and add it to Solr, unless it is on the blacklist.
   #  NOTE: don't forget to send commit to Solr, either once at end (already in harvest_and_index), or for each add, or ...
   def index_item druid
     if blacklist.include?(druid)
@@ -109,7 +101,7 @@ class Indexer < Harvestdor::Indexer
         fields_to_add[:file_id] = sdb.file_ids unless !sdb.file_ids  # defined in public_xml_fields
 
         ckey = sdb.catkey
-        if ckey 
+        if ckey
           if config.merge_policy == 'never'
             logger.warn("#{druid} to be indexed from MODS; has ckey #{ckey} but merge_policy is 'never'")
             merged = false
@@ -131,7 +123,7 @@ class Indexer < Harvestdor::Indexer
             end
           end
         end
-        
+
         if !ckey && config.merge_policy == 'always'
           logger.error("#{druid} NOT INDEXED:  no ckey found and merge_policy set to 'always'")
           @error_count += 1
@@ -155,7 +147,7 @@ class Indexer < Harvestdor::Indexer
 
   # Create Solr document for the collection druid suitable for SearchWorks
   #  and write the result to the SearchWorks Solr Index
-  # @param [String] druid 
+  # @param [String] druid
   def index_coll_obj_per_config
     # we have already affirmed that coll_druid_from_config is a collection record in harvest_and_index method
     begin
@@ -181,7 +173,7 @@ class Indexer < Harvestdor::Indexer
           logger.error("#{coll_druid} to be indexed from MODS:  MARC record #{coll_catkey} not found in SW Solr index (may be shadowed in Symphony)")
         end
       end
-        
+
       if !coll_catkey || !merged
         logger.info "Indexing collection object #{coll_druid} (unmerged)"
         doc_hash = coll_sdb.doc_hash
@@ -205,27 +197,27 @@ class Indexer < Harvestdor::Indexer
     if coll_druids
       doc_hash[:collection] = []
       doc_hash[:collection_with_title] = []
-      
-      coll_druids.each { |coll_druid|  
+
+      coll_druids.each { |coll_druid|
         cache_coll_title coll_druid
         cache_display_type_for_collection coll_druid, doc_hash[:display_type]
         coll_id = coll_catkey ? coll_catkey : coll_druid
         doc_hash[:collection] << coll_id
         doc_hash[:collection_with_title] << "#{coll_id}-|-#{coll_druid_2_title_hash[coll_druid]}"
-      } 
+      }
     end
   end
-  
+
   # @return [String] The collection object catkey or nil if none exists
   def coll_catkey
     @coll_catkey ||= coll_sdb.catkey
   end
-  
+
   # @return [SolrDocBuilder] a SolrDocBuilder object for the collection per coll_druid_from_config
   def coll_sdb
     @coll_sdb ||= SolrDocBuilder.new(coll_druid_from_config, harvestdor_client, logger)
   end
-  
+
   # return String indicating the druid of a collection object, or nil if there is no collection druid
   # @return [String] The collection object druid or nil if none exists  (e.g. ab123cd1234)
   def coll_druid_from_config
@@ -244,7 +236,7 @@ class Indexer < Harvestdor::Indexer
       coll_druid_2_title_hash[coll_druid] = identity_md_obj_label(coll_druid)
     end
   end
-  
+
 # FIXME:  move to public_xml_fields???  push up to harvestdor-indexer?
   # given a druid, get its objectLabel from its purl page identityMetadata
   # @param [String] druid, e.g. ab123cd4567
@@ -254,7 +246,7 @@ class Indexer < Harvestdor::Indexer
     logger.error("#{@druid} (collection) missing identityMetadata") if !ng_imd
     ng_imd.xpath('identityMetadata/objectLabel').text
   end
-  
+
   # cache the display_type of this (item) object with a collection, so when the collection rec
   # is being indexed, it can get all of the display_types of the members
   def cache_display_type_for_collection coll_druid, display_type
@@ -278,7 +270,7 @@ class Indexer < Harvestdor::Indexer
     end
     false
   end
-  
+
   # cache collection titles so each item doesn't need to look it up -- we only look it up once per harvest.
   # collection title is from the objectLabel from the collection record's identityMetadata
   # @return [Hash<String, String>] collection druids as keys, and collection title as value
@@ -286,7 +278,7 @@ class Indexer < Harvestdor::Indexer
     @coll_druid_2_title_hash ||= {}
   end
 
-  # cache display_type from each item so we have this info for indexing collection record 
+  # cache display_type from each item so we have this info for indexing collection record
   # @return [Hash<String, Array<String>>] collection druids as keys, array of item display_types as values
   def coll_display_types_from_items
     @coll_display_types_from_items ||= {}
@@ -301,7 +293,7 @@ class Indexer < Harvestdor::Indexer
     result << "#{druid} missing file_id(s)\n" if !doc_hash.field_present?(:file_id)
     result
   end
-  
+
   # validate fields that should be in hash for any collection object in SearchWorks Solr
   # @return [Array<String>] Array of messages suitable for notificaiton email and/or logs
   def validate_collection druid, doc_hash
@@ -322,7 +314,7 @@ class Indexer < Harvestdor::Indexer
     result << "#{druid} missing building_facet 'Stanford Digital Repository'\n" if !doc_hash.field_present?(:building_facet, 'Stanford Digital Repository')
     result
   end
-  
+
   # count the number of records in solr for this collection (and the collection record itself)
   #  and check for a purl in the collection record
   def num_found_in_solr
@@ -378,7 +370,7 @@ class Indexer < Harvestdor::Indexer
 
   # log details about the results of indexing
   def log_results
-    record_count_msgs.each { |msg|  
+    record_count_msgs.each { |msg|
       logger.info msg
     }
     total_objects = @success_count + @error_count
@@ -395,7 +387,7 @@ class Indexer < Harvestdor::Indexer
     require 'socket'
     if Socket.gethostname.index("harvestdor")
       to_email = config.notification ? config.notification : 'gdor-indexing-notification@lists.stanford.edu'
-      
+
       coll_rec_id = coll_catkey ? coll_catkey : coll_druid_from_config
 
       body = "#{config.log_name.chomp('.log')} indexed coll record is: #{coll_rec_id}\n"
@@ -413,7 +405,7 @@ class Indexer < Harvestdor::Indexer
       body += "\n"
       body += "full log is at gdor_indexer/shared/#{config.log_dir}/#{config.log_name} on #{Socket.gethostname}"
       body += "\n"
-      
+
       body += @validation_messages.join("\n") + "\n"
 
       opts = {}
