@@ -38,7 +38,7 @@ class Indexer < Harvestdor::Indexer
     # Indexer.config.configure options
     Indexer.config[:solr] = {:url => solr_config["solr"]["url"], :read_timeout => 3600, :open_timeout => 3600}
     client_config = YAML.load_file(client_config_path) if client_config_path && File.exists?(client_config_path)
-    @dor_fetcher_client=DorFetcher::Client.new({:service_url => client_config["dor_fetcher_service_url"], :skip_heartbeat => true, :ignore_ssl => true})
+    @dor_fetcher_client=DorFetcher::Client.new({:service_url => client_config["dor_fetcher_service_url"]})
     yield(Indexer.config) if block_given?
   end
 

@@ -7,7 +7,7 @@ Code to harvest DOR druids via OAI, mods from PURL, and use it to index items in
 Relationship used for OAI harvest:  "is_member_of_collection_ww121ss5000"
 
 
-== install steps
+== Install steps for running locally
 
 You must use jruby in 1.9 compatibility mode to run this app. Version 1.7.9 is known to work. An rvmrc file with the below is known to work :
   # export JRUBY_OPTS="--1.9"  # this is the default so it is no longer needed
@@ -15,11 +15,43 @@ You must use jruby in 1.9 compatibility mode to run this app. Version 1.7.9 is k
   
   bundle install
 
-You must also clone the solrmarc code from git (for merged records)
-  clone /afs/ir/dev/dlss/git/searchworks/solrmarc-sw.git
-  run 'ant dist_site'
-  set dist_dir to the path of the dist directory that is created, like dist_dir: ./solrmarc-sw/dist
+===Configure environments
 
-== Usage
-create a collection config file based on spec/config/walters_integration_spec.yml in the config/collections folder
-./bin/indexer -c [name_of_collection_config_file]
+Copy the example solr.yml file from the spec/config directory into the config directory and change as required.  This will indicate which solr instance the collection will index into.
+  cp spec/config/solr.yml config
+
+Copy the example dor-fetcher-client.yml file from the spec/config directory into the config directory and change as required.  This will indicate which dor-fetcher-service the indexer will pull objects from.
+  cp spec/config/dor-fetcher-client.yml config
+
+=== Cloning solrmarc
+
+You must also clone the solrmarc code from git and build the project with ant
+  git clone https://github.com/sul-dlss/solrmarc-sw.git
+  cd /path/to/solrmarc-sw
+  ant dist_site
+  
+Add a symbolic link in the top level of the gdor-indexer code to the cloned version of solrmarc-sw:
+  cd /path/to/gdor-indexer
+  ln -s /path/to/solrmarc-sw . 
+
+== Running the tests
+
+Once installed, you should run the tests to make sure everything is set up properly
+  rake ci
+
+== Indexing a collection
+
+Create a collections folder in the config directory
+
+  cd /path/to/gdor-indexer/config
+  mkdir collections
+
+Copy the example yml file (spec/config/walters_integration_spec.yml) into the newly created collections folder and edit as needed.
+
+  cp spec/config/walters_integration_spec.yml config/collections/my_collection.yml
+
+Run the indexer script as follows:
+
+  cd /path/to/gdor-indexer
+  ./bin/indexer -c my_collection
+
