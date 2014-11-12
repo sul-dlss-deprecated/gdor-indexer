@@ -32,7 +32,7 @@ GEM
     confstruct (0.2.7)
     diff-lcs (1.2.5)
     docile (1.1.3)
-    dor-fetcher (1.0.0)
+    dor-fetcher (1.0.5)
     equivalent-xml (0.4.0)
       nokogiri (>= 1.4.3)
     faraday (0.9.0)
@@ -44,9 +44,9 @@ GEM
       faraday (>= 0.9.0)
       nokogiri
       oai (~> 0.3.0)
-    harvestdor-indexer (1.0.0)
+    harvestdor-indexer (1.0.3)
       confstruct
-      dor-fetcher (>= 1.0.0)
+      dor-fetcher (= 1.0.5)
       harvestdor (>= 0.0.14)
       retries
       rsolr
@@ -136,7 +136,7 @@ DEPENDENCIES
   capistrano-rvm
   equivalent-xml (= 0.4.0)
   harvestdor (>= 0.0.14)
-  harvestdor-indexer (>= 1.0.0)
+  harvestdor-indexer (= 1.0.3)
   jruby-openssl
   lyberteam-capistrano-devel
   mail
