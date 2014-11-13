@@ -68,6 +68,7 @@ describe Indexer do
   end # harvest_and_index
   
   context "#index_item" do
+
     context "merge or not?" do
       it "uses RecordMerger if there is a catkey" do
         ckey = '666'
@@ -836,6 +837,18 @@ describe Indexer do
         expect(hash[:body]).to match /full log is at gdor_indexer\/shared\/spec\/test_logs\/testcoll.log on harvestdor-specs/
       end
       @indexer.send(:email_results)
+    end
+  end
+
+  context "Integration with dor-fetcher-service" do
+    it "has a local cache of item druids from the dor-fetcher-service" do
+      expect(@indexer.druid_item_array).not_to be_nil
+    end
+    it "the druid array should not contain the collection level druid" do
+      VCR.use_cassette('no_coll_druid_in_druid_array_call') do
+        @indexer.populate_druid_item_array
+        expect(@indexer.druid_item_array.include? "druid:#{@indexer.coll_druid_from_config}").to eq(false)
+      end
     end
   end
 end

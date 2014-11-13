@@ -25,3 +25,6 @@ logs
 *.tmproj
 tmtags
 .idea/*
+config/solr.yml
+config/dor-fetcher-client.yml
+config/collections
