@@ -17,6 +17,7 @@ require 'dor-fetcher'
 # Base class to harvest from DOR via harvestdor gem
 class Indexer < Harvestdor::Indexer
   attr_accessor :dor_fetcher_client
+  attr_reader :druid_item_array
 
   # Initialize with configuration files
   # @param yml_path [String] /path/to
@@ -31,6 +32,7 @@ class Indexer < Harvestdor::Indexer
     @yml_path = yml_path
     @druids_failed_to_ix = []
     @validation_messages = []
+    @druid_item_array = []   # Local cache of items returned by dor-fetcher-service
     @collection = File.basename(yml_path, ".yml")
     solr_config = YAML.load_file(solr_config_path) if solr_config_path && File.exists?(solr_config_path)
     @@config ||= Confstruct::Configuration.new()
@@ -40,6 +42,16 @@ class Indexer < Harvestdor::Indexer
     client_config = YAML.load_file(client_config_path) if client_config_path && File.exists?(client_config_path)
     @dor_fetcher_client=DorFetcher::Client.new({:service_url => client_config["dor_fetcher_service_url"], :skip_heartbeat => true, :ignore_ssl => true})
     yield(Indexer.config) if block_given?
+  end
+
+  # Collection druid is now included in druids array from dor-fetcher-service and must be removed 
+  # to prevent indexing of collection druid as an item in the collection itself
+  # Populate the druid_item_array with a local cache of item druids from the dor-fetcher-service,
+  # deletes the collection druid from the array, and computes the size of the array
+  def populate_druid_item_array
+    @druid_item_array = druids
+    @druid_item_array.delete_if {|druid| druid == "druid:#{coll_druid_from_config}"}
+    @dor_fetcher_count = @druid_item_array.size
   end
 
   # per this Indexer's config options
@@ -56,8 +68,8 @@ class Indexer < Harvestdor::Indexer
     else
       if whitelist.empty?
         logger.debug("Whitelist is empty")
-        @dor_fetcher_count = druids.size
-        druids.threach(3) { |druid| index_item druid }
+        populate_druid_item_array
+        @druid_item_array.threach(3) { |druid| index_item druid }
       else
         logger.info("Using whitelist from #{config.whitelist}")
         @whitelist_count = whitelist.size
@@ -85,6 +97,7 @@ class Indexer < Harvestdor::Indexer
   # create Solr doc for the druid and add it to Solr, unless it is on the blacklist.
   #  NOTE: don't forget to send commit to Solr, either once at end (already in harvest_and_index), or for each add, or ...
   def index_item druid
+    druid = druid.split(':').last  # drop the druid prefix
     if blacklist.include?(druid)
       logger.info("#{druid} is on the blacklist and will have no Solr doc created")
     else

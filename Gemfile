@@ -28,6 +28,8 @@ group :test do
 	gem 'simplecov-rcov', :require => false
 #  gem 'jettywrapper'
   gem 'equivalent-xml', '0.4.0' # 0.4.1 causes a failure 
+  gem 'vcr'
+  gem 'webmock'
 end
 
 group :deployment do

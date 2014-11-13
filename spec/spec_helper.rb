@@ -1,3 +1,7 @@
+require 'indexer'
+require 'equivalent-xml'
+require 'vcr'
+
 # for test coverage
 require 'simplecov'
 require 'simplecov-rcov'
@@ -18,8 +22,11 @@ end
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..'))
 
-require 'indexer'
-require 'equivalent-xml'
+VCR.configure do |c|
+  c.cassette_library_dir = 'spec/vcr_cassettes'
+  c.hook_into :webmock
+  c.allow_http_connections_when_no_cassette = true
+end
 
 #RSpec.configure do |config|
 #end
