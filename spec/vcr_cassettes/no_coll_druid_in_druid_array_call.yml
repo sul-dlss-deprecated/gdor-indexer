@@ -2,7 +2,7 @@
 http_interactions:
 - request:
     method: get
-    uri: http://dorfetcher-stage.stanford.edu/collections/ww121ss5000
+    uri: http://127.0.0.1:3000/collections/ww121ss5000
     body:
       encoding: US-ASCII
       string: ''

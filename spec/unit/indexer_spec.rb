@@ -851,4 +851,11 @@ describe Indexer do
       end
     end
   end
+
+  context "skip heartbeat" do
+    it "allows me to use a fake url for dor-fetcher-client" do
+      expect {Indexer.new(@config_yml_path, @client_config_path, @solr_yml_path)}.not_to raise_error
+    end
+  end
+
 end

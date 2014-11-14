@@ -3,7 +3,6 @@ source 'https://rubygems.org'
 # sul-gems
 gem 'harvestdor-indexer', '=1.0.4'
 gem 'harvestdor', '>=0.0.14'
-gem 'dor-fetcher', '=1.0.4'
 gem 'stanford-mods'
 gem 'jruby-openssl'
 gem 'nokogiri'
