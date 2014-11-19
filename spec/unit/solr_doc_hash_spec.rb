@@ -200,7 +200,7 @@ describe GDor::Indexer::SolrDocHash do
         expect(subject.combine({:foo => ['bar', 'ness']})).to eq({:foo => ["a", 'bar', 'ness']})
       end
       it "result is orig value if new value is not String or Array" do
-        expect(subject.combine({:foo => :bar})).to eq({:foo => "a"})
+        expect(subject.combine({:foo => :bar})).to eq({:foo => ["a", :bar]})
       end
     end # orig value is String
     context "orig value is empty Array" do
@@ -246,7 +246,7 @@ describe GDor::Indexer::SolrDocHash do
         expect(subject.combine({:foo => ['bar', 'ness']})).to eq({:foo => ["a", "b", 'bar', 'ness']})
       end
       it "result is orig value if new value is not String or Array" do
-        expect(subject.combine({:foo => :bar})).to eq({:foo => ["a", "b"]})
+        expect(subject.combine({:foo => :bar})).to eq({:foo => ["a", "b", :bar]})
       end
     end # orig value is non-empty Array
   end # combine

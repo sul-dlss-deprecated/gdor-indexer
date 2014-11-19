@@ -29,29 +29,31 @@ class GDor::Indexer
     #  values for keys in new_hash will be a non-empty String or flat Array 
     #  keys will be removed from hash if all values are nil or empty 
     def combine new_hash
-      new_hash.each_key { |key| 
-        # only pay attention to real new values
-        new_val = new_hash[key] if new_hash[key] && (new_hash[key].instance_of?(String) || new_hash[key].instance_of?(Array)) && new_hash[key].length > 0
-
-        if self[key] && (self[key].instance_of?(String) || self[key].instance_of?(Array)) && self[key].length > 0 
+      new_hash.select { |key, value| Array(value).any? { |v| !v.blank? } }.each do |key, new_val|
+        if field_present? key
           orig_val = self[key]
-          if orig_val.instance_of?(String)
-            if new_val
-              self[key] = [orig_val, new_val].flatten.uniq
-            end
-          elsif orig_val.instance_of?(Array)
-            if new_val
-              self[key] = [orig_val, new_val].flatten.uniq
-            end
+          case orig_val
+            when Array
+              self[key] += Array(new_val)
+            else
+              self[key] = Array(orig_val) + Array(new_val)
           end
-        else # no old value
-          if new_val
-            self[key] = new_val
-          else
-            self.delete(key)
-          end
+
+          self[key] = self[key].reject { |x| x.blank? }.uniq
+        else
+          self[key] = new_val
         end
-      }
+      end
+
+      compact_blank_fields!
+
+      self
+    end
+
+    def compact_blank_fields!
+      keys.reject { |key| field_present? key }.each do |key|
+        self.delete key
+      end
       self
     end
 
