@@ -60,6 +60,56 @@ class GDor::Indexer
       }
       self
     end
-      
+
+    def druid
+      self[:druid]
+    end
+
+    # validate fields that should be in hash for any item object in SearchWorks Solr
+    # @return [Array<String>] Array of messages suitable for notificaiton email and/or logs
+    def validate_item config
+      result = validate_gdor_fields(config)
+      collection_druid = GDor::Indexer.coll_druid(config)
+      result << "#{druid} missing collection of harvest\n" unless field_present?(:collection, collection_druid)
+      result << "#{druid} missing collection_with_title (or collection #{collection_druid} is missing title)\n" unless field_present?(:collection_with_title, Regexp.new("#{collection_druid}-\\|-.+"))
+      result << "#{druid} missing file_id(s)\n" unless field_present?(:file_id)
+      result
+    end
+
+    # validate fields that should be in hash for any collection object in SearchWorks Solr
+    # @return [Array<String>] Array of messages suitable for notificaiton email and/or logs
+    def validate_collection config
+      result = validate_gdor_fields(config)
+      result << "#{druid} missing collection_type 'Digital Collection'\n" unless field_present?(:collection_type, 'Digital Collection')
+      result << "#{druid} missing format_main_ssim 'Archive/Manuscript'\n" unless field_present?(:format_main_ssim, 'Archive/Manuscript')
+      result
+    end
+
+    # validate fields that should be in hash for every gryphonDOR object in SearchWorks Solr
+    # @return [Array<String>] Array of messages suitable for notificaiton email and/or logs
+    def validate_gdor_fields config
+      result = []
+      result << "#{druid} missing druid field\n" unless field_present?(:druid, druid)
+      result << "#{druid} missing url_fulltext for purl\n" unless field_present?(:url_fulltext, "#{config.purl}/#{druid}")
+      result << "#{druid} missing access_facet 'Online'\n" unless field_present?(:access_facet, 'Online')
+      result << "#{druid} missing or bad display_type, possibly caused by unrecognized @type attribute on <contentMetadata>\n" unless field_present?(:display_type, /(file)|(image)|(media)|(book)/)
+      result << "#{druid} missing building_facet 'Stanford Digital Repository'\n" unless field_present?(:building_facet, 'Stanford Digital Repository')
+      result
+    end
+
+    # validate fields that should be in doc hash for every unmerged gryphonDOR object in SearchWorks Solr
+    # @return [Array<String>] array of Strings indicating absence of required fields
+    def validate_mods config
+      result = []
+      result << "#{druid} missing modsxml\n" unless field_present?(:modsxml)
+      result << "#{druid} missing resource type\n" unless field_present?(:format_main_ssim)
+      result << "#{druid} missing format\n" unless field_present?(:format) # for backwards compatibility
+      result << "#{druid} missing title\n" unless field_present?(:title_display)
+      result << "#{druid} missing pub year for date slider\n" unless field_present?(:pub_year_tisim)
+      result << "#{druid} missing author\n" unless field_present?(:author_person_display)
+      result << "#{druid} missing language\n" unless field_present?(:language)
+      result
+    end
+
   end
 end

@@ -125,7 +125,7 @@ module GDor
               merged = false
             else
               add_coll_info fields_to_add, sdb.coll_druids_from_rels_ext # defined in public_xml_fields
-              @validation_messages = validate_item(druid, fields_to_add)
+              @validation_messages = fields_to_add.validate_item(config)
               require 'gdor/indexer/record_merger'
               merged = GDor::Indexer::RecordMerger.merge_and_index(ckey, fields_to_add)
               if merged
@@ -150,8 +150,8 @@ module GDor
             doc_hash = sdb.doc_hash
             doc_hash.combine fields_to_add
             add_coll_info doc_hash, sdb.coll_druids_from_rels_ext # defined in public_xml_fields
-            @validation_messages = validate_item(druid, doc_hash)
-            @validation_messages.concat sdb.validate_mods(druid, doc_hash)
+            @validation_messages = fields_to_add.validate_item(config)
+            @validation_messages.concat doc_hash.validate_mods(config)
             solr_add(doc_hash, druid)
             @success_count += 1
           end
@@ -179,9 +179,9 @@ module GDor
           :format_main_ssim => 'Archive/Manuscript',  # per INDEX-12, add this to all collection records (does not add dups)
           :format => 'Manuscript/Archive',  # per INDEX-144, add this to all collection records (does not add dups)
           :building_facet => 'Stanford Digital Repository'  # INDEX-53 add building_facet = Stanford Digital Repository here for collection
-        }
+        })
         if coll_catkey
-          @validation_messages = validate_collection(coll_druid, fields_to_add)
+          @validation_messages = fields_to_add.validate_collection(config)
           require 'gdor/indexer/record_merger'
           merged = GDor::Indexer::RecordMerger.merge_and_index(coll_catkey, fields_to_add)
           if merged
@@ -196,8 +196,8 @@ module GDor
           logger.info "Indexing collection object #{coll_druid} (unmerged)"
           doc_hash = coll_sdb.doc_hash
           doc_hash.combine fields_to_add
-          @validation_messages = validate_collection(coll_druid, doc_hash)
-          @validation_messages.concat coll_sdb.validate_mods(coll_druid, doc_hash)
+          @validation_messages = fields_to_add.validate_collection(config)
+          @validation_messages.concat doc_hash.validate_mods(config)
           solr_add(doc_hash, coll_druid) unless coll_druid.nil?
           @success_count += 1
         end
@@ -238,14 +238,16 @@ module GDor
 
     # return String indicating the druid of a collection object, or nil if there is no collection druid
     # @return [String] The collection object druid or nil if none exists  (e.g. ab123cd1234)
-    def coll_druid_from_config
-      @coll_druid_from_config ||= begin
-        druid = nil
-        if config[:default_set].include? "is_member_of_collection_"
-          druid = config[:default_set].gsub("is_member_of_collection_",'')
-        end
-        druid
+    def self.coll_druid config
+      if config[:default_set] and config[:default_set].include? "is_member_of_collection_"
+        config[:default_set].gsub("is_member_of_collection_",'')
       end
+    end
+
+    # return String indicating the druid of a collection object, or nil if there is no collection druid
+    # @return [String] The collection object druid or nil if none exists  (e.g. ab123cd1234)
+    def coll_druid_from_config
+      @coll_druid_from_config ||= self.class.coll_druid(config)
     end
 
     # cache the coll title so we don't have to look it up more than once
@@ -300,37 +302,6 @@ module GDor
     # @return [Hash<String, Array<String>>] collection druids as keys, array of item display_types as values
     def coll_display_types_from_items
       @coll_display_types_from_items ||= {}
-    end
-
-    # validate fields that should be in hash for any item object in SearchWorks Solr
-    # @return [Array<String>] Array of messages suitable for notificaiton email and/or logs
-    def validate_item druid, doc_hash
-      result = validate_gdor_fields druid, doc_hash
-      result << "#{druid} missing collection of harvest\n" if !doc_hash.field_present?(:collection, coll_druid_from_config)
-      result << "#{druid} missing collection_with_title (or collection #{coll_druid_from_config} is missing title)\n" if !doc_hash.field_present?(:collection_with_title, Regexp.new("#{coll_druid_from_config}-\\|-.+"))
-      result << "#{druid} missing file_id(s)\n" if !doc_hash.field_present?(:file_id)
-      result
-    end
-
-    # validate fields that should be in hash for any collection object in SearchWorks Solr
-    # @return [Array<String>] Array of messages suitable for notificaiton email and/or logs
-    def validate_collection druid, doc_hash
-      result = validate_gdor_fields druid, doc_hash
-      result << "#{druid} missing collection_type 'Digital Collection'\n" if !doc_hash.field_present?(:collection_type, 'Digital Collection')
-      result << "#{druid} missing format_main_ssim 'Archive/Manuscript'\n" if !doc_hash.field_present?(:format_main_ssim, 'Archive/Manuscript')
-      result
-    end
-
-    # validate fields that should be in hash for every gryphonDOR object in SearchWorks Solr
-    # @return [Array<String>] Array of messages suitable for notificaiton email and/or logs
-    def validate_gdor_fields druid, doc_hash
-      result = []
-      result << "#{druid} missing druid field\n" if !doc_hash.field_present?(:druid, druid)
-      result << "#{druid} missing url_fulltext for purl\n" if !doc_hash.field_present?(:url_fulltext, "#{config.purl}/#{druid}")
-      result << "#{druid} missing access_facet 'Online'\n" if !doc_hash.field_present?(:access_facet, 'Online')
-      result << "#{druid} missing or bad display_type, possibly caused by unrecognized @type attribute on <contentMetadata>\n" if !doc_hash.field_present?(:display_type, /(file)|(image)|(media)|(book)/)
-      result << "#{druid} missing building_facet 'Stanford Digital Repository'\n" if !doc_hash.field_present?(:building_facet, 'Stanford Digital Repository')
-      result
     end
 
     # count the number of records in solr for this collection (and the collection record itself)

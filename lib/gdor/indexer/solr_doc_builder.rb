@@ -41,20 +41,6 @@ class GDor::Indexer::SolrDocBuilder
       doc_hash
     end
   end
-  
-  # validate fields that should be in doc hash for every unmerged gryphonDOR object in SearchWorks Solr
-  # @return [Array<String>] array of Strings indicating absence of required fields
-  def validate_mods druid = @druid, doc_fields_hash = doc_hash
-    result = []
-    result << "#{druid} missing modsxml\n" if !doc_fields_hash.field_present?(:modsxml)
-    result << "#{druid} missing resource type\n" if !doc_fields_hash.field_present?(:format_main_ssim)
-    result << "#{druid} missing format\n" if !doc_fields_hash.field_present?(:format) # for backwards compatibility
-    result << "#{druid} missing title\n" if !doc_fields_hash.field_present?(:title_display)
-    result << "#{druid} missing pub year for date slider\n" if !doc_hash.field_present?(:pub_year_tisim)
-    result << "#{druid} missing author\n" if !doc_fields_hash.field_present?(:author_person_display)
-    result << "#{druid} missing language\n" if !doc_fields_hash.field_present?(:language)
-    result
-  end
 
   # @return [String] value with SIRSI/Symphony numeric catkey in it, or nil if none exists
   # first we look for 

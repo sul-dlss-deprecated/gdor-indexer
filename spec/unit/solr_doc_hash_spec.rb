@@ -225,4 +225,164 @@ describe GDor::Indexer::SolrDocHash do
     end # orig value is non-empty Array
   end # combine
 
+  context "#validate_item" do
+    let(:collection_druid) { "xyz" }
+    let(:mock_config) { { default_set: "is_member_of_collection_#{collection_druid}" } }
+
+    before do
+      GDor::Indexer::SolrDocHash.any_instance.stub(validate_gdor_fields: [])
+    end
+
+    it "should call validate_gdor_fields" do
+      hash = GDor::Indexer::SolrDocHash.new({})
+      hash.should_receive(:validate_gdor_fields).and_return([])
+      hash.validate_item(mock_config)
+    end
+    it "should have a value if collection is wrong" do
+      hash = GDor::Indexer::SolrDocHash.new({
+        :collection => 'junk',
+        :collection_with_title => "#{collection_druid}-|-asdasdf",
+        :file_id => ['anything']
+      })
+      hash.should_receive(:validate_gdor_fields).and_return([])
+      hash.validate_item(mock_config).first.should =~ /collection /
+    end
+    it "should have a value if collection_with_title is missing" do
+      hash = GDor::Indexer::SolrDocHash.new({
+        :collection => collection_druid,
+        :collection_with_title => nil,
+        :file_id => ['anything']
+      })
+      hash.validate_item(mock_config).first.should =~ /collection_with_title /
+    end
+    it "should have a value if collection_with_title is missing the title" do
+      hash = GDor::Indexer::SolrDocHash.new({
+        :collection => collection_druid,
+        :collection_with_title => "#{collection_druid}-|-",
+        :file_id => ['anything']
+      })
+      hash.validate_item(mock_config).first.should =~ /collection_with_title /
+    end
+    it "should have a value if file_id field is missing" do
+      hash = GDor::Indexer::SolrDocHash.new({
+        :collection => collection_druid,
+        :collection_with_title => "#{collection_druid}-|-asdasdf",
+        :file_id => nil
+      })
+      hash.validate_item(mock_config).first.should =~ /file_id/
+    end
+    it "should not have a value if gdor_fields and item fields are ok" do
+      hash = GDor::Indexer::SolrDocHash.new({
+        :collection => collection_druid,
+        :collection_with_title => "#{collection_druid}-|-asdasdf",
+        :file_id => ['anything']
+      })
+      hash.validate_item(mock_config).should == []
+    end
+  end # validate_item
+
+  context "#validate_collection" do
+    let(:mock_config) { { } }
+
+    before do
+      GDor::Indexer::SolrDocHash.any_instance.stub(validate_gdor_fields: [])
+    end
+
+    it "should call validate_gdor_fields" do
+      hash = GDor::Indexer::SolrDocHash.new({})
+      hash.should_receive(:validate_gdor_fields).and_return([])
+      hash.validate_collection(mock_config)
+    end
+    it "should have a value if collection_type is missing" do
+      hash = GDor::Indexer::SolrDocHash.new({:format_main_ssim => 'Archive/Manuscript'})
+
+      hash.validate_collection(mock_config).first.should =~ /collection_type/
+    end
+    it "should have a value if collection_type is not 'Digital Collection'" do
+      hash = GDor::Indexer::SolrDocHash.new({:collection_type => 'lalalalala', :format_main_ssim => 'Archive/Manuscript'})
+      hash.validate_collection(mock_config).first.should =~ /collection_type/
+    end
+    it "should have a value if format_main_ssim is missing" do
+      hash = GDor::Indexer::SolrDocHash.new({:collection_type => 'Digital Collection'})
+      hash.validate_collection(mock_config).first.should =~ /format_main_ssim/
+    end
+    it "should have a value if format_main_ssim doesn't include 'Archive/Manuscript'" do
+      hash = GDor::Indexer::SolrDocHash.new({:format_main_ssim => 'lalalalala', :collection_type => 'Digital Collection'})
+      hash.validate_collection(mock_config).first.should =~ /format_main_ssim/
+    end
+    it "should not have a value if gdor_fields, collection_type and format_main_ssim are ok" do
+      hash = GDor::Indexer::SolrDocHash.new({:collection_type => 'Digital Collection', :format_main_ssim => 'Archive/Manuscript'})
+      hash.validate_collection(mock_config).should == []
+    end
+  end # validate_collection
+
+  context "#validate_gdor_fields" do
+    let(:druid) { 'druid' }
+    let(:purl_url) { 'http://some.uri' }
+    let(:mock_config) { double purl: purl_url }
+
+    it "should return an empty Array when there are no problems" do
+      hash = GDor::Indexer::SolrDocHash.new({
+        :access_facet => 'Online',
+        :druid => druid,
+        :url_fulltext => "#{purl_url}/#{druid}",
+        :display_type => 'image',
+        :building_facet => 'Stanford Digital Repository'})
+      hash.validate_gdor_fields(mock_config).should == []
+    end
+    it "should have a value for each missing field" do
+      hash = GDor::Indexer::SolrDocHash.new({})
+      hash.validate_gdor_fields(mock_config).length.should == 5
+    end
+    it "should have a value for an unrecognized display_type" do
+      hash = GDor::Indexer::SolrDocHash.new({
+        :access_facet => 'Online',
+        :druid => druid,
+        :url_fulltext => "#{purl_url}/#{druid}",
+        :display_type => 'zzzz', 
+        :building_facet => 'Stanford Digital Repository'})
+      hash.validate_gdor_fields(mock_config).first.should =~ /display_type/
+    end
+    it "should have a value for access_facet other than 'Online'" do
+      hash = GDor::Indexer::SolrDocHash.new({
+        :access_facet => 'BAD',
+        :druid => druid,
+        :url_fulltext => "#{purl_url}/#{druid}",
+        :display_type => 'image', 
+        :building_facet => 'Stanford Digital Repository'})
+      hash.validate_gdor_fields(mock_config).first.should =~ /access_facet/
+    end
+    it "should have a value for building_facet other than 'Stanford Digital Repository'" do
+      hash = GDor::Indexer::SolrDocHash.new({
+        :access_facet => 'Online',
+        :druid => druid,
+        :url_fulltext => "#{purl_url}/#{druid}",
+        :display_type => 'image',
+        :building_facet => 'WRONG'})
+      hash.validate_gdor_fields(mock_config).first.should =~ /building_facet/
+    end
+  end # validate_gdor_fields
+
+  context "#validation_mods" do
+    let(:mock_config) { {} }
+    it 'should have no validation messages for a complete record' do
+      hash = GDor::Indexer::SolrDocHash.new({
+        :modsxml => 'whatever',
+        :title_display => 'title',
+        :pub_year_tisim => 'some year',
+        :author_person_display => 'author',
+        :format_main_ssim => 'Image',
+        :format => 'Image',
+        :language => 'English'
+      })
+      hash.validate_mods(mock_config).length.should == 0
+    end
+    it 'should have validation messages for each missing field' do
+      hash = GDor::Indexer::SolrDocHash.new({
+        :id => 'whatever',
+      })
+      hash.validate_mods(mock_config).length.should == 7
+    end
+  end  
+
 end

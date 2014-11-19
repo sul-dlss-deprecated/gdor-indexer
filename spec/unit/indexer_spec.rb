@@ -77,7 +77,7 @@ describe GDor::Indexer do
         sdb.stub(:public_xml)
         sdb.stub(:display_type)
         sdb.stub(:file_ids)
-        sdb.stub(:validate_mods).and_return([])
+        sdb.doc_hash.stub(:validate_mods).and_return([])
         GDor::Indexer::SolrDocBuilder.stub(:new).and_return(sdb)
         GDor::Indexer::RecordMerger.should_receive(:merge_and_index).with(ckey, instance_of(GDor::Indexer::SolrDocHash))
         @indexer.index_item @fake_druid
@@ -90,7 +90,7 @@ describe GDor::Indexer do
         sdb.stub(:coll_druids_from_rels_ext)
         sdb.stub(:display_type)
         sdb.stub(:file_ids)
-        sdb.stub(:validate_mods).and_return([])
+        sdb.doc_hash.stub(:validate_mods).and_return([])
         GDor::Indexer::SolrDocBuilder.stub(:new).and_return(sdb)
         GDor::Indexer::RecordMerger.should_not_receive(:merge_and_index)
         @indexer.solr_client.should_receive(:add)
@@ -105,7 +105,7 @@ describe GDor::Indexer do
           @sdb.stub(:file_ids)
           # for unmerged items only
           @sdb.stub(:doc_hash).and_return(GDor::Indexer::SolrDocHash.new)
-          @sdb.stub(:validate_mods).and_return([])
+          @sdb.doc_hash.stub(:validate_mods).and_return([])
         end
         context "have catkey" do
           before(:each) do
@@ -191,11 +191,11 @@ describe GDor::Indexer do
         @indexer.index_item @fake_druid
       end
       it "calls validate_item" do
-        @indexer.should_receive(:validate_item)
+        GDor::Indexer::SolrDocHash.any_instance.should_receive(:validate_item)
         @indexer.index_item @fake_druid
       end
       it "calls GDor::Indexer::SolrDocBuilder.validate_mods" do
-        GDor::Indexer::SolrDocBuilder.any_instance.should_receive(:validate_mods)
+        GDor::Indexer::SolrDocHash.any_instance.should_receive(:validate_mods)
         @indexer.index_item @fake_druid
       end
       it "calls add_coll_info" do
@@ -208,7 +208,7 @@ describe GDor::Indexer do
         sdb.stub(:doc_hash).and_return(GDor::Indexer::SolrDocHash.new)
         sdb.stub(:display_type)
         sdb.stub(:file_ids)
-        sdb.stub(:validate_mods).and_return([])
+        sdb.doc_hash.stub(:validate_mods).and_return([])
         GDor::Indexer::SolrDocBuilder.stub(:new).and_return(sdb)
         sdb.stub(:coll_druids_from_rels_ext).and_return(['foo'])
         @indexer.stub(:identity_md_obj_label).with('foo').and_return('bar')
@@ -256,7 +256,7 @@ describe GDor::Indexer do
         @sdb.stub(:doc_hash).and_return(GDor::Indexer::SolrDocHash.new)
         @sdb.stub(:display_type).and_return('fiddle')
         @sdb.stub(:file_ids).and_return(['dee', 'dum'])
-        @sdb.stub(:validate_mods).and_return([])
+        @sdb.doc_hash.stub(:validate_mods).and_return([])
         GDor::Indexer::SolrDocBuilder.stub(:new).and_return(@sdb)
         @indexer.stub(:identity_md_obj_label).with('foo').and_return('bar')
         @indexer.stub(:coll_catkey).and_return(nil)
@@ -278,7 +278,7 @@ describe GDor::Indexer do
         @indexer.index_item @fake_druid
       end
       it "calls validate_item" do
-        @indexer.should_receive(:validate_item)
+        GDor::Indexer::SolrDocHash.any_instance.should_receive(:validate_item)
         @indexer.index_item @fake_druid
       end
       it "should add a doc to Solr with item fields added" do
@@ -316,7 +316,7 @@ describe GDor::Indexer do
         @sdb.stub(:file_ids)
         # for unmerged items only
         @sdb.stub(:doc_hash).and_return(GDor::Indexer::SolrDocHash.new)
-        @sdb.stub(:validate_mods).and_return([])
+        @sdb.doc_hash.stub(:validate_mods).and_return([])
       end
       context "have catkey" do
         before(:each) do
@@ -385,13 +385,15 @@ describe GDor::Indexer do
         @indexer.index_coll_obj_per_config
       end
       it "calls validate_collection" do
-        GDor::Indexer::SolrDocBuilder.any_instance.stub(:doc_hash).and_return(GDor::Indexer::SolrDocHash.new) # speed up the test
-        @indexer.should_receive(:validate_collection)
+        doc_hash = GDor::Indexer::SolrDocHash.new
+        GDor::Indexer::SolrDocBuilder.any_instance.stub(:doc_hash).and_return(doc_hash) # speed up the test
+        doc_hash.should_receive(:validate_collection)
         @indexer.index_coll_obj_per_config
       end
       it "calls GDor::Indexer::SolrDocBuilder.validate_mods" do
-        GDor::Indexer::SolrDocBuilder.any_instance.stub(:doc_hash).and_return(GDor::Indexer::SolrDocHash.new) # speed up the test
-        GDor::Indexer::SolrDocBuilder.any_instance.should_receive(:validate_mods)
+        doc_hash = GDor::Indexer::SolrDocHash.new
+        GDor::Indexer::SolrDocBuilder.any_instance.stub(:doc_hash).and_return(doc_hash) # speed up the test
+        doc_hash.should_receive(:validate_mods)
         @indexer.index_coll_obj_per_config
       end
       context "display_type" do
@@ -478,8 +480,9 @@ describe GDor::Indexer do
         @indexer.index_coll_obj_per_config
       end
       it "validates the collection doc via validate_collection" do
-        GDor::Indexer::SolrDocBuilder.any_instance.stub(:doc_hash).and_return(GDor::Indexer::SolrDocHash.new) # speed up the test
-        expect(@indexer).to receive(:validate_collection)
+        doc_hash = GDor::Indexer::SolrDocHash.new
+        GDor::Indexer::SolrDocBuilder.any_instance.stub(:doc_hash).and_return(doc_hash) # speed up the test
+        expect(doc_hash).to receive(:validate_collection)
         @indexer.index_coll_obj_per_config
       end
       it "should add a doc to Solr with gdor fields and collection specific fields" do
@@ -683,123 +686,6 @@ describe GDor::Indexer do
       end
     end
   end # num_found_in_solr
-
-  context "#validate_gdor_fields" do
-    it "should return an empty Array when there are no problems" do
-      hash = GDor::Indexer::SolrDocHash.new({
-        :access_facet => 'Online',
-        :druid => @fake_druid,
-        :url_fulltext => "#{@yaml['purl']}/#{@fake_druid}",
-        :display_type => 'image',
-        :building_facet => 'Stanford Digital Repository'})
-      @indexer.validate_gdor_fields(@fake_druid, hash).should == []
-    end
-    it "should have a value for each missing field" do
-      @indexer.validate_gdor_fields(@fake_druid, GDor::Indexer::SolrDocHash.new({})).length.should == 5
-    end
-    it "should have a value for an unrecognized display_type" do
-      hash = GDor::Indexer::SolrDocHash.new({
-        :access_facet => 'Online',
-        :druid => @fake_druid,
-        :url_fulltext => "#{@yaml['purl']}/#{@fake_druid}",
-        :display_type => 'zzzz', 
-        :building_facet => 'Stanford Digital Repository'})
-      @indexer.validate_gdor_fields(@fake_druid, hash).first.should =~ /display_type/
-    end
-    it "should have a value for access_facet other than 'Online'" do
-      hash = GDor::Indexer::SolrDocHash.new({
-        :access_facet => 'BAD',
-        :druid => @fake_druid,
-        :url_fulltext => "#{@yaml['purl']}/#{@fake_druid}",
-        :display_type => 'image', 
-        :building_facet => 'Stanford Digital Repository'})
-        @indexer.validate_gdor_fields(@fake_druid, hash).first.should =~ /access_facet/
-    end
-    it "should have a value for building_facet other than 'Stanford Digital Repository'" do
-      hash = GDor::Indexer::SolrDocHash.new({
-        :access_facet => 'Online',
-        :druid => @fake_druid,
-        :url_fulltext => "#{@yaml['purl']}/#{@fake_druid}",
-        :display_type => 'image',
-        :building_facet => 'WRONG'})
-        @indexer.validate_gdor_fields(@fake_druid, hash).first.should =~ /building_facet/
-    end
-  end # validate_gdor_fields
-
-  context "#validate_item" do
-    before(:each) do
-      @indexer.stub(:validate_gdor_fields).and_return([])
-    end
-    it "should call validate_gdor_fields" do
-      @indexer.should_receive(:validate_gdor_fields)
-      @indexer.validate_item(@fake_druid, GDor::Indexer::SolrDocHash.new({}))
-    end
-    it "should have a value if collection is wrong" do
-      hash = GDor::Indexer::SolrDocHash.new({
-        :collection => 'junk',
-        :collection_with_title => "#{@coll_druid_from_test_config}-|-asdasdf",
-        :file_id => ['anything']
-      })
-      @indexer.validate_item(@fake_druid, hash).first.should =~ /collection /
-    end
-    it "should have a value if collection_with_title is missing" do
-      hash = GDor::Indexer::SolrDocHash.new({
-        :collection => @coll_druid_from_test_config,
-        :collection_with_title => nil,
-        :file_id => ['anything']
-      })
-      @indexer.validate_item(@fake_druid, hash).first.should =~ /collection_with_title /
-    end
-    it "should have a value if collection_with_title is missing the title" do
-      hash = GDor::Indexer::SolrDocHash.new({
-        :collection => @coll_druid_from_test_config,
-        :collection_with_title => "#{@coll_druid_from_test_config}-|-",
-        :file_id => ['anything']
-      })
-      @indexer.validate_item(@fake_druid, hash).first.should =~ /collection_with_title /
-    end
-    it "should have a value if file_id field is missing" do
-      hash = GDor::Indexer::SolrDocHash.new({
-        :collection => @coll_druid_from_test_config,
-        :collection_with_title => "#{@coll_druid_from_test_config}-|-asdasdf",
-        :file_id => nil
-      })
-      @indexer.validate_item(@fake_druid, hash).first.should =~ /file_id/
-    end
-    it "should not have a value if gdor_fields and item fields are ok" do
-      hash = GDor::Indexer::SolrDocHash.new({
-        :collection => @coll_druid_from_test_config,
-        :collection_with_title => "#{@coll_druid_from_test_config}-|-asdasdf",
-        :file_id => ['anything']
-      })
-      @indexer.validate_item(@fake_druid, hash).should == []
-    end
-  end # validate_item
-
-  context "#validate_collection" do
-    before(:each) do
-      @indexer.stub(:validate_gdor_fields).and_return([])
-    end
-    it "should call validate_gdor_fields" do
-      @indexer.should_receive(:validate_gdor_fields)
-      @indexer.validate_collection(@fake_druid, GDor::Indexer::SolrDocHash.new)
-    end
-    it "should have a value if collection_type is missing" do
-      @indexer.validate_collection(@fake_druid, GDor::Indexer::SolrDocHash.new({:format_main_ssim => 'Archive/Manuscript'})).first.should =~ /collection_type/
-    end
-    it "should have a value if collection_type is not 'Digital Collection'" do
-      @indexer.validate_collection(@fake_druid, GDor::Indexer::SolrDocHash.new({:collection_type => 'lalalalala', :format_main_ssim => 'Archive/Manuscript'})).first.should =~ /collection_type/
-    end
-    it "should have a value if format_main_ssim is missing" do
-      @indexer.validate_collection(@fake_druid, GDor::Indexer::SolrDocHash.new({:collection_type => 'Digital Collection'})).first.should =~ /format_main_ssim/
-    end
-    it "should have a value if format_main_ssim doesn't include 'Archive/Manuscript'" do
-      @indexer.validate_collection(@fake_druid, GDor::Indexer::SolrDocHash.new({:format_main_ssim => 'lalalalala', :collection_type => 'Digital Collection'})).first.should =~ /format_main_ssim/
-    end
-    it "should not have a value if gdor_fields, collection_type and format_main_ssim are ok" do
-      @indexer.validate_collection(@fake_druid, GDor::Indexer::SolrDocHash.new({:collection_type => 'Digital Collection', :format_main_ssim => 'Archive/Manuscript'})).should == []
-    end
-  end # validate_collection
 
   context "#email_results" do
     require 'socket'
