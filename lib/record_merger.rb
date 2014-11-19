@@ -1,5 +1,7 @@
-require 'solrmarc_wrapper'
-require 'solrj_wrapper'
+if defined? JRUBY_VERSION
+  require 'solrmarc_wrapper'
+  require 'solrj_wrapper'
+end
 
 class RecordMerger
   

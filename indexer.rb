@@ -10,7 +10,7 @@ require 'net/smtp'
 # local files
 require 'solr_doc_builder'
 require 'hash_mixin'
-require 'nokogiri_xml_node_mixin'
+require 'nokogiri_xml_node_mixin' if defined? JRUBY_VERSION
 require 'oai_client_mixin'
 require 'dor-fetcher'
 
