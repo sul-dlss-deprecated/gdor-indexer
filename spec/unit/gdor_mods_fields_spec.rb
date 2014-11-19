@@ -14,7 +14,7 @@ describe GDor::Indexer::ModsFields do
   # per https://www.relishapp.com/rspec/rspec-mocks/docs/scope
   before(:each) do
     @hdor_client = double
-    @hdor_client.stub(:public_xml).with(@fake_druid).and_return(nil)
+    allow(@hdor_client).to receive(:public_xml).with(@fake_druid).and_return(nil)
   end
 
   context "doc_hash_from_mods" do
@@ -24,53 +24,53 @@ describe GDor::Indexer::ModsFields do
     context "summary_search solr field from <abstract>" do
       it "should be populated when the MODS has a top level <abstract> element" do
         m = "<mods #{@ns_decl}><abstract>blah blah</abstract></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-        sdb.doc_hash_from_mods[:summary_search].should == ['blah blah']
+        expect(sdb.doc_hash_from_mods[:summary_search]).to match_array ['blah blah']
       end
       it "should have a value for each abstract element" do
         m = "<mods #{@ns_decl}>
           <abstract>one</abstract>
           <abstract>two</abstract>
         </mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-        sdb.doc_hash_from_mods[:summary_search].should == ['one', 'two']
+        expect(sdb.doc_hash_from_mods[:summary_search]).to match_array ['one', 'two']
       end
       it "should not be present when there is no top level <abstract> element" do
         m = "<mods #{@ns_decl}><relatedItem><abstract>blah blah</abstract></relatedItem></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        sdb.doc_hash_from_mods[:summary_search].should == nil
+        expect(sdb.doc_hash_from_mods[:summary_search]).to be_nil
       end
       it "should not be present if there are only empty abstract elements in the MODS" do
         m = "<mods #{@ns_decl}><abstract/><note>notit</note></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-        sdb.doc_hash_from_mods[:summary_search].should ==  nil
+        expect(sdb.doc_hash_from_mods[:summary_search]).to be_nil
       end
       it "summary_display should not be populated - it is a copy field" do
         m = "<mods #{@ns_decl}><abstract>blah blah</abstract></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-        sdb.doc_hash_from_mods[:summary_display].should == nil
+        expect(sdb.doc_hash_from_mods[:summary_display]).to be_nil
       end
     end # summary_search / <abstract>
 
     it "language: should call sw_language_facet in stanford-mods gem to populate language field" do
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+      allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(@ng_mods_xml)
       sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
       smr = sdb.smods_rec
-      smr.should_receive(:sw_language_facet)
+      expect(smr).to receive(:sw_language_facet)
       sdb.doc_hash_from_mods
     end
 
     context "physical solr field from <physicalDescription><extent>" do
       it "should be populated when the MODS has mods/physicalDescription/extent element" do
         m = "<mods #{@ns_decl}><physicalDescription><extent>blah blah</extent></physicalDescription></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-        sdb.doc_hash_from_mods[:physical].should == ['blah blah']
+        expect(sdb.doc_hash_from_mods[:physical]).to match_array ['blah blah']
       end
       it "should have a value for each extent element" do
         m = "<mods #{@ns_decl}>
@@ -80,30 +80,30 @@ describe GDor::Indexer::ModsFields do
           </physicalDescription>
           <physicalDescription><extent>three</extent></physicalDescription>
         </mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-        sdb.doc_hash_from_mods[:physical].should == ['one', 'two', 'three']
+        expect(sdb.doc_hash_from_mods[:physical]).to match_array ['one', 'two', 'three']
       end
       it "should not be present when there is no top level <physicalDescription> element" do
         m = "<mods #{@ns_decl}><relatedItem><physicalDescription><extent>foo</extent></physicalDescription></relatedItem></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        sdb.doc_hash_from_mods[:physical].should == nil
+        expect(sdb.doc_hash_from_mods[:physical]).to be_nil
       end
       it "should not be present if there are only empty physicalDescription or extent elements in the MODS" do
         m = "<mods #{@ns_decl}><physicalDescription/><physicalDescription><extent/></physicalDescription><note>notit</note></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-        sdb.doc_hash_from_mods[:physical].should ==  nil
+        expect(sdb.doc_hash_from_mods[:physical]).to be_nil
       end      
     end # physical field from physicalDescription/extent
 
     context "url_suppl solr field from /mods/relatedItem/location/url" do
       it "should be populated when the MODS has mods/relatedItem/location/url " do
         m = "<mods #{@ns_decl}><relatedItem><location><url>url.org</url></location></relatedItem></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-        sdb.doc_hash_from_mods[:url_suppl].should == ['url.org']
+        expect(sdb.doc_hash_from_mods[:url_suppl]).to match_array ['url.org']
       end
       it "should have a value for each mods/relatedItem/location/url element" do
         m = "<mods #{@ns_decl}>
@@ -116,24 +116,24 @@ describe GDor::Indexer::ModsFields do
           </relatedItem>
           <relatedItem><location><url>four</url></location></relatedItem>
         </mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-        sdb.doc_hash_from_mods[:url_suppl].should == ['one', 'two', 'three', 'four']
+        expect(sdb.doc_hash_from_mods[:url_suppl]).to match_array ['one', 'two', 'three', 'four']
       end
       it "should not be populated from /mods/location/url element" do
         m = "<mods #{@ns_decl}><location><url>hi</url></location></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        sdb.doc_hash_from_mods[:url_suppl].should == nil
+        expect(sdb.doc_hash_from_mods[:url_suppl]).to be_nil
       end
       it "should not be present if there are only empty relatedItem/location/url elements in the MODS" do
         m = "<mods #{@ns_decl}>
           <relatedItem><location><url/></location></relatedItem>
           <relatedItem><location/></relatedItem>
           <relatedItem/><note>notit</note></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-        sdb.doc_hash_from_mods[:url_suppl].should ==  nil
+        expect(sdb.doc_hash_from_mods[:url_suppl]).to be_nil
       end      
     end
 
@@ -143,21 +143,21 @@ describe GDor::Indexer::ModsFields do
         <tableOfContents>one</tableOfContents>
         <tableOfContents>two</tableOfContents>
         </mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-        sdb.doc_hash_from_mods[:toc_search].should == ['one', 'two']
+        expect(sdb.doc_hash_from_mods[:toc_search]).to match_array ['one', 'two']
       end
       it "should not be present when there is no top level <tableOfContents> element" do
         m = "<mods #{@ns_decl}><relatedItem><tableOfContents>foo</tableOfContents></relatedItem></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        sdb.doc_hash_from_mods[:toc_search].should == nil
+        expect(sdb.doc_hash_from_mods[:toc_search]).to be_nil
       end
       it "should not be present if there are only empty tableOfContents elements in the MODS" do
         m = "<mods #{@ns_decl}><tableOfContents/><note>notit</note></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)) 
-        sdb.doc_hash_from_mods[:toc_search].should ==  nil
+        expect(sdb.doc_hash_from_mods[:toc_search]).to be_nil
       end      
     end
 
@@ -165,43 +165,43 @@ describe GDor::Indexer::ModsFields do
       context "format_main_ssim" do
         it "should call #format_main_ssim method" do
           m = "<mods #{@ns_decl}><note>nope</typeOfResource></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           expect(sdb).to receive(:format_main_ssim)
           sdb.doc_hash_from_mods[:format_main_ssim]
         end
         it "should have a value when MODS data provides" do
           m = "<mods #{@ns_decl}><typeOfResource>software, multimedia</typeOfResource><genre>dataset</genre></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-          sdb.doc_hash_from_mods[:format_main_ssim].should == ['Dataset']
+          expect(sdb.doc_hash_from_mods[:format_main_ssim]).to match_array ['Dataset']
         end
         it "should return empty Array if there is no value" do
           m = "<mods #{@ns_decl}><note>nope</typeOfResource></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-          sdb.doc_hash_from_mods[:format_main_ssim].should == []
+          expect(sdb.doc_hash_from_mods[:format_main_ssim]).to eq([])
         end
       end
       context "format Solr field" do
         it "should call #format method" do
           m = "<mods #{@ns_decl}><note>nope</typeOfResource></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           expect(sdb).to receive(:format)
           sdb.doc_hash_from_mods[:format]
         end
         it "should have a value when MODS data provides" do
           m = "<mods #{@ns_decl}><typeOfResource>software, multimedia</typeOfResource></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-          sdb.doc_hash_from_mods[:format].should == ['Computer File']
+          expect(sdb.doc_hash_from_mods[:format]).to match_array ['Computer File']
         end
         it "should return empty Array if there is no value" do
           m = "<mods #{@ns_decl}><note>nope</typeOfResource></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-          sdb.doc_hash_from_mods[:format].should == []
+          expect(sdb.doc_hash_from_mods[:format]).to eq([])
         end
       end
     end
@@ -216,45 +216,45 @@ describe GDor::Indexer::ModsFields do
         @ng_title_mods = Nokogiri::XML(title_mods)
       end
       before(:each) do
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_title_mods)
+        allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(@ng_title_mods)
         @title_doc_hash = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash_from_mods
       end
       it "should call the appropriate methods in the stanford-mods gem to populate the fields" do
         sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
         smr = sdb.smods_rec
-        smr.should_receive(:sw_short_title).at_least(:once)
-        smr.should_receive(:sw_full_title).at_least(:once)
-        smr.should_receive(:sw_title_display)
-        smr.should_receive(:sw_addl_titles)
-        smr.should_receive(:sw_sort_title)
+        expect(smr).to receive(:sw_short_title).at_least(:once)
+        expect(smr).to receive(:sw_full_title).at_least(:once)
+        expect(smr).to receive(:sw_title_display)
+        expect(smr).to receive(:sw_addl_titles)
+        expect(smr).to receive(:sw_sort_title)
         sdb.doc_hash_from_mods
       end
       context "search fields" do
         it "title_245a_search" do
-          @title_doc_hash[:title_245a_search].should == "The Jerk"
+          expect(@title_doc_hash[:title_245a_search]).to eq("The Jerk")
         end
         it "title_245_search" do
-          @title_doc_hash[:title_245_search].should == "The Jerk : is whom?"
+          expect(@title_doc_hash[:title_245_search]).to eq("The Jerk : is whom?")
         end
         it "title_variant_search" do
-          @title_doc_hash[:title_variant_search].should == ["Joke", "Alternative"]
+          expect(@title_doc_hash[:title_variant_search]).to match_array ["Joke", "Alternative"]
         end
         it "title_related_search should not be populated from MODS" do
-          @title_doc_hash[:title_related_search].should == nil
+          expect(@title_doc_hash[:title_related_search]).to be_nil
         end
       end
       context "display fields" do
         it "title_display" do
-          @title_doc_hash[:title_display].should == "The Jerk : is whom?"
+          expect(@title_doc_hash[:title_display]).to eq("The Jerk : is whom?")
         end
         it "title_245a_display" do
-          @title_doc_hash[:title_245a_display].should == "The Jerk"
+          expect(@title_doc_hash[:title_245a_display]).to eq("The Jerk")
         end
         it "title_245c_display should not be populated from MODS" do
-          @title_doc_hash[:title_245c_display].should == nil
+          expect(@title_doc_hash[:title_245c_display]).to be_nil
         end
         it "title_full_display" do
-          @title_doc_hash[:title_full_display].should == "The Jerk : is whom?"
+          expect(@title_doc_hash[:title_full_display]).to eq("The Jerk : is whom?")
         end
         it 'should remove trailing commas in title_display' do
           title_mods = "<mods #{@ns_decl}>
@@ -263,17 +263,17 @@ describe GDor::Indexer::ModsFields do
           <titleInfo type='alternative'><title>Alternative</title></titleInfo>
           </mods>"
           ng_title_mods = Nokogiri::XML(title_mods)
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(ng_title_mods)
+          allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(ng_title_mods)
           @title_doc_hash = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash_from_mods
           @title_doc_hash
-          @title_doc_hash[:title_display].should == "The Jerk : is whom"
+          expect(@title_doc_hash[:title_display]).to eq("The Jerk : is whom")
         end
         it "title_variant_display should not be populated - it is a copy field" do
-          @title_doc_hash[:title_variant_display].should == nil
+          expect(@title_doc_hash[:title_variant_display]).to be_nil
         end
       end
       it "title_sort" do
-        @title_doc_hash[:title_sort].should == "Jerk is whom"
+        expect(@title_doc_hash[:title_sort]).to eq("Jerk is whom")
       end
     end # title fields  
 
@@ -297,57 +297,57 @@ describe GDor::Indexer::ModsFields do
         @ng_name_mods = Nokogiri::XML(name_mods)
       end
       before(:each) do
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_name_mods)
+        allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(@ng_name_mods)
         @author_doc_hash = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash_from_mods
       end
       it "should call the appropriate methods in the stanford-mods gem to populate the fields" do
         sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
         smr = sdb.smods_rec
-        smr.should_receive(:sw_main_author)
-        smr.should_receive(:sw_addl_authors)
-        smr.should_receive(:sw_person_authors).exactly(3).times
-        smr.should_receive(:sw_impersonal_authors)
-        smr.should_receive(:sw_corporate_authors)
-        smr.should_receive(:sw_meeting_authors)
-        smr.should_receive(:sw_sort_author)
+        expect(smr).to receive(:sw_main_author)
+        expect(smr).to receive(:sw_addl_authors)
+        expect(smr).to receive(:sw_person_authors).exactly(3).times
+        expect(smr).to receive(:sw_impersonal_authors)
+        expect(smr).to receive(:sw_corporate_authors)
+        expect(smr).to receive(:sw_meeting_authors)
+        expect(smr).to receive(:sw_sort_author)
         sdb.doc_hash_from_mods
       end
       context "search fields" do
         it "author_1xx_search" do
-          @author_doc_hash[:author_1xx_search].should == "Crusty The Clown"
+          expect(@author_doc_hash[:author_1xx_search]).to eq("Crusty The Clown")
         end
         it "author_7xx_search" do
           pending "Should this return all authors? or only 7xx authors?"
-          @author_doc_hash[:author_7xx_search].should == ["q", "Watchful Eye", "Exciting Prints", "conference"]
+          expect(@author_doc_hash[:author_7xx_search]).to match_array ["q", "Watchful Eye", "Exciting Prints", "conference"]
         end
         it "author_8xx_search should not be populated from MODS" do
-          @author_doc_hash[:author_8xx_search].should == nil
+          expect(@author_doc_hash[:author_8xx_search]).to be_nil
         end
       end
       context "facet fields" do
         it "author_person_facet" do
-          @author_doc_hash[:author_person_facet].should == ["q", "Crusty The Clown"]
+          expect(@author_doc_hash[:author_person_facet]).to match_array ["q", "Crusty The Clown"]
         end
         it "author_other_facet" do
-          @author_doc_hash[:author_other_facet].should == ["Watchful Eye", "Exciting Prints", "conference"]
+          expect(@author_doc_hash[:author_other_facet]).to match_array ["Watchful Eye", "Exciting Prints", "conference"]
         end
       end
       context "display fields" do
         it "author_person_display" do
-          @author_doc_hash[:author_person_display].should == ["q", "Crusty The Clown"]
+          expect(@author_doc_hash[:author_person_display]).to match_array ["q", "Crusty The Clown"]
         end
         it "author_person_full_display" do
-          @author_doc_hash[:author_person_full_display].should == ["q", "Crusty The Clown"]
+          expect(@author_doc_hash[:author_person_full_display]).to match_array ["q", "Crusty The Clown"]
         end
         it "author_corp_display" do
-          @author_doc_hash[:author_corp_display].should == ["Watchful Eye", "Exciting Prints"]
+          expect(@author_doc_hash[:author_corp_display]).to match_array ["Watchful Eye", "Exciting Prints"]
         end
         it "author_meeting_display" do
-          @author_doc_hash[:author_meeting_display].should == ["conference"]
+          expect(@author_doc_hash[:author_meeting_display]).to match_array ["conference"]
         end
       end
       it "author_sort" do
-        @author_doc_hash[:author_sort].should == "Crusty The Clown"
+        expect(@author_doc_hash[:author_sort]).to eq("Crusty The Clown")
       end
     end # author fields
 
@@ -383,43 +383,43 @@ describe GDor::Indexer::ModsFields do
         @ng_mods_no_subject = Nokogiri::XML(m_no_subject)
       end
       before(:each) do
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_subject_mods)
+        allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(@ng_subject_mods)
         @subject_doc_hash = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, nil).doc_hash_from_mods
       end
       it "should call the appropriate methods in stanford-mods to populate the Solr fields" do
         sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        sdb.smods_rec.should_receive(:topic_search)
-        sdb.smods_rec.should_receive(:geographic_search)
-        sdb.smods_rec.should_receive(:subject_other_search)
-        sdb.smods_rec.should_receive(:subject_other_subvy_search)
-        sdb.smods_rec.should_receive(:subject_all_search)
-        sdb.smods_rec.should_receive(:topic_facet)
-        sdb.smods_rec.should_receive(:geographic_facet)
-        sdb.smods_rec.should_receive(:era_facet)
+        expect(sdb.smods_rec).to receive(:topic_search)
+        expect(sdb.smods_rec).to receive(:geographic_search)
+        expect(sdb.smods_rec).to receive(:subject_other_search)
+        expect(sdb.smods_rec).to receive(:subject_other_subvy_search)
+        expect(sdb.smods_rec).to receive(:subject_all_search)
+        expect(sdb.smods_rec).to receive(:topic_facet)
+        expect(sdb.smods_rec).to receive(:geographic_facet)
+        expect(sdb.smods_rec).to receive(:era_facet)
         sdb.doc_hash_from_mods
       end
       context "search fields" do
         context "topic_search" do
           it "should only include genre and topic" do
-            @subject_doc_hash[:topic_search].should == [@genre, @topic]
+            expect(@subject_doc_hash[:topic_search]).to match_array [@genre, @topic]
           end
           context "functional tests checking results from stanford-mods methods" do
             it "should be nil if there are no values in the MODS" do
-              @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_no_subject)
+              allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(@ng_mods_no_subject)
               sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-              sdb.doc_hash_from_mods[:topic_search].should == nil
+              expect(sdb.doc_hash_from_mods[:topic_search]).to be_nil
             end
             it "should not be nil if there are only subject/topic elements (no <genre>)" do
               m = "<mods #{@ns_decl}><subject><topic>#{@topic}</topic></subject></mods>"
-              @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+              allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
               sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-              sdb.doc_hash_from_mods[:topic_search].should == [@topic]
+              expect(sdb.doc_hash_from_mods[:topic_search]).to match_array [@topic]
             end
             it "should not be nil if there are only <genre> elements (no subject/topic elements)" do
               m = "<mods #{@ns_decl}><genre>#{@genre}</genre></mods>"
-              @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+              allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
               sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-              sdb.doc_hash_from_mods[:topic_search].should == [@genre]
+              expect(sdb.doc_hash_from_mods[:topic_search]).to match_array [@genre]
             end
             it "should have a separate value for each topic subelement" do
               m = "<mods #{@ns_decl}>
@@ -429,60 +429,60 @@ describe GDor::Indexer::ModsFields do
               </subject>
               <subject><topic>third</topic></subject>
               </mods>"
-              @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+              allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
               sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-              sdb.doc_hash_from_mods[:topic_search].should == ['first', 'second', 'third']
+              expect(sdb.doc_hash_from_mods[:topic_search]).to match_array ['first', 'second', 'third']
             end
           end # functional tests checking results from stanford-mods methods
         end # topic_search
 
         context "geographic_search" do
           it "should include geographic and hierarchicalGeographic" do
-            @subject_doc_hash[:geographic_search].should == [@geo, @hier_geo_country]
+            expect(@subject_doc_hash[:geographic_search]).to match_array [@geo, @hier_geo_country]
           end
           it "should call sw_geographic_search (from stanford-mods gem)" do
             m = "<mods #{@ns_decl}><subject><geographic>#{@geo}</geographic></subject></mods>"
-            @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+            allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
             sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-            sdb.smods_rec.should_receive(:sw_geographic_search).at_least(1).times
+            expect(sdb.smods_rec).to receive(:sw_geographic_search).at_least(1).times
             sdb.doc_hash_from_mods
           end
           it "should log an info message when it encounters a geographicCode encoding it doesn't translate" do
             m = "<mods #{@ns_decl}><subject><geographicCode authority='iso3166'>ca</geographicCode></subject></mods>"
-            @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+            allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
             sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-            sdb.smods_rec.sw_logger.should_receive(:info).with(/#{@fake_druid} has subject geographicCode element with untranslated encoding \(iso3166\): <geographicCode authority=.*>ca<\/geographicCode>/).at_least(1).times
+            expect(sdb.smods_rec.sw_logger).to receive(:info).with(/#{@fake_druid} has subject geographicCode element with untranslated encoding \(iso3166\): <geographicCode authority=.*>ca<\/geographicCode>/).at_least(1).times
             sdb.doc_hash_from_mods
           end
         end # geographic_search
 
         context "subject_other_search" do
           it "should include occupation, subject names, and subject titles" do
-            @subject_doc_hash[:subject_other_search].should == [@occupation, @s_name, @s_title]
+            expect(@subject_doc_hash[:subject_other_search]).to match_array [@occupation, @s_name, @s_title]
           end
           context "functional tests checking results from stanford-mods methods" do
             it "should be nil if there are no values in the MODS" do
-              @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_no_subject)
+              allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(@ng_mods_no_subject)
               sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-              sdb.doc_hash_from_mods[:subject_other_search].should == nil
+              expect(sdb.doc_hash_from_mods[:subject_other_search]).to be_nil
             end
             it "should not be nil if there are only subject/name elements" do
               m = "<mods #{@ns_decl}><subject><name><namePart>#{@s_name}</namePart></name></subject></mods>"
-              @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+              allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
               sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-              sdb.doc_hash_from_mods[:subject_other_search].should == [@s_name]
+              expect(sdb.doc_hash_from_mods[:subject_other_search]).to match_array [@s_name]
             end
             it "should not be nil if there are only subject/occupation elements" do
               m = "<mods #{@ns_decl}><subject><occupation>#{@occupation}</occupation></subject></mods>"
-              @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+              allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
               sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-              sdb.doc_hash_from_mods[:subject_other_search].should == [@occupation]
+              expect(sdb.doc_hash_from_mods[:subject_other_search]).to match_array [@occupation]
             end
             it "should not be nil if there are only subject/titleInfo elements" do
               m = "<mods #{@ns_decl}><subject><titleInfo><title>#{@s_title}</title></titleInfo></subject></mods>"
-              @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+              allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
               sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-              sdb.doc_hash_from_mods[:subject_other_search].should == [@s_title]
+              expect(sdb.doc_hash_from_mods[:subject_other_search]).to match_array [@s_title]
             end
             it "should have a separate value for each occupation subelement" do
               m = "<mods #{@ns_decl}>
@@ -492,34 +492,34 @@ describe GDor::Indexer::ModsFields do
               </subject>
               <subject><occupation>third</occupation></subject>
               </mods>"
-              @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+              allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
               sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-              sdb.doc_hash_from_mods[:subject_other_search].should == ['first', 'second', 'third']
+              expect(sdb.doc_hash_from_mods[:subject_other_search]).to match_array ['first', 'second', 'third']
             end
           end # functional tests checking results from stanford-mods methods
         end # subject_other_search
 
         context "subject_other_subvy_search" do
           it "should include temporal and genre SUBelement" do
-            @subject_doc_hash[:subject_other_subvy_search].should == [@temporal, @s_genre]
+            expect(@subject_doc_hash[:subject_other_subvy_search]).to match_array [@temporal, @s_genre]
           end
           context "functional tests checking results from stanford-mods methods" do
             it "should be nil if there are no values in the MODS" do
-              @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_no_subject)
+              allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(@ng_mods_no_subject)
               sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-              sdb.doc_hash_from_mods[:subject_other_subvy_search].should == nil
+              expect(sdb.doc_hash_from_mods[:subject_other_subvy_search]).to be_nil
             end
             it "should not be nil if there are only subject/temporal elements (no subject/genre)" do
               m = "<mods #{@ns_decl}><subject><temporal>#{@temporal}</temporal></subject></mods>"
-              @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+              allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
               sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-              sdb.doc_hash_from_mods[:subject_other_subvy_search].should == [@temporal]
+              expect(sdb.doc_hash_from_mods[:subject_other_subvy_search]).to match_array [@temporal]
             end
             it "should not be nil if there are only subject/genre elements (no subject/temporal)" do
               m = "<mods #{@ns_decl}><subject><genre>#{@s_genre}</genre></subject></mods>"
-              @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+              allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
               sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-              sdb.doc_hash_from_mods[:subject_other_subvy_search].should == [@s_genre]
+              expect(sdb.doc_hash_from_mods[:subject_other_subvy_search]).to match_array [@s_genre]
             end
             context "genre subelement" do
               it "should have a separate value for each genre element" do
@@ -530,9 +530,9 @@ describe GDor::Indexer::ModsFields do
                 </subject>
                 <subject><genre>third</genre></subject>
                 </mods>"
-                @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+                allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
                 sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-                sdb.doc_hash_from_mods[:subject_other_subvy_search].should == ['first', 'second', 'third']
+                expect(sdb.doc_hash_from_mods[:subject_other_subvy_search]).to match_array ['first', 'second', 'third']
               end
             end # genre subelement
           end # "functional tests checking results from stanford-mods methods"
@@ -540,23 +540,23 @@ describe GDor::Indexer::ModsFields do
 
         context "subject_all_search" do
           it "should contain top level <genre> element data" do
-            @subject_doc_hash[:subject_all_search].should include(@genre)
+            expect(@subject_doc_hash[:subject_all_search]).to include(@genre)
           end
           it "should not contain cartographic sub element" do
-            @subject_doc_hash[:subject_all_search].should_not include(@cart_coord)
+            expect(@subject_doc_hash[:subject_all_search]).not_to include(@cart_coord)
           end
           it "should not include codes from hierarchicalGeographic sub element" do
-            @subject_doc_hash[:subject_all_search].should_not include(@geo_code)
+            expect(@subject_doc_hash[:subject_all_search]).not_to include(@geo_code)
           end
           it "should contain all other subject subelement data" do
-            @subject_doc_hash[:subject_all_search].should include(@s_genre)
-            @subject_doc_hash[:subject_all_search].should include(@geo)
-            @subject_doc_hash[:subject_all_search].should include(@hier_geo_country)
-            @subject_doc_hash[:subject_all_search].should include(@s_name)
-            @subject_doc_hash[:subject_all_search].should include(@occupation)
-            @subject_doc_hash[:subject_all_search].should include(@temporal)
-            @subject_doc_hash[:subject_all_search].should include(@s_title)
-            @subject_doc_hash[:subject_all_search].should include(@topic)
+            expect(@subject_doc_hash[:subject_all_search]).to include(@s_genre)
+            expect(@subject_doc_hash[:subject_all_search]).to include(@geo)
+            expect(@subject_doc_hash[:subject_all_search]).to include(@hier_geo_country)
+            expect(@subject_doc_hash[:subject_all_search]).to include(@s_name)
+            expect(@subject_doc_hash[:subject_all_search]).to include(@occupation)
+            expect(@subject_doc_hash[:subject_all_search]).to include(@temporal)
+            expect(@subject_doc_hash[:subject_all_search]).to include(@s_title)
+            expect(@subject_doc_hash[:subject_all_search]).to include(@topic)
           end
         end # subject_all_search
       end # search fields
@@ -564,16 +564,16 @@ describe GDor::Indexer::ModsFields do
       context "facet fields" do
         context "topic_facet" do
           it "should include topic subelement" do
-            @subject_doc_hash[:topic_facet].should include(@topic)
+            expect(@subject_doc_hash[:topic_facet]).to include(@topic)
           end
           it "should include sw_subject_names" do
-            @subject_doc_hash[:topic_facet].should include(@s_name)
+            expect(@subject_doc_hash[:topic_facet]).to include(@s_name)
           end
           it "should include sw_subject_titles" do
-            @subject_doc_hash[:topic_facet].should include(@s_title)
+            expect(@subject_doc_hash[:topic_facet]).to include(@s_title)
           end
           it "should include occupation subelement" do
-            @subject_doc_hash[:topic_facet].should include(@occupation)
+            expect(@subject_doc_hash[:topic_facet]).to include(@occupation)
           end
           it "should have the trailing punctuation removed" do
             m = "<mods #{@ns_decl}><subject>
@@ -582,19 +582,19 @@ describe GDor::Indexer::ModsFields do
             <titleInfo><title>backslash \\</title></titleInfo>
             <name><namePart>internal, punct;uation</namePart></name>
             </subject></mods>"
-            @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+            allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
             sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
             doc_hash = sdb.doc_hash_from_mods
-            doc_hash[:topic_facet].should include('comma')
-            doc_hash[:topic_facet].should include('semicolon')
-            doc_hash[:topic_facet].should include('backslash')
-            doc_hash[:topic_facet].should include('internal, punct;uation')
+            expect(doc_hash[:topic_facet]).to include('comma')
+            expect(doc_hash[:topic_facet]).to include('semicolon')
+            expect(doc_hash[:topic_facet]).to include('backslash')
+            expect(doc_hash[:topic_facet]).to include('internal, punct;uation')
           end
         end # topic_facet
         
         context "geographic_facet" do
           it "should include geographic subelement" do
-            @subject_doc_hash[:geographic_facet].should include(@geo)
+            expect(@subject_doc_hash[:geographic_facet]).to include(@geo)
           end
           it "should be like geographic_search with the trailing punctuation (and preceding spaces) removed" do
             m = "<mods #{@ns_decl}><subject>
@@ -603,13 +603,13 @@ describe GDor::Indexer::ModsFields do
             <geographic>backslash \\</geographic>
             <geographic>internal, punct;uation</geographic>
             </subject></mods>"
-            @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+            allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
             sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
             doc_hash = sdb.doc_hash_from_mods
-            doc_hash[:geographic_facet].should include('comma')
-            doc_hash[:geographic_facet].should include('semicolon')
-            doc_hash[:geographic_facet].should include('backslash')
-            doc_hash[:geographic_facet].should include('internal, punct;uation')
+            expect(doc_hash[:geographic_facet]).to include('comma')
+            expect(doc_hash[:geographic_facet]).to include('semicolon')
+            expect(doc_hash[:geographic_facet]).to include('backslash')
+            expect(doc_hash[:geographic_facet]).to include('internal, punct;uation')
           end
         end
 
@@ -620,13 +620,13 @@ describe GDor::Indexer::ModsFields do
           <temporal>backslash \\</temporal>
           <temporal>internal, punct;uation</temporal>
           </subject></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           doc_hash = sdb.doc_hash_from_mods
-          doc_hash[:era_facet].should include('comma')
-          doc_hash[:era_facet].should include('semicolon')
-          doc_hash[:era_facet].should include('backslash')
-          doc_hash[:era_facet].should include('internal, punct;uation')
+          expect(doc_hash[:era_facet]).to include('comma')
+          expect(doc_hash[:era_facet]).to include('semicolon')
+          expect(doc_hash[:era_facet]).to include('backslash')
+          expect(doc_hash[:era_facet]).to include('internal, punct;uation')
         end
       end # facet fields
     end # subject fields
@@ -636,42 +636,42 @@ describe GDor::Indexer::ModsFields do
         m = "<mods #{@ns_decl}><originInfo>
               <dateIssued>13th century AH / 19th CE</dateIssued>
             </originInfo></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         doc_hash = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash_from_mods
-        doc_hash[:pub_date].should == '19th century'
-        doc_hash[:pub_date_sort].should == '1800'
-        doc_hash[:publication_year_isi].should == '1800'
-        doc_hash[:pub_year_tisim].should == '1800' # date slider
-        doc_hash[:pub_date_display].should == '13th century AH / 19th CE'
-        doc_hash[:imprint_display].should == '13th century AH / 19th CE'
+        expect(doc_hash[:pub_date]).to eq('19th century')
+        expect(doc_hash[:pub_date_sort]).to eq('1800')
+        expect(doc_hash[:publication_year_isi]).to eq('1800')
+        expect(doc_hash[:pub_year_tisim]).to eq('1800') # date slider
+        expect(doc_hash[:pub_date_display]).to eq('13th century AH / 19th CE')
+        expect(doc_hash[:imprint_display]).to eq('13th century AH / 19th CE')
       end
       it 'should not populate the date slider for BC dates' do
         m = "<mods #{@ns_decl}><originInfo><dateIssued>199 B.C.</dateIssued></originInfo></mods>"
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+        allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
         doc_hash = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash_from_mods
-        doc_hash.has_key?(:pub_year_tisim).should == false
+        expect(doc_hash).to_not have_key(:pub_year_tisim)
       end
       
       context 'pub_date_sort integration tests' do
         before :each do
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML("<mods #{@ns_decl}> </mods>"))
+          allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML("<mods #{@ns_decl}> </mods>"))
           @sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
         end
         it 'should work on normal dates' do
-          @sdb.smods_rec.stub(:pub_date).and_return('1945')
-          @sdb.doc_hash_from_mods[:pub_date_sort].should == '1945'
+          allow(@sdb.smods_rec).to receive(:pub_date).and_return('1945')
+          expect(@sdb.doc_hash_from_mods[:pub_date_sort]).to eq('1945')
         end
         it 'should work on 3 digit dates' do
-          @sdb.smods_rec.stub(:pub_date).and_return('945')
-          @sdb.doc_hash_from_mods[:pub_date_sort].should == '0945'
+          allow(@sdb.smods_rec).to receive(:pub_date).and_return('945')
+          expect(@sdb.doc_hash_from_mods[:pub_date_sort]).to eq('0945')
         end
         it 'should work on century dates' do
-          @sdb.smods_rec.stub(:pub_date).and_return('16--')
-          @sdb.doc_hash_from_mods[:pub_date_sort].should == '1600'
+          allow(@sdb.smods_rec).to receive(:pub_date).and_return('16--')
+          expect(@sdb.doc_hash_from_mods[:pub_date_sort]).to eq('1600')
         end
         it 'should work on 3 digit century dates' do
-          @sdb.smods_rec.stub(:pub_date).and_return('9--')
-          @sdb.doc_hash_from_mods[:pub_date_sort].should == '0900'
+          allow(@sdb.smods_rec).to receive(:pub_date).and_return('9--')
+          expect(@sdb.doc_hash_from_mods[:pub_date_sort]).to eq('0900')
         end
       end # pub_date_sort
 
@@ -680,57 +680,57 @@ describe GDor::Indexer::ModsFields do
           m = "<mods #{@ns_decl}><originInfo>
           <dateCreated>1904</dateCreated>
           </originInfo></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           doc_hash = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash_from_mods
-          doc_hash[:pub_year_tisim].should == '1904'
+          expect(doc_hash[:pub_year_tisim]).to eq('1904')
         end
         it "should correctly parse a ranged date" do
           m = "<mods #{@ns_decl}><originInfo>
                 <dateCreated>Text dated June 4, 1594; miniatures added by 1596</dateCreated>
               </originInfo></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           doc_hash = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash_from_mods
-          doc_hash[:pub_year_tisim].should == '1594'
+          expect(doc_hash[:pub_year_tisim]).to eq('1594')
         end
         it "should find year in an expanded English form" do
           m = "<mods #{@ns_decl}><originInfo>
                 <dateCreated>Aug. 3rd, 1886</dateCreated>
               </originInfo></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           doc_hash = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash_from_mods
-          doc_hash[:pub_year_tisim].should == '1886'
+          expect(doc_hash[:pub_year_tisim]).to eq('1886')
         end
         it "should remove question marks and brackets" do
           m = "<mods #{@ns_decl}><originInfo>
                 <dateCreated>Aug. 3rd, [18]86?</dateCreated>
               </originInfo></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           doc_hash = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash_from_mods
-          doc_hash[:pub_year_tisim].should == '1886'
+          expect(doc_hash[:pub_year_tisim]).to eq('1886')
         end
         it 'should ignore an s after the decade' do
           m = "<mods #{@ns_decl}><originInfo>
                 <dateCreated>early 1890s</dateCreated>
               </originInfo></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           doc_hash = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash_from_mods
-          doc_hash[:pub_year_tisim].should == '1890'
+          expect(doc_hash[:pub_year_tisim]).to eq('1890')
         end
         it 'should choose a date ending with CE if there are multiple dates' do
           m = "<mods #{@ns_decl}><originInfo>
                 <dateIssued>7192 AM (li-Adam) / 1684 CE</dateIssued>
               </originInfo></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           doc_hash = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash_from_mods
-          doc_hash[:pub_year_tisim].should == '1684'
+          expect(doc_hash[:pub_year_tisim]).to eq('1684')
         end
         it 'should take first year from hyphenated range (for now)' do
           m = "<mods #{@ns_decl}><originInfo>
                 <dateIssued>1282 AH / 1865-6 CE</dateIssued>
               </originInfo></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           doc_hash = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio)).doc_hash_from_mods
-          doc_hash[:pub_year_tisim].should == '1865'
+          expect(doc_hash[:pub_year_tisim]).to eq('1865')
         end
       end # pub_year_tisim method
 
@@ -745,89 +745,89 @@ describe GDor::Indexer::ModsFields do
                 <dateCreated>1905</dateCreated>
                 <dateIssued>1906</dateIssued>
               </originInfo></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           doc_hash = sdb.doc_hash_from_mods
-          doc_hash[:pub_date_sort].should == '1904'
-          doc_hash[:pub_year_tisim].should == '1904'
-          doc_hash[:pub_date].should == '1904'
-          doc_hash[:pub_year_tisim].should == ['1904','1905','1906']
+          expect(doc_hash[:pub_date_sort]).to eq('1904')
+          expect(doc_hash[:pub_year_tisim]).to eq('1904')
+          expect(doc_hash[:pub_date]).to eq('1904')
+          expect(doc_hash[:pub_year_tisim]).to match_array ['1904','1905','1906']
         end
 
         it 'should handle nnth century dates' do
           m = "<mods #{@ns_decl}><originInfo>
                 <dateIssued>13th century AH / 19th CE</dateIssued>
               </originInfo></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           doc_hash = sdb.doc_hash_from_mods
-          doc_hash[:pub_date].should == '19th century'
-          doc_hash[:pub_date_sort].should =='1800'
-          doc_hash[:pub_year_tisim].should == '1800'
-          doc_hash[:publication_year_isi].should == '1800'
-          doc_hash[:imprint_display].should == '13th century AH / 19th CE'
+          expect(doc_hash[:pub_date]).to eq('19th century')
+          expect(doc_hash[:pub_date_sort]).to eq('1800')
+          expect(doc_hash[:pub_year_tisim]).to eq('1800')
+          expect(doc_hash[:publication_year_isi]).to eq('1800')
+          expect(doc_hash[:imprint_display]).to eq('13th century AH / 19th CE')
         end
         it 'should handle multiple CE dates' do
           m = "<mods #{@ns_decl}><originInfo>
                 <dateIssued>6 Dhu al-Hijjah 923 AH / 1517 CE -- 7 Rabi I 924 AH / 1518 CE</dateIssued>
               </originInfo></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           doc_hash = sdb.doc_hash_from_mods
-          doc_hash[:pub_date_sort].should =='1517'
-          doc_hash[:pub_date].should == '1517'
-          doc_hash[:pub_year_tisim].should == '1517'
+          expect(doc_hash[:pub_date_sort]).to eq('1517')
+          expect(doc_hash[:pub_date]).to eq('1517')
+          expect(doc_hash[:pub_year_tisim]).to eq('1517')
         end
         it 'should handle specific century case from walters' do
           m = "<mods #{@ns_decl}><originInfo>
                 <dateIssued>Late 14th or early 15th century CE</dateIssued>
               </originInfo></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           doc_hash = sdb.doc_hash_from_mods
-          doc_hash[:pub_date_sort].should =='1400'
-          doc_hash[:pub_year_tisim].should =='1400'
-          doc_hash[:publication_year_isi].should == '1400'
-          doc_hash[:pub_date].should == '15th century'
-          doc_hash[:imprint_display].should == 'Late 14th or early 15th century CE'
+          expect(doc_hash[:pub_date_sort]).to eq('1400')
+          expect(doc_hash[:pub_year_tisim]).to eq('1400')
+          expect(doc_hash[:publication_year_isi]).to eq('1400')
+          expect(doc_hash[:pub_date]).to eq('15th century')
+          expect(doc_hash[:imprint_display]).to eq('Late 14th or early 15th century CE')
         end
         it 'should work on explicit 3 digit dates' do
           m = "<mods #{@ns_decl}><originInfo>
                 <dateIssued>966 CE</dateIssued>
               </originInfo></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           doc_hash = sdb.doc_hash_from_mods
-          doc_hash[:pub_date_sort].should =='0966'
-          doc_hash[:pub_date].should == '966'
-          doc_hash[:pub_year_tisim].should == '0966'
-          doc_hash[:publication_year_isi].should == '0966'
-          doc_hash[:imprint_display].should == '966 CE'
+          expect(doc_hash[:pub_date_sort]).to eq('0966')
+          expect(doc_hash[:pub_date]).to eq('966')
+          expect(doc_hash[:pub_year_tisim]).to eq('0966')
+          expect(doc_hash[:publication_year_isi]).to eq('0966')
+          expect(doc_hash[:imprint_display]).to eq('966 CE')
         end
         it 'should work on 3 digit century dates' do
           m = "<mods #{@ns_decl}><originInfo>
                 <dateIssued>3rd century AH / 9th CE</dateIssued>
               </originInfo></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           doc_hash = sdb.doc_hash_from_mods
-          doc_hash[:pub_date_sort].should =='0800'
-          doc_hash[:pub_year_tisim].should =='0800'
-          doc_hash[:pub_date].should == '9th century'
-          doc_hash[:publication_year_isi].should == '0800'
-          doc_hash[:imprint_display].should == '3rd century AH / 9th CE'
+          expect(doc_hash[:pub_date_sort]).to eq('0800')
+          expect(doc_hash[:pub_year_tisim]).to eq('0800')
+          expect(doc_hash[:pub_date]).to eq('9th century')
+          expect(doc_hash[:publication_year_isi]).to eq('0800')
+          expect(doc_hash[:imprint_display]).to eq('3rd century AH / 9th CE')
         end
         it 'should work on 3 digit BC dates' do
           m = "<mods #{@ns_decl}><originInfo>
                 <dateCreated>300 B.C.</dateCreated>
               </originInfo></mods>"
-          @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+          allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
           sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
           doc_hash = sdb.doc_hash_from_mods
-          doc_hash[:pub_date_sort].should =='-700'
-          doc_hash[:pub_year_tisim].should == nil
-          doc_hash[:pub_date].should == '300 B.C.'
-          doc_hash[:imprint_display].should =='300 B.C.'
+          expect(doc_hash[:pub_date_sort]).to eq('-700')
+          expect(doc_hash[:pub_year_tisim]).to be_nil
+          expect(doc_hash[:pub_date]).to eq('300 B.C.')
+          expect(doc_hash[:imprint_display]).to eq('300 B.C.')
           # doc_hash[:creation_year_isi].should =='-300'
         end
       end # difficult pub dates
@@ -838,47 +838,47 @@ describe GDor::Indexer::ModsFields do
   context "#format" do
     it "should get format from call to stanford-mods searchworks format method " do
       m = "<mods #{@ns_decl}><typeOfResource>still image</typeOfResouce></mods>"
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
       sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-      sdb.smods_rec.should_receive(:format).and_call_original
-      sdb.format.should == ['Image']
+      expect(sdb.smods_rec).to receive(:format).and_call_original
+      expect(sdb.format).to match_array ['Image']
     end
     it "should return empty Array and log warning if there is no value" do
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+      allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(@ng_mods_xml)
       sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-      sdb.logger.should_receive(:warn).with("#{@fake_druid} has no SearchWorks format from MODS - check <typeOfResource> and other implicated MODS elements")
-      sdb.format.should == []
+      expect(sdb.logger).to receive(:warn).with("#{@fake_druid} has no SearchWorks format from MODS - check <typeOfResource> and other implicated MODS elements")
+      expect(sdb.format).to eq([])
     end
   end # context #format
 
   context "#format_main_ssim" do
     it "should get format_main_ssim from call to stanford-mods searchworks format_main method " do
       m = "<mods #{@ns_decl}><typeOfResource>still image</typeOfResouce></mods>"
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
       sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-      sdb.smods_rec.should_receive(:format_main).and_call_original
-      sdb.format_main_ssim.should == ['Image']
+      expect(sdb.smods_rec).to receive(:format_main).and_call_original
+      expect(sdb.format_main_ssim).to match_array ['Image']
     end
     it "should return empty Array and log warning if there is no value" do
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+      allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(@ng_mods_xml)
       sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-      sdb.logger.should_receive(:warn).with("#{@fake_druid} has no SearchWorks Resource Type from MODS - check <typeOfResource> and other implicated MODS elements")
-      sdb.format_main_ssim.should == []
+      expect(sdb.logger).to receive(:warn).with("#{@fake_druid} has no SearchWorks Resource Type from MODS - check <typeOfResource> and other implicated MODS elements")
+      expect(sdb.format_main_ssim).to eq([])
     end
   end # context format_main_ssim
 
   context "genre_ssim" do
     it "should get genre_ssim from call to stanford-mods searchworks sw_genre method " do
       m = "<mods #{@ns_decl}><genre>technical report</genre></mods>"
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
+      allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
       sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-      sdb.smods_rec.should_receive(:sw_genre).and_call_original
-      sdb.genre_ssim.should == ['Technical report']
+      expect(sdb.smods_rec).to receive(:sw_genre).and_call_original
+      expect(sdb.genre_ssim).to match_array ['Technical report']
     end
     it "should return empty Array if there is no value" do
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+      allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(@ng_mods_xml)
       sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-      sdb.genre_ssim.should == []
+      expect(sdb.genre_ssim).to eq([])
     end
   end # context genre_ssim
 

@@ -21,23 +21,23 @@ describe GDor::Indexer::PublicXmlFields do
     end
     before(:each) do
       @hdor_client = double
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
-      @hdor_client.stub(:public_xml).with(@fake_druid).and_return(@ng_pub_xml)
+      allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+      allow(@hdor_client).to receive(:public_xml).with(@fake_druid).and_return(@ng_pub_xml)
       @sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
     end
     context "identity_md" do
       it "identity_md should get the identityMetadata from public_xml, not a separate fetch" do
-        @hdor_client.should_not_receive(:identity_metadata)
-        @sdb.should_receive(:public_xml).and_call_original
+        expect(@hdor_client).not_to receive(:identity_metadata)
+        expect(@sdb).to receive(:public_xml).and_call_original
         identity_md = @sdb.send(:identity_md)
-        identity_md.should be_an_instance_of(Nokogiri::XML::Element)
-        identity_md.name.should == 'identityMetadata'
+        expect(identity_md).to be_an_instance_of(Nokogiri::XML::Element)
+        expect(identity_md.name).to eq('identityMetadata')
 # NOTE:  the below isn't working -- probably due to Nokogiri bug with attributes
 #        identity_md.should be_equivalent_to(@id_md_xml)
       end
       it "should log an error message if there is no identityMetadata" do
-        @sdb.should_receive(:public_xml).and_return(@empty_ng_pub_xml)
-        @sdb.logger.should_receive(:error).with("#{@fake_druid} missing identityMetadata")
+        expect(@sdb).to receive(:public_xml).and_return(@empty_ng_pub_xml)
+        expect(@sdb.logger).to receive(:error).with("#{@fake_druid} missing identityMetadata")
         @sdb.send(:identity_md)
       end
     end
@@ -46,21 +46,21 @@ describe GDor::Indexer::PublicXmlFields do
       it "should return true if identityMetadata has objectType element with value 'collection'" do
         id_md_xml = "<identityMetadata><objectType>collection</objectType></identityMetadata>"
         ng_pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{id_md_xml}</publicObject>")
-        @hdor_client.stub(:public_xml).with(@fake_druid).and_return(ng_pub_xml)
+        allow(@hdor_client).to receive(:public_xml).with(@fake_druid).and_return(ng_pub_xml)
         @sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-        @sdb.coll_object?.should == true
+        expect(@sdb).to be_coll_object
       end
       it "should return false if identityMetadata has objectType element with value other than 'collection'" do
         id_md_xml = "<identityMetadata><objectType>other</objectType></identityMetadata>"
         ng_pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{id_md_xml}</publicObject>")
-        @hdor_client.stub(:public_xml).with(@fake_druid).and_return(ng_pub_xml)
+        allow(@hdor_client).to receive(:public_xml).with(@fake_druid).and_return(ng_pub_xml)
         @sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-        @sdb.coll_object?.should == false
+        expect(@sdb).not_to be_coll_object
       end
       it "should return false if identityMetadata doesn't have an objectType" do
-        @hdor_client.stub(:public_xml).with(@fake_druid).and_return(@ng_pub_xml)
+        allow(@hdor_client).to receive(:public_xml).with(@fake_druid).and_return(@ng_pub_xml)
         @sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
-        @sdb.coll_object?.should == false
+        expect(@sdb).not_to be_coll_object
       end
     end
   end # identityMetadata fields and methods
@@ -76,87 +76,87 @@ describe GDor::Indexer::PublicXmlFields do
     end
     before(:each) do
       @hdor_client = double
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
-      @hdor_client.stub(:public_xml).with(@fake_druid).and_return(@ng_pub_xml)
+      allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+      allow(@hdor_client).to receive(:public_xml).with(@fake_druid).and_return(@ng_pub_xml)
       @sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
     end
 
     context "content_md" do
       it "content_md should get the contentMetadata from public_xml, not a separate fetch" do
-        @hdor_client.should_not_receive(:content_metadata)
-        @sdb.should_receive(:public_xml).and_call_original
+        expect(@hdor_client).not_to receive(:content_metadata)
+        expect(@sdb).to receive(:public_xml).and_call_original
         content_md = @sdb.send(:content_md)
-        content_md.should be_an_instance_of(Nokogiri::XML::Element)
-        content_md.name.should == 'contentMetadata'
+        expect(content_md).to be_an_instance_of(Nokogiri::XML::Element)
+        expect(content_md.name).to eq('contentMetadata')
 # NOTE:  the below isn't working -- probably due to Nokogiri bug with attributes
 #        content_md.should be_equivalent_to(@cntnt_md_xml)
       end
       it "should log an error message if there is no contentMetadata" do
-        @sdb.should_receive(:public_xml).and_return(@empty_ng_pub_xml)
-        @sdb.logger.should_receive(:error).with("#{@fake_druid} missing contentMetadata")
+        expect(@sdb).to receive(:public_xml).and_return(@empty_ng_pub_xml)
+        expect(@sdb.logger).to receive(:error).with("#{@fake_druid} missing contentMetadata")
         @sdb.send(:content_md)
       end
     end
 
     context "dor_content_type" do
       it "should be retreived from the <contentMetadata>" do
-        @sdb.should_receive(:content_md)
+        expect(@sdb).to receive(:content_md)
         @sdb.send(:dor_content_type)
       end
       it "should be the value of the type attribute on <contentMetadata> element" do
         val = 'foo'
         cntnt_md_xml = "<contentMetadata type='#{val}'>#{@content_md_end}"
-        @sdb.should_receive(:content_md).at_least(1).times.and_return(Nokogiri::XML(cntnt_md_xml).root)
-        @sdb.send(:dor_content_type).should == val
+        expect(@sdb).to receive(:content_md).at_least(1).times.and_return(Nokogiri::XML(cntnt_md_xml).root)
+        expect(@sdb.send(:dor_content_type)).to eq(val)
       end
       it "should log an error message if there is no content type" do
         cntnt_md_xml = "#{@content_md_start}#{@content_md_end}"
-        @sdb.should_receive(:content_md).at_least(1).times.and_return(Nokogiri::XML(cntnt_md_xml).root)
-        @sdb.logger.should_receive(:error).with("#{@fake_druid} has no DOR content type (<contentMetadata> element may be missing type attribute)")
+        expect(@sdb).to receive(:content_md).at_least(1).times.and_return(Nokogiri::XML(cntnt_md_xml).root)
+        expect(@sdb.logger).to receive(:error).with("#{@fake_druid} has no DOR content type (<contentMetadata> element may be missing type attribute)")
         @sdb.send(:dor_content_type)
       end
     end
     
     context "display_type" do
       it "should not access the mods to determine the display_type" do
-        @hdor_client.should_not_receive(:mods).with(@fake_druid)
+        expect(@hdor_client).not_to receive(:mods).with(@fake_druid)
         @sdb.display_type
       end
       it "'image' for dor_content_type 'image'" do
-        @sdb.stub(:dor_content_type).and_return('image')
-        @sdb.display_type.should == 'image'
+        allow(@sdb).to receive(:dor_content_type).and_return('image')
+        expect(@sdb.display_type).to eq('image')
       end
       it "'image' for dor_content_type 'manuscript'" do
-        @sdb.stub(:dor_content_type).and_return('manuscript')
-        @sdb.display_type.should == 'image'
+        allow(@sdb).to receive(:dor_content_type).and_return('manuscript')
+        expect(@sdb.display_type).to eq('image')
       end
       it "'image' for dor_content_type 'map'" do
-        @sdb.stub(:dor_content_type).and_return('map')
-        @sdb.display_type.should == 'image'
+        allow(@sdb).to receive(:dor_content_type).and_return('map')
+        expect(@sdb.display_type).to eq('image')
       end
       it "'file' for dor_content_type 'media'" do
-        @sdb.stub(:dor_content_type).and_return('media')
-        @sdb.display_type.should == 'file'
+        allow(@sdb).to receive(:dor_content_type).and_return('media')
+        expect(@sdb.display_type).to eq('file')
       end
       it "'book' for dor_content_type 'book'" do
-        @sdb.stub(:dor_content_type).and_return('book')
-        @sdb.display_type.should == 'book'
+        allow(@sdb).to receive(:dor_content_type).and_return('book')
+        expect(@sdb.display_type).to eq('book')
       end
       it "'file' for unrecognized dor_content_type" do
-        @sdb.stub(:dor_content_type).and_return('foo')
-        @sdb.display_type.should == 'file'
+        allow(@sdb).to receive(:dor_content_type).and_return('foo')
+        expect(@sdb.display_type).to eq('file')
       end
       it "should not be hydrus_xxx for config :add_display_type of 'hydrus'" do
-        GDor::Indexer.stub(:config).and_return({:add_display_type => 'hydrus'})
-        @sdb.display_type.should_not =~ /^hydrus/
+        allow(GDor::Indexer).to receive(:config).and_return({:add_display_type => 'hydrus'})
+        expect(@sdb.display_type).not_to match(/^hydrus/)
       end
     end # display_type
     
     context "#file_ids" do
       before(:each) do
         @hdor_client = double
-        @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
-        @hdor_client.stub(:public_xml).with(@fake_druid).and_return(nil)
+        allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+        allow(@hdor_client).to receive(:public_xml).with(@fake_druid).and_return(nil)
         @sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
       end
       context "file display_type" do
@@ -167,8 +167,8 @@ describe GDor::Indexer::PublicXmlFields do
                 <label>John A. Blume Earthquake Engineering Center Technical Report 180</label>
                 <file id="TR180_Shahi.pdf" mimetype="application/pdf" size="4949212" />
               </resource></contentMetadata>')
-            @sdb.stub(:content_md).and_return(ng_xml.root)
-            @sdb.file_ids.should == ['TR180_Shahi.pdf']
+            allow(@sdb).to receive(:content_md).and_return(ng_xml.root)
+            expect(@sdb.file_ids).to match_array ['TR180_Shahi.pdf']
           end
           it "should be id attrib of file elements in multiple resource elements with type=file" do
             ng_xml = Nokogiri::XML('<contentMetadata objectId="jt108hm9275" type="file">
@@ -188,8 +188,8 @@ describe GDor::Indexer::PublicXmlFields do
                 <label>WTDS Interview: Douglas C. Engelbart, 2006 Apr 13</label>
                 <file id="DougEngelbart041306.wav" mimetype="audio/x-wav" size="273705910" />
               </resource></contentMetadata>')
-            @sdb.stub(:content_md).and_return(ng_xml.root)
-            @sdb.file_ids.should == ['ATE.PDF', "SC0524_2013-047_b8_811.mp4", "SAILDART.zip", "DougEngelbart041306.wav"]
+            allow(@sdb).to receive(:content_md).and_return(ng_xml.root)
+            expect(@sdb.file_ids).to match_array ['ATE.PDF', "SC0524_2013-047_b8_811.mp4", "SAILDART.zip", "DougEngelbart041306.wav"]
           end
         end # contentMetadata type=file, resource type=file
         it "contentMetadata type=geo, resource type=object" do
@@ -204,8 +204,8 @@ describe GDor::Indexer::PublicXmlFields do
                 <imageData height="846" width="919"/>
               </file>
             </resource></contentMetadata>')
-          @sdb.stub(:content_md).and_return(ng_xml.root)
-          @sdb.file_ids.should == ['data.zip', 'preview.jpg']
+          allow(@sdb).to receive(:content_md).and_return(ng_xml.root)
+          expect(@sdb.file_ids).to match_array ['data.zip', 'preview.jpg']
         end
         
         # FIXME:  non-file resource types
@@ -227,8 +227,8 @@ describe GDor::Indexer::PublicXmlFields do
                   <imageData width="7266" height="6188"/>
                 </file>
               </resource></contentMetadata>')
-            @sdb.stub(:content_md).and_return(ng_xml.root)
-            @sdb.file_ids.should == ['rg759wj0953_00_0003.jp2', 'rg759wj0953_00_00_0001.jp2']
+            allow(@sdb).to receive(:content_md).and_return(ng_xml.root)
+            expect(@sdb.file_ids).to match_array ['rg759wj0953_00_0003.jp2', 'rg759wj0953_00_00_0001.jp2']
           end
           it "resource type=object should be ignored" do
             ng_xml = Nokogiri::XML('<contentMetadata objectId="ny981gz0831" type="image">
@@ -238,8 +238,8 @@ describe GDor::Indexer::PublicXmlFields do
                 <file id="da39a3ee5e6b4b0d3255bfef95601890afd80709.img" mimetype="application/x-symlink" size="368640" />
                 <file id="da39a3ee5e6b4b0d3255bfef95601890afd80709.img.sha" mimetype="application/x-symlink" size="173" />
               </resource></contentMetadata>')
-            @sdb.stub(:content_md).and_return(ng_xml.root)
-            @sdb.file_ids.should == nil
+            allow(@sdb).to receive(:content_md).and_return(ng_xml.root)
+            expect(@sdb.file_ids).to be_nil
           end
         end # contentMetadata type=image
         context "contentMetadata type=map, resource type=image" do
@@ -255,8 +255,8 @@ describe GDor::Indexer::PublicXmlFields do
                   <imageData height="7248" width="14787"/>
                 </file>
               </resource></contentMetadata>')
-            @sdb.stub(:content_md).and_return(ng_xml.root)
-            @sdb.file_ids.should == ['rf935xg1061_00_0001.jp2', 'rf935xg1061_00_0002.jp2']
+            allow(@sdb).to receive(:content_md).and_return(ng_xml.root)
+            expect(@sdb.file_ids).to match_array ['rf935xg1061_00_0001.jp2', 'rf935xg1061_00_0002.jp2']
           end
         end # contentMetadata type=map, resource type=image
         context "contentMetadata type=manuscript" do
@@ -275,8 +275,8 @@ describe GDor::Indexer::PublicXmlFields do
                   </file>
                 </resource>
               </contentMetadata>')
-            @sdb.stub(:content_md).and_return(ng_xml.root)
-            @sdb.file_ids.should == ['T0000001.jp2', 'T0000343.jp2']
+            allow(@sdb).to receive(:content_md).and_return(ng_xml.root)
+            expect(@sdb.file_ids).to match_array ['T0000001.jp2', 'T0000343.jp2']
           end
           it "resource type=page should be ignored" do
             ng_xml = Nokogiri::XML('<contentMetadata objectId="druid:Bodley342" type="manuscript">
@@ -292,8 +292,8 @@ describe GDor::Indexer::PublicXmlFields do
                   <imageData height="3431" width="2431"/>
                 </file>
               </resource></contentMetadata>')
-            @sdb.stub(:content_md).and_return(ng_xml.root)
-            @sdb.file_ids.should == nil
+            allow(@sdb).to receive(:content_md).and_return(ng_xml.root)
+            expect(@sdb.file_ids).to be_nil
           end
         end # contentMetadata type=manuscript
       end # image display_type
@@ -312,8 +312,8 @@ describe GDor::Indexer::PublicXmlFields do
               <imageData width="2090" height="2905"/>
             </file>
           </resource></contentMetadata>')
-        @sdb.stub(:content_md).and_return(ng_xml.root)
-        @sdb.file_ids.should == nil
+        allow(@sdb).to receive(:content_md).and_return(ng_xml.root)
+        expect(@sdb.file_ids).to be_nil
       end
       it "should be id attrib of file elements for media display_type" do
         ng_xml = Nokogiri::XML('<contentMetadata objectId="jy496kh1727" type="media">
@@ -327,13 +327,13 @@ describe GDor::Indexer::PublicXmlFields do
               <imageData width="2659" height="2535"/>
             </file>
           </resource></contentMetadata>')
-        @sdb.stub(:content_md).and_return(ng_xml.root)
-        @sdb.file_ids.should == ["jy496kh1727_sl.mp3", "jy496kh1727_img_1.jp2"]
+        allow(@sdb).to receive(:content_md).and_return(ng_xml.root)
+        expect(@sdb.file_ids).to match_array ["jy496kh1727_sl.mp3", "jy496kh1727_img_1.jp2"]
       end
       it "should be nil if there are no <resource> elements in the contentMetadata" do
         ng_xml = Nokogiri::XML('<contentMetadata objectId="jy496kh1727" type="file"></contentMetadata>')
-        @sdb.stub(:content_md).and_return(ng_xml.root)
-        @sdb.file_ids.should == nil
+        allow(@sdb).to receive(:content_md).and_return(ng_xml.root)
+        expect(@sdb.file_ids).to be_nil
       end
       it "should be nil if there are no <file> elements in the contentMetadata" do
         ng_xml = Nokogiri::XML('<contentMetadata objectId="jy496kh1727" type="file">
@@ -343,13 +343,13 @@ describe GDor::Indexer::PublicXmlFields do
           <resource sequence="2" id="jy496kh1727_2" type="image">
             <label>Image of media (1 of 3)</label>
           </resource></contentMetadata>')
-        @sdb.stub(:content_md).and_return(ng_xml.root)
-        @sdb.file_ids.should == nil
+        allow(@sdb).to receive(:content_md).and_return(ng_xml.root)
+        expect(@sdb.file_ids).to be_nil
       end
       it "should be nil if there are no id elements on file elements" do
         ng_xml = Nokogiri::XML("#{@content_md_start}<resource type='image'><file/></resource>#{@content_md_end}")
-        @sdb.stub(:content_md).and_return(ng_xml.root)
-        @sdb.file_ids.should == nil
+        allow(@sdb).to receive(:content_md).and_return(ng_xml.root)
+        expect(@sdb.file_ids).to be_nil
       end
 
       # TODO:  multiple file elements in a single resource element
@@ -361,7 +361,7 @@ describe GDor::Indexer::PublicXmlFields do
   context "rels-ext fields and methods" do
     before(:each) do
       @hdor_client = double
-      @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
+      allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(@ng_mods_xml)
       @ns_decl = "xmlns:fedora='info:fedora/fedora-system:def/relations-external#' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'"
     end
     context "coll_druids_from_rels_ext" do
@@ -369,10 +369,10 @@ describe GDor::Indexer::PublicXmlFields do
         rels_ext_xml = "<rdf:RDF #{@ns_decl}>
           <rdf:Description rdf:about='info:fedora/druid:#{@fake_druid}'></rdf:Description></rdf:RDF>"
         pub_xml_ng = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{rels_ext_xml}</publicObject>")
-        @hdor_client.should_receive(:public_xml).and_return(pub_xml_ng)
+        expect(@hdor_client).to receive(:public_xml).and_return(pub_xml_ng)
         @sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
-        @hdor_client.should_not_receive(:rels_ext)
-        @sdb.should_receive(:public_xml).and_return(pub_xml_ng)
+        expect(@hdor_client).not_to receive(:rels_ext)
+        expect(@sdb).to receive(:public_xml).and_return(pub_xml_ng)
         @sdb.coll_druids_from_rels_ext
       end
       it "coll_druids_from_rels_ext look for the object's collection druids in the rels-ext in the public_xml" do
@@ -382,9 +382,9 @@ describe GDor::Indexer::PublicXmlFields do
             <fedora:isMemberOfCollection rdf:resource='info:fedora/druid:#{coll_druid}'/>
           </rdf:Description></rdf:RDF>"
         pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{rels_ext_xml}</publicObject>")
-        @hdor_client.stub(:public_xml).with(@fake_druid).and_return(pub_xml)
+        allow(@hdor_client).to receive(:public_xml).with(@fake_druid).and_return(pub_xml)
         sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
-        sdb.coll_druids_from_rels_ext.should == [coll_druid]
+        expect(sdb.coll_druids_from_rels_ext).to match_array [coll_druid]
       end
       it "coll_druids_from_rels_ext should get multiple collection druids when they exist" do
         coll_druid = 'ww121ss5000'
@@ -395,9 +395,9 @@ describe GDor::Indexer::PublicXmlFields do
             <fedora:isMemberOfCollection rdf:resource='info:fedora/druid:#{coll_druid2}'/>
           </rdf:Description></rdf:RDF>"
         pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{rels_ext_xml}</publicObject>")
-        @hdor_client.stub(:public_xml).with(@fake_druid).and_return(pub_xml)
+        allow(@hdor_client).to receive(:public_xml).with(@fake_druid).and_return(pub_xml)
         sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
-        sdb.coll_druids_from_rels_ext.should == [coll_druid, coll_druid2]
+        expect(sdb.coll_druids_from_rels_ext).to match_array [coll_druid, coll_druid2]
       end
       it "coll_druids_from_rels_ext should be nil when no isMemberOf relationships exist" do
         coll_druid = 'ww121ss5000'
@@ -405,9 +405,9 @@ describe GDor::Indexer::PublicXmlFields do
           <rdf:Description rdf:about='info:fedora/druid:#{@fake_druid}'>
           </rdf:Description></rdf:RDF>"
         pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{rels_ext_xml}</publicObject>")
-        @hdor_client.stub(:public_xml).with(@fake_druid).and_return(pub_xml)
+        allow(@hdor_client).to receive(:public_xml).with(@fake_druid).and_return(pub_xml)
         sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
-        sdb.coll_druids_from_rels_ext.should == nil
+        expect(sdb.coll_druids_from_rels_ext).to be_nil
       end
     end # collection druids    
   end # rels-ext fields and methods
