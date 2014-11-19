@@ -74,11 +74,11 @@ module GDor
         if whitelist.empty?
           logger.debug("Whitelist is empty")
           populate_druid_item_array
-          @druid_item_array.threach(3) { |druid| index_item druid }
+          @druid_item_array.threach(3) { |druid| index_item_with_exception_handling druid }
         else
           logger.info("Using whitelist from #{config.whitelist}")
           @whitelist_count = whitelist.size
-          whitelist.threach(3) { |druid| index_item druid }
+          whitelist.threach(3) { |druid| index_item_with_exception_handling druid }
         end
         index_coll_obj_per_config
       end
@@ -99,6 +99,16 @@ module GDor
       email_results
     end
 
+    def index_item_with_exception_handling druid
+      begin
+        index_item druid
+      rescue => e
+        @error_count += 1
+        @druids_failed_to_ix << druid
+        logger.error "Failed to index item #{druid}: #{e.message} #{e.backtrace}"
+      end
+    end
+
     # create Solr doc for the druid and add it to Solr, unless it is on the blacklist.
     #  NOTE: don't forget to send commit to Solr, either once at end (already in harvest_and_index), or for each add, or ...
     def index_item druid
@@ -106,59 +116,53 @@ module GDor
       if blacklist.include?(druid)
         logger.info("#{druid} is on the blacklist and will have no Solr doc created")
       else
-        begin
-          sdb = GDor::Indexer::SolrDocBuilder.new(druid, harvestdor_client, logger)
+        sdb = GDor::Indexer::SolrDocBuilder.new(druid, harvestdor_client, logger)
 
-          fields_to_add = GDor::Indexer::SolrDocHash.new({
-            :druid => druid,
-            :url_fulltext => "http://purl.stanford.edu/#{druid}",
-            :access_facet => 'Online',
-            :display_type => sdb.display_type,  # defined in public_xml_fields
-            :building_facet => 'Stanford Digital Repository'  # INDEX-53 add building_facet = Stanford Digital Repository here for item
-          })
-          fields_to_add[:file_id] = sdb.file_ids unless !sdb.file_ids  # defined in public_xml_fields
+        fields_to_add = GDor::Indexer::SolrDocHash.new({
+          :druid => druid,
+          :url_fulltext => "http://purl.stanford.edu/#{druid}",
+          :access_facet => 'Online',
+          :display_type => sdb.display_type,  # defined in public_xml_fields
+          :building_facet => 'Stanford Digital Repository'  # INDEX-53 add building_facet = Stanford Digital Repository here for item
+        })
+        fields_to_add[:file_id] = sdb.file_ids unless !sdb.file_ids  # defined in public_xml_fields
 
-          ckey = sdb.catkey
-          if ckey
-            if config.merge_policy == 'never'
-              logger.warn("#{druid} to be indexed from MODS; has ckey #{ckey} but merge_policy is 'never'")
-              merged = false
+        ckey = sdb.catkey
+        if ckey
+          if config.merge_policy == 'never'
+            logger.warn("#{druid} to be indexed from MODS; has ckey #{ckey} but merge_policy is 'never'")
+            merged = false
+          else
+            add_coll_info fields_to_add, sdb.coll_druids_from_rels_ext # defined in public_xml_fields
+            @validation_messages = fields_to_add.validate_item(config)
+            require 'gdor/indexer/record_merger'
+            merged = GDor::Indexer::RecordMerger.merge_and_index(ckey, fields_to_add)
+            if merged
+              logger.info "item #{druid} merged into #{ckey}"
+              @success_count += 1
             else
-              add_coll_info fields_to_add, sdb.coll_druids_from_rels_ext # defined in public_xml_fields
-              @validation_messages = fields_to_add.validate_item(config)
-              require 'gdor/indexer/record_merger'
-              merged = GDor::Indexer::RecordMerger.merge_and_index(ckey, fields_to_add)
-              if merged
-                logger.info "item #{druid} merged into #{ckey}"
-                @success_count += 1
+              if config.merge_policy == 'always'
+                logger.error("#{druid} NOT INDEXED:  MARC record #{ckey} not found in SW Solr index (may be shadowed in Symphony) and merge_policy set to 'always'")
+                @error_count += 1
               else
-                if config.merge_policy == 'always'
-                  logger.error("#{druid} NOT INDEXED:  MARC record #{ckey} not found in SW Solr index (may be shadowed in Symphony) and merge_policy set to 'always'")
-                  @error_count += 1
-                else
-                  logger.error("#{druid} to be indexed from MODS:  MARC record #{ckey} not found in SW Solr index (may be shadowed in Symphony)")
-                end
+                logger.error("#{druid} to be indexed from MODS:  MARC record #{ckey} not found in SW Solr index (may be shadowed in Symphony)")
               end
             end
           end
+        end
 
-          if !ckey && config.merge_policy == 'always'
-            logger.error("#{druid} NOT INDEXED:  no ckey found and merge_policy set to 'always'")
-            @error_count += 1
-          elsif !ckey || ( !merged && config.merge_policy != 'always' )
-            logger.info "indexing item #{druid} (unmerged)"
-            doc_hash = sdb.doc_hash
-            doc_hash.combine fields_to_add
-            add_coll_info doc_hash, sdb.coll_druids_from_rels_ext # defined in public_xml_fields
-            @validation_messages = fields_to_add.validate_item(config)
-            @validation_messages.concat doc_hash.validate_mods(config)
-            solr_add(doc_hash, druid)
-            @success_count += 1
-          end
-        rescue => e
+        if !ckey && config.merge_policy == 'always'
+          logger.error("#{druid} NOT INDEXED:  no ckey found and merge_policy set to 'always'")
           @error_count += 1
-          @druids_failed_to_ix << druid
-          logger.error "Failed to index item #{druid}: #{e.message} #{e.backtrace}"
+        elsif !ckey || ( !merged && config.merge_policy != 'always' )
+          logger.info "indexing item #{druid} (unmerged)"
+          doc_hash = sdb.doc_hash
+          doc_hash.combine fields_to_add
+          add_coll_info doc_hash, sdb.coll_druids_from_rels_ext # defined in public_xml_fields
+          @validation_messages = fields_to_add.validate_item(config)
+          @validation_messages.concat doc_hash.validate_mods(config)
+          solr_add(doc_hash, druid)
+          @success_count += 1
         end
       end
     end
