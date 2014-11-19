@@ -4,12 +4,12 @@ require 'harvestdor'
 require 'stanford-mods'
 require 'hash_mixin'
 require 'gdor_mods_fields'
-include GdorModsFields
 require 'public_xml_fields'
-include PublicXmlFields
 
 # Class to build the Hash representing a Solr document for a particular druid
 class SolrDocBuilder
+  include GdorModsFields
+  include PublicXmlFields
 
   # The druid of the item
   attr_reader :druid
