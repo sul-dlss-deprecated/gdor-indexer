@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'public_xml_fields mixin for SolrDocBuilder class' do
+describe GDor::Indexer::PublicXmlFields do
 
   before(:all) do
     @fake_druid = 'oo000oo0000'
@@ -23,7 +23,7 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
       @hdor_client = double
       @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
       @hdor_client.stub(:public_xml).with(@fake_druid).and_return(@ng_pub_xml)
-      @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+      @sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
     end
     context "identity_md" do
       it "identity_md should get the identityMetadata from public_xml, not a separate fetch" do
@@ -47,19 +47,19 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
         id_md_xml = "<identityMetadata><objectType>collection</objectType></identityMetadata>"
         ng_pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{id_md_xml}</publicObject>")
         @hdor_client.stub(:public_xml).with(@fake_druid).and_return(ng_pub_xml)
-        @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+        @sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
         @sdb.coll_object?.should == true
       end
       it "should return false if identityMetadata has objectType element with value other than 'collection'" do
         id_md_xml = "<identityMetadata><objectType>other</objectType></identityMetadata>"
         ng_pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{id_md_xml}</publicObject>")
         @hdor_client.stub(:public_xml).with(@fake_druid).and_return(ng_pub_xml)
-        @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+        @sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
         @sdb.coll_object?.should == false
       end
       it "should return false if identityMetadata doesn't have an objectType" do
         @hdor_client.stub(:public_xml).with(@fake_druid).and_return(@ng_pub_xml)
-        @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+        @sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
         @sdb.coll_object?.should == false
       end
     end
@@ -78,7 +78,7 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
       @hdor_client = double
       @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
       @hdor_client.stub(:public_xml).with(@fake_druid).and_return(@ng_pub_xml)
-      @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+      @sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
     end
 
     context "content_md" do
@@ -101,19 +101,19 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
     context "dor_content_type" do
       it "should be retreived from the <contentMetadata>" do
         @sdb.should_receive(:content_md)
-        @sdb.dor_content_type
+        @sdb.send(:dor_content_type)
       end
       it "should be the value of the type attribute on <contentMetadata> element" do
         val = 'foo'
         cntnt_md_xml = "<contentMetadata type='#{val}'>#{@content_md_end}"
         @sdb.should_receive(:content_md).at_least(1).times.and_return(Nokogiri::XML(cntnt_md_xml).root)
-        @sdb.dor_content_type.should == val
+        @sdb.send(:dor_content_type).should == val
       end
       it "should log an error message if there is no content type" do
         cntnt_md_xml = "#{@content_md_start}#{@content_md_end}"
         @sdb.should_receive(:content_md).at_least(1).times.and_return(Nokogiri::XML(cntnt_md_xml).root)
         @sdb.logger.should_receive(:error).with("#{@fake_druid} has no DOR content type (<contentMetadata> element may be missing type attribute)")
-        @sdb.dor_content_type
+        @sdb.send(:dor_content_type)
       end
     end
     
@@ -147,7 +147,7 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
         @sdb.display_type.should == 'file'
       end
       it "should not be hydrus_xxx for config :add_display_type of 'hydrus'" do
-        Indexer.stub(:config).and_return({:add_display_type => 'hydrus'})
+        GDor::Indexer.stub(:config).and_return({:add_display_type => 'hydrus'})
         @sdb.display_type.should_not =~ /^hydrus/
       end
     end # display_type
@@ -157,7 +157,7 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
         @hdor_client = double
         @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
         @hdor_client.stub(:public_xml).with(@fake_druid).and_return(nil)
-        @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+        @sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
       end
       context "file display_type" do
         context "contentMetadata type=file, resource type=file" do
@@ -370,7 +370,7 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
           <rdf:Description rdf:about='info:fedora/druid:#{@fake_druid}'></rdf:Description></rdf:RDF>"
         pub_xml_ng = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{rels_ext_xml}</publicObject>")
         @hdor_client.should_receive(:public_xml).and_return(pub_xml_ng)
-        @sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+        @sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
         @hdor_client.should_not_receive(:rels_ext)
         @sdb.should_receive(:public_xml).and_return(pub_xml_ng)
         @sdb.coll_druids_from_rels_ext
@@ -383,7 +383,7 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
           </rdf:Description></rdf:RDF>"
         pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{rels_ext_xml}</publicObject>")
         @hdor_client.stub(:public_xml).with(@fake_druid).and_return(pub_xml)
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+        sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
         sdb.coll_druids_from_rels_ext.should == [coll_druid]
       end
       it "coll_druids_from_rels_ext should get multiple collection druids when they exist" do
@@ -396,7 +396,7 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
           </rdf:Description></rdf:RDF>"
         pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{rels_ext_xml}</publicObject>")
         @hdor_client.stub(:public_xml).with(@fake_druid).and_return(pub_xml)
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+        sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
         sdb.coll_druids_from_rels_ext.should == [coll_druid, coll_druid2]
       end
       it "coll_druids_from_rels_ext should be nil when no isMemberOf relationships exist" do
@@ -406,7 +406,7 @@ describe 'public_xml_fields mixin for SolrDocBuilder class' do
           </rdf:Description></rdf:RDF>"
         pub_xml = Nokogiri::XML("<publicObject id='druid:#{@fake_druid}'>#{rels_ext_xml}</publicObject>")
         @hdor_client.stub(:public_xml).with(@fake_druid).and_return(pub_xml)
-        sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
+        sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, nil)
         sdb.coll_druids_from_rels_ext.should == nil
       end
     end # collection druids    

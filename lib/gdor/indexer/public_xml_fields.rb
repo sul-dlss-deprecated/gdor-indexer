@@ -1,6 +1,6 @@
-# A mixin to the SolrDocBuilder class.
+# A mixin to the GDor::Indexer::SolrDocBuilder class.
 # Methods for Solr field values determined from the DOR object's purl page public xml 
-module PublicXmlFields
+module GDor::Indexer::PublicXmlFields
   
   # value is used to tell SearchWorks UI app of specific display needs for objects
   # a config file value for add_display_type can be used to prepend a string to 
@@ -106,4 +106,4 @@ module PublicXmlFields
     end
   end
   
-end # SolrDocBuilder class
+end # GDor::Indexer::SolrDocBuilder class

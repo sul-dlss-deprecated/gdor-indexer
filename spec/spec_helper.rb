@@ -1,7 +1,6 @@
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..'))
 
-require 'indexer'
+require 'gdor/indexer'
 require 'equivalent-xml'
 require 'vcr'
 require 'stringio'

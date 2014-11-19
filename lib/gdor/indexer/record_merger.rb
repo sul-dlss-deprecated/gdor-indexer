@@ -3,7 +3,7 @@ if defined? JRUBY_VERSION
   require 'solrj_wrapper'
 end
 
-class RecordMerger
+class GDor::Indexer::RecordMerger
   
   def self.fetch_sw_solr_input_doc catkey
     @sw_solr_input_doc = smwrapper.get_solr_input_doc_from_marcxml(catkey)
@@ -29,7 +29,7 @@ class RecordMerger
   # @param [String] catkey - the Symphony record catkey of the record we will be merging with
   # @param [Hash<String, Object>] doc_hash_to_add - the keys are Solr field names, the values are either String or an Array of Strings
   def self.merge_and_index catkey, doc_hash_to_add
-    doc = RecordMerger.fetch_sw_solr_input_doc catkey
+    doc = GDor::Indexer::RecordMerger.fetch_sw_solr_input_doc catkey
     return false if !doc
     add_hash_to_solr_input_doc(doc, doc_hash_to_add)
     solrj.add_doc_to_ix(doc, catkey)
@@ -38,15 +38,15 @@ class RecordMerger
   
   # cache SolrJWrapper object at class level
   def self.solrj
-    @@solrj ||= SolrjWrapper.new('../solrmarc-sw/lib/solrj-lib', Indexer.config.solr.url)
+    @@solrj ||= SolrjWrapper.new('../solrmarc-sw/lib/solrj-lib', GDor::Indexer.config.solr.url)
   end
   
   # cache SolrmarcWrapper object at class level
   def self.smwrapper
     @@smwrapper ||= begin
-      dist_dir = Indexer.config.solrmarc.dist_dir
-      sw_solr_url = Indexer.config.solrmarc.sw_solr_url
-      config_file = Indexer.config.solrmarc.config_file
+      dist_dir = GDor::Indexer.config.solrmarc.dist_dir
+      sw_solr_url = GDor::Indexer.config.solrmarc.sw_solr_url
+      config_file = GDor::Indexer.config.solrmarc.config_file
       SolrmarcWrapper.new(dist_dir, config_file, sw_solr_url)
     end
   end

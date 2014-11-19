@@ -1,12 +1,11 @@
 #!/usr/bin/env ruby
 
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..'))         # Look in the root directory for .rb files
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))  # Look in the lib directory for .rb files
 
 require 'rubygems'
 require "bundler/setup"
 require 'trollop'
-require 'indexer'
+require 'gdor/indexer'
 
 # Define the collections that this script knows how to harvest per yml files in the config/collections directory
 # @return Array
@@ -68,20 +67,6 @@ end
 #   end
 # end
 
-# If no set is specified, harvest the sets from the config file
-# if opts[:set]
-#   SearchWorksOaiHarvester::Harvester.new(SearchWorksOaiHarvester.oai_client, SearchWorksOaiHarvester.solr_client, opts).harvest
-# else
-#   SearchWorksOaiHarvester.logger.info "No set specified. Harvesting sets from config file."
-#   SearchWorksOaiHarvester.config.sets.each do |s|
-#     SearchWorksOaiHarvester.logger.info "Harvesting #{s[0]}"
-#     opts[:set] = s[1]
-#     SearchWorksOaiHarvester::Harvester.new(SearchWorksOaiHarvester.oai_client, SearchWorksOaiHarvester.solr_client, opts).harvest
-#   end
-# end
-# SearchWorksOaiHarvester.logger.info 'Commiting to Solr'
-# SearchWorksOaiHarvester.solr_client.commit
-
 def time
   start = Time.now
   yield
@@ -102,9 +87,9 @@ end
   solr_config_path = File.join(File.dirname(__FILE__), "..", "config", "solr.yml")
   config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "collections", "#{coll}.yml")
   client_config_path = File.join(File.dirname(__FILE__), "..", "config", "dor-fetcher-client.yml")
-  @indexer = Indexer.new(config_yml_path, client_config_path, solr_config_path)
-  puts "Indexing #{coll} into Solr server #{Indexer.config[:solr][:url]}"
-  puts "Logging output to #{Indexer.config[:log_dir]}/#{Indexer.config[:log_name]}"
+  @indexer = GDor::Indexer.new(config_yml_path, client_config_path, solr_config_path)
+  puts "Indexing #{coll} into Solr server #{GDor::Indexer.config[:solr][:url]}"
+  puts "Logging output to #{GDor::Indexer.config[:log_dir]}/#{GDor::Indexer.config[:log_name]}"
   time do
     if @indexer.collection_is_mergable?
       puts 'A collection record merge will happen!'

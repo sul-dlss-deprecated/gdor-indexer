@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Indexer do
+describe GDor::Indexer do
   
   before(:all) do
     @config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "walters_integration_spec.yml")
@@ -15,7 +15,7 @@ describe Indexer do
     @ng_pub_xml = Nokogiri::XML("<publicObject id='druid#{@fake_druid}'></publicObject>")
   end
   before(:each) do
-    @indexer = Indexer.new(@config_yml_path, @client_config_path, @solr_yml_path)
+    @indexer = GDor::Indexer.new(@config_yml_path, @client_config_path, @solr_yml_path)
     @hdor_client = @indexer.send(:harvestdor_client)
     @hdor_client.stub(:public_xml).and_return(@ng_pub_xml)
   end
@@ -37,7 +37,7 @@ describe Indexer do
       @indexer.stub(:coll_druid_from_config).and_return(@fake_druid)
       @hdor_client.stub(:mods).with(@fake_druid).and_return(@ng_mods_xml)
       @hdor_client.stub(:public_xml).with(@fake_druid).and_return(@ng_pub_xml)
-      @coll_sdb = SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
+      @coll_sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(STDOUT))
       @coll_sdb.stub(:coll_object?).and_return(true)
       @indexer.stub(:num_found_in_solr)
       @indexer.stub(:coll_sdb).and_return(@coll_sdb)
@@ -68,7 +68,7 @@ describe Indexer do
   context "#index_item" do
 
     context "merge or not?" do
-      it "uses RecordMerger if there is a catkey" do
+      it "uses GDor::Indexer::RecordMerger if there is a catkey" do
         ckey = '666'
         sdb = double
         sdb.stub(:catkey).and_return(ckey)
@@ -78,11 +78,11 @@ describe Indexer do
         sdb.stub(:display_type)
         sdb.stub(:file_ids)
         sdb.stub(:validate_mods).and_return([])
-        SolrDocBuilder.stub(:new).and_return(sdb)
-        RecordMerger.should_receive(:merge_and_index).with(ckey, instance_of(Hash))
+        GDor::Indexer::SolrDocBuilder.stub(:new).and_return(sdb)
+        GDor::Indexer::RecordMerger.should_receive(:merge_and_index).with(ckey, instance_of(Hash))
         @indexer.index_item @fake_druid
       end
-      it "does not use RecordMerger if there isn't a catkey" do
+      it "does not use GDor::Indexer::RecordMerger if there isn't a catkey" do
         sdb = double
         sdb.stub(:catkey).and_return(nil)
         sdb.stub(:public_xml)
@@ -91,8 +91,8 @@ describe Indexer do
         sdb.stub(:display_type)
         sdb.stub(:file_ids)
         sdb.stub(:validate_mods).and_return([])
-        SolrDocBuilder.stub(:new).and_return(sdb)
-        RecordMerger.should_not_receive(:merge_and_index)
+        GDor::Indexer::SolrDocBuilder.stub(:new).and_return(sdb)
+        GDor::Indexer::RecordMerger.should_not_receive(:merge_and_index)
         @indexer.solr_client.should_receive(:add)
         @indexer.index_item @fake_druid
       end
@@ -111,42 +111,42 @@ describe Indexer do
           before(:each) do
             @ckey = '666'
             @sdb.stub(:catkey).and_return(@ckey)
-            SolrDocBuilder.stub(:new).and_return(@sdb)
+            GDor::Indexer::SolrDocBuilder.stub(:new).and_return(@sdb)
           end
           context "merge_policy 'always'" do
-            it "uses RecordMerger if SW Solr index has record" do
-              Indexer.config[:merge_policy] = 'always'
-              RecordMerger.should_receive(:merge_and_index).with(@ckey, instance_of(Hash))
+            it "uses GDor::Indexer::RecordMerger if SW Solr index has record" do
+              GDor::Indexer.config[:merge_policy] = 'always'
+              GDor::Indexer::RecordMerger.should_receive(:merge_and_index).with(@ckey, instance_of(Hash))
               @indexer.index_item @fake_druid
             end
             it "fails with error message if no record in SW Solr index" do
-              Indexer.config[:merge_policy] = 'always'
-              RecordMerger.should_receive(:fetch_sw_solr_input_doc).with(@ckey).and_return(nil)
-              RecordMerger.should_receive(:merge_and_index).with(@ckey, instance_of(Hash)).and_call_original
+              GDor::Indexer.config[:merge_policy] = 'always'
+              GDor::Indexer::RecordMerger.should_receive(:fetch_sw_solr_input_doc).with(@ckey).and_return(nil)
+              GDor::Indexer::RecordMerger.should_receive(:merge_and_index).with(@ckey, instance_of(Hash)).and_call_original
               @indexer.logger.should_receive(:error).with("#{@fake_druid} NOT INDEXED:  MARC record #{@ckey} not found in SW Solr index (may be shadowed in Symphony) and merge_policy set to 'always'")
               @indexer.solr_client.should_not_receive(:add)
               @indexer.index_item @fake_druid
             end
           end
           context "merge_policy 'never'" do
-            it "does not use RecordMerger and prints warning message" do
-              Indexer.config[:merge_policy] = 'never'
-              RecordMerger.should_not_receive(:merge_and_index)
+            it "does not use GDor::Indexer::RecordMerger and prints warning message" do
+              GDor::Indexer.config[:merge_policy] = 'never'
+              GDor::Indexer::RecordMerger.should_not_receive(:merge_and_index)
               @indexer.logger.should_receive(:warn).with("#{@fake_druid} to be indexed from MODS; has ckey #{@ckey} but merge_policy is 'never'")
               @indexer.solr_client.should_receive(:add)
               @indexer.index_item @fake_druid
             end
           end
           context "merge_policy not set" do
-            it "uses RecordMerger if SW Solr index has record" do
-              Indexer.config[:merge_policy] = nil
-              RecordMerger.should_receive(:merge_and_index).with(@ckey, instance_of(Hash))
+            it "uses GDor::Indexer::RecordMerger if SW Solr index has record" do
+              GDor::Indexer.config[:merge_policy] = nil
+              GDor::Indexer::RecordMerger.should_receive(:merge_and_index).with(@ckey, instance_of(Hash))
               @indexer.index_item @fake_druid
             end
             it "falls back to MODS with error message if no record in SW Solr index" do
-              Indexer.config[:merge_policy] = nil
-              RecordMerger.stub(:fetch_sw_solr_input_doc).with(@ckey).and_return(nil)
-              RecordMerger.should_receive(:merge_and_index).with(@ckey, instance_of(Hash)).and_call_original
+              GDor::Indexer.config[:merge_policy] = nil
+              GDor::Indexer::RecordMerger.stub(:fetch_sw_solr_input_doc).with(@ckey).and_return(nil)
+              GDor::Indexer::RecordMerger.should_receive(:merge_and_index).with(@ckey, instance_of(Hash)).and_call_original
               @indexer.logger.should_receive(:error).with("#{@fake_druid} to be indexed from MODS:  MARC record #{@ckey} not found in SW Solr index (may be shadowed in Symphony)")
               @indexer.solr_client.should_receive(:add)
               @indexer.index_item @fake_druid
@@ -156,24 +156,24 @@ describe Indexer do
         context "no catkey" do
           before(:each) do
             @sdb.stub(:catkey).and_return(nil)
-            SolrDocBuilder.stub(:new).and_return(@sdb)
+            GDor::Indexer::SolrDocBuilder.stub(:new).and_return(@sdb)
           end
           it "merge_policy 'always' doesn't use the MODS and prints error message" do
-            Indexer.config[:merge_policy] = 'always'
-            RecordMerger.should_not_receive(:merge_and_index)
+            GDor::Indexer.config[:merge_policy] = 'always'
+            GDor::Indexer::RecordMerger.should_not_receive(:merge_and_index)
             @indexer.logger.should_receive(:error).with("#{@fake_druid} NOT INDEXED:  no ckey found and merge_policy set to 'always'")
             @indexer.solr_client.should_not_receive(:add)
             @indexer.index_item @fake_druid
           end
           it "merge_policy 'never' uses the MODS without error message" do
-            Indexer.config[:merge_policy] = 'never'
-            RecordMerger.should_not_receive(:merge_and_index)
+            GDor::Indexer.config[:merge_policy] = 'never'
+            GDor::Indexer::RecordMerger.should_not_receive(:merge_and_index)
             @indexer.logger.should_not_receive(:error)
             @indexer.solr_client.should_receive(:add)
             @indexer.index_item @fake_druid
           end
           it "merge_policy not set uses the MODS without error message" do
-            RecordMerger.should_not_receive(:merge_and_index)
+            GDor::Indexer::RecordMerger.should_not_receive(:merge_and_index)
             @indexer.logger.should_not_receive(:error)
             @indexer.solr_client.should_receive(:add)
             @indexer.index_item @fake_druid
@@ -194,8 +194,8 @@ describe Indexer do
         @indexer.should_receive(:validate_item)
         @indexer.index_item @fake_druid
       end
-      it "calls SolrDocBuilder.validate_mods" do
-        SolrDocBuilder.any_instance.should_receive(:validate_mods)
+      it "calls GDor::Indexer::SolrDocBuilder.validate_mods" do
+        GDor::Indexer::SolrDocBuilder.any_instance.should_receive(:validate_mods)
         @indexer.index_item @fake_druid
       end
       it "calls add_coll_info" do
@@ -209,7 +209,7 @@ describe Indexer do
         sdb.stub(:display_type)
         sdb.stub(:file_ids)
         sdb.stub(:validate_mods).and_return([])
-        SolrDocBuilder.stub(:new).and_return(sdb)
+        GDor::Indexer::SolrDocBuilder.stub(:new).and_return(sdb)
         sdb.stub(:coll_druids_from_rels_ext).and_return(['foo'])
         @indexer.stub(:identity_md_obj_label).with('foo').and_return('bar')
         Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(hash_including(:collection => ['foo'], 
@@ -232,12 +232,12 @@ describe Indexer do
         @indexer.index_item @fake_druid
       end
       it "should populate display_type field by calling display_type method" do
-        SolrDocBuilder.any_instance.should_receive(:display_type).and_return("foo")
+        GDor::Indexer::SolrDocBuilder.any_instance.should_receive(:display_type).and_return("foo")
         Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(hash_including(:display_type => "foo"), @fake_druid)
         @indexer.index_item @fake_druid
       end
       it "should populate file_id field by calling file_ids method" do
-        SolrDocBuilder.any_instance.should_receive(:file_ids).at_least(1).times.and_return(["foo"])
+        GDor::Indexer::SolrDocBuilder.any_instance.should_receive(:file_ids).at_least(1).times.and_return(["foo"])
         Harvestdor::Indexer.any_instance.should_receive(:solr_add).with(hash_including(:file_id => ["foo"]), @fake_druid)
         @indexer.index_item @fake_druid
       end
@@ -257,13 +257,13 @@ describe Indexer do
         @sdb.stub(:display_type).and_return('fiddle')
         @sdb.stub(:file_ids).and_return(['dee', 'dum'])
         @sdb.stub(:validate_mods).and_return([])
-        SolrDocBuilder.stub(:new).and_return(@sdb)
+        GDor::Indexer::SolrDocBuilder.stub(:new).and_return(@sdb)
         @indexer.stub(:identity_md_obj_label).with('foo').and_return('bar')
         @indexer.stub(:coll_catkey).and_return(nil)
-        Indexer.config[:merge_policy] = nil
+        GDor::Indexer.config[:merge_policy] = nil
       end
-      it "calls RecordMerger.merge_and_index with gdor fields and item specific fields" do
-        RecordMerger.should_receive(:merge_and_index).with(@ickey, hash_including(:display_type => 'fiddle',
+      it "calls GDor::Indexer::RecordMerger.merge_and_index with gdor fields and item specific fields" do
+        GDor::Indexer::RecordMerger.should_receive(:merge_and_index).with(@ickey, hash_including(:display_type => 'fiddle',
                                                                                   :file_id => ['dee', 'dum'],
                                                                                   :druid => @fake_druid,
                                                                                   :url_fulltext => "#{@yaml['purl']}/#{@fake_druid}",
@@ -295,16 +295,16 @@ describe Indexer do
 
   context "#index_coll_obj_per_config" do
     context "merge or not?" do
-      it "uses RecordMerger if there is a catkey" do
+      it "uses GDor::Indexer::RecordMerger if there is a catkey" do
         ckey = '666'
         @indexer.stub(:coll_catkey).and_return(ckey)
-        RecordMerger.should_receive(:merge_and_index)
+        GDor::Indexer::RecordMerger.should_receive(:merge_and_index)
         @indexer.index_coll_obj_per_config
       end
-      it "does not use RecordMerger if there isn't a catkey" do
+      it "does not use GDor::Indexer::RecordMerger if there isn't a catkey" do
         @indexer.stub(:coll_catkey).and_return(nil)
-        RecordMerger.should_not_receive(:merge_and_index)
-        SolrDocBuilder.any_instance.stub(:doc_hash).and_return({}) # speed up the test
+        GDor::Indexer::RecordMerger.should_not_receive(:merge_and_index)
+        GDor::Indexer::SolrDocBuilder.any_instance.stub(:doc_hash).and_return({}) # speed up the test
         @indexer.solr_client.should_receive(:add)
         @indexer.index_coll_obj_per_config
       end
@@ -322,18 +322,18 @@ describe Indexer do
         before(:each) do
           @ckey = '666'
           @sdb.stub(:catkey).and_return(@ckey)
-          SolrDocBuilder.stub(:new).and_return(@sdb)
+          GDor::Indexer::SolrDocBuilder.stub(:new).and_return(@sdb)
         end
         shared_examples_for 'uses MARC if it can find it' do | policy |
-          it "uses RecordMerger if SW Solr index has record" do
-            Indexer.config[:merge_policy] = policy
-            RecordMerger.should_receive(:merge_and_index).with(@ckey, instance_of(Hash))
+          it "uses GDor::Indexer::RecordMerger if SW Solr index has record" do
+            GDor::Indexer.config[:merge_policy] = policy
+            GDor::Indexer::RecordMerger.should_receive(:merge_and_index).with(@ckey, instance_of(Hash))
             @indexer.index_coll_obj_per_config
           end
           it "falls back to MODS with error message if no record in SW Solr index" do
-            Indexer.config[:merge_policy] = policy
-            RecordMerger.should_receive(:fetch_sw_solr_input_doc).with(@ckey).and_return(nil)
-            RecordMerger.should_receive(:merge_and_index).with(@ckey, instance_of(Hash)).and_call_original
+            GDor::Indexer.config[:merge_policy] = policy
+            GDor::Indexer::RecordMerger.should_receive(:fetch_sw_solr_input_doc).with(@ckey).and_return(nil)
+            GDor::Indexer::RecordMerger.should_receive(:merge_and_index).with(@ckey, instance_of(Hash)).and_call_original
             @indexer.logger.should_receive(:error).with("#{@coll_druid_from_test_config} to be indexed from MODS:  MARC record #{@ckey} not found in SW Solr index (may be shadowed in Symphony)")
             @indexer.solr_client.should_receive(:add)
             @indexer.index_coll_obj_per_config
@@ -352,12 +352,12 @@ describe Indexer do
       context "no catkey" do
         before(:each) do
           @sdb.stub(:catkey).and_return(nil)
-          SolrDocBuilder.stub(:new).and_return(@sdb)
+          GDor::Indexer::SolrDocBuilder.stub(:new).and_return(@sdb)
         end
         shared_examples_for 'uses the MODS without error message' do | policy |
           it "" do
-            Indexer.config[:merge_policy] = policy
-            RecordMerger.should_not_receive(:merge_and_index)
+            GDor::Indexer.config[:merge_policy] = policy
+            GDor::Indexer::RecordMerger.should_not_receive(:merge_and_index)
             @indexer.logger.should_not_receive(:error)
             @indexer.solr_client.should_receive(:add)
             @indexer.index_coll_obj_per_config
@@ -377,30 +377,30 @@ describe Indexer do
     
     context "unmerged" do
       it "adds the collection doc to the index" do
-        SolrDocBuilder.any_instance.stub(:doc_hash).and_return({}) # speed up the test
+        GDor::Indexer::SolrDocBuilder.any_instance.stub(:doc_hash).and_return({}) # speed up the test
         @indexer.solr_client.should_receive(:add)
         @indexer.index_coll_obj_per_config
       end
       it "calls validate_collection" do
-        SolrDocBuilder.any_instance.stub(:doc_hash).and_return({}) # speed up the test
+        GDor::Indexer::SolrDocBuilder.any_instance.stub(:doc_hash).and_return({}) # speed up the test
         @indexer.should_receive(:validate_collection)
         @indexer.index_coll_obj_per_config
       end
-      it "calls SolrDocBuilder.validate_mods" do
-        SolrDocBuilder.any_instance.stub(:doc_hash).and_return({}) # speed up the test
-        SolrDocBuilder.any_instance.should_receive(:validate_mods)
+      it "calls GDor::Indexer::SolrDocBuilder.validate_mods" do
+        GDor::Indexer::SolrDocBuilder.any_instance.stub(:doc_hash).and_return({}) # speed up the test
+        GDor::Indexer::SolrDocBuilder.any_instance.should_receive(:validate_mods)
         @indexer.index_coll_obj_per_config
       end
       context "display_type" do
         it "includes display_types from coll_display_types_from_items when the druid matches" do
           @indexer.stub(:coll_display_types_from_items).and_return({@coll_druid_from_test_config => ['image']})
-          SolrDocBuilder.any_instance.stub(:doc_hash).and_return({})
+          GDor::Indexer::SolrDocBuilder.any_instance.stub(:doc_hash).and_return({})
           @indexer.solr_client.should_receive(:add).with(hash_including(:display_type => ['image']))
           @indexer.index_coll_obj_per_config
         end
         it "does not include display_types from coll_display_types_from_items when the druid doesn't match" do
           @indexer.stub(:coll_display_types_from_items).and_return({'foo' => ['image']})
-          SolrDocBuilder.any_instance.stub(:doc_hash).and_return({})
+          GDor::Indexer::SolrDocBuilder.any_instance.stub(:doc_hash).and_return({})
           @indexer.solr_client.should_not_receive(:add).with(hash_including(:display_type => ['image']))
           @indexer.index_coll_obj_per_config
         end
@@ -417,23 +417,23 @@ describe Indexer do
         @indexer.index_coll_obj_per_config
       end
       it "collection_type should be 'Digital Collection'" do
-        SolrDocBuilder.any_instance.stub(:doc_hash).and_return({}) # speed up the test
+        GDor::Indexer::SolrDocBuilder.any_instance.stub(:doc_hash).and_return({}) # speed up the test
         @indexer.solr_client.should_receive(:add).with(hash_including(:collection_type => 'Digital Collection'))
         @indexer.index_coll_obj_per_config
       end
       context "add format_main_ssim Archive/Manuscript" do
         it "no other values" do
-          allow_any_instance_of(SolrDocBuilder).to receive(:doc_hash).and_return({})
+          allow_any_instance_of(GDor::Indexer::SolrDocBuilder).to receive(:doc_hash).and_return({})
           expect(@indexer.solr_client).to receive(:add).with(hash_including(:format_main_ssim => 'Archive/Manuscript'))
           @indexer.index_coll_obj_per_config
         end
         it "other values present" do
-          allow_any_instance_of(SolrDocBuilder).to receive(:doc_hash).and_return({:format_main_ssim => ['Image', 'Video']})
+          allow_any_instance_of(GDor::Indexer::SolrDocBuilder).to receive(:doc_hash).and_return({:format_main_ssim => ['Image', 'Video']})
           expect(@indexer.solr_client).to receive(:add).with(hash_including(:format_main_ssim => ['Image', 'Video', 'Archive/Manuscript']))
           @indexer.index_coll_obj_per_config
         end
         it "already has values Archive/Manuscript" do
-          allow_any_instance_of(SolrDocBuilder).to receive(:doc_hash).and_return({:format_main_ssim => 'Archive/Manuscript'})
+          allow_any_instance_of(GDor::Indexer::SolrDocBuilder).to receive(:doc_hash).and_return({:format_main_ssim => 'Archive/Manuscript'})
           expect(@indexer.solr_client).to receive(:add).with(hash_including(:format_main_ssim => ['Archive/Manuscript']))
           @indexer.index_coll_obj_per_config
         end
@@ -450,9 +450,9 @@ describe Indexer do
         @ckey = '666'
         @indexer.stub(:coll_catkey).and_return(@ckey)
       end
-      it "should call RecordMerger.merge_and_index with gdor fields and collection specific fields" do
+      it "should call GDor::Indexer::RecordMerger.merge_and_index with gdor fields and collection specific fields" do
         @indexer.stub(:coll_display_types_from_items).and_return({@coll_druid_from_test_config => ['image']})
-        expect(RecordMerger).to receive(:merge_and_index).with(@ckey, hash_including(:display_type => ['image'],
+        expect(GDor::Indexer::RecordMerger).to receive(:merge_and_index).with(@ckey, hash_including(:display_type => ['image'],
                                                                                 :druid => @coll_druid_from_test_config,
                                                                                 :url_fulltext => "#{@yaml['purl']}/#{@coll_druid_from_test_config}",
                                                                                 :access_facet => 'Online', 
@@ -461,10 +461,10 @@ describe Indexer do
                                                                                 :building_facet => 'Stanford Digital Repository'))
         @indexer.index_coll_obj_per_config
       end
-      it "should call RecordMerger.add_hash_to_solr_input_doc with gdor fields and collection specific fields" do
+      it "should call GDor::Indexer::RecordMerger.add_hash_to_solr_input_doc with gdor fields and collection specific fields" do
         @indexer.stub(:coll_display_types_from_items).and_return({@coll_druid_from_test_config => ['image']})
-        allow(RecordMerger).to receive(:merge_and_index).and_call_original
-        expect(RecordMerger).to receive(:add_hash_to_solr_input_doc).with(anything, 
+        allow(GDor::Indexer::RecordMerger).to receive(:merge_and_index).and_call_original
+        expect(GDor::Indexer::RecordMerger).to receive(:add_hash_to_solr_input_doc).with(anything, 
                                                                           hash_including(:display_type => ['image'],
                                                                                 :druid => @coll_druid_from_test_config,
                                                                                 :url_fulltext => "#{@yaml['purl']}/#{@coll_druid_from_test_config}",
@@ -475,7 +475,7 @@ describe Indexer do
         @indexer.index_coll_obj_per_config
       end
       it "validates the collection doc via validate_collection" do
-        SolrDocBuilder.any_instance.stub(:doc_hash).and_return({}) # speed up the test
+        GDor::Indexer::SolrDocBuilder.any_instance.stub(:doc_hash).and_return({}) # speed up the test
         expect(@indexer).to receive(:validate_collection)
         @indexer.index_coll_obj_per_config
       end
@@ -487,7 +487,7 @@ describe Indexer do
       end
       context "add format_main_ssim Archive/Manuscript" do
         before(:each) do
-          @solr_input_doc = RecordMerger.fetch_sw_solr_input_doc @key
+          @solr_input_doc = GDor::Indexer::RecordMerger.fetch_sw_solr_input_doc @key
           allow(@indexer).to receive(:coll_display_types_from_items).and_return({@coll_druid_from_test_config => ['image']})
         end
         it "no other values" do
@@ -613,7 +613,7 @@ describe Indexer do
       end
     end # coll_display_types_from_items
     it "#add_to_coll_display_types_from_item doesn't allow duplicate values" do
-      indexer = Indexer.new(@config_yml_path, @client_config_path, @solr_yml_path)
+      indexer = GDor::Indexer.new(@config_yml_path, @client_config_path, @solr_yml_path)
       indexer.add_to_coll_display_types_from_item('foo', 'image')
       indexer.add_to_coll_display_types_from_item('foo', 'image')
       indexer.coll_display_types_from_items['foo'].size.should == 1
@@ -852,7 +852,7 @@ describe Indexer do
 
   context "skip heartbeat" do
     it "allows me to use a fake url for dor-fetcher-client" do
-      expect {Indexer.new(@config_yml_path, @client_config_path, @solr_yml_path)}.not_to raise_error
+      expect {GDor::Indexer.new(@config_yml_path, @client_config_path, @solr_yml_path)}.not_to raise_error
     end
   end
 

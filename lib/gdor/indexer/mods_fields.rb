@@ -1,6 +1,6 @@
-# A mixin to the SolrDocBuilder class.
+# A mixin to the GDor::Indexer::SolrDocBuilder class.
 # Methods for Solr field values determined from MODS 
-module GdorModsFields
+module GDor::Indexer::ModsFields
   
   # Create a Hash representing a Solr doc, with all MODS related fields populated.
   # @return [Hash] Hash representing the Solr document

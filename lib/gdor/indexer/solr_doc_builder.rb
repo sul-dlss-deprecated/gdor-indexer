@@ -2,14 +2,14 @@ require 'logger'
 
 require 'harvestdor'
 require 'stanford-mods'
-require 'hash_mixin'
-require 'gdor_mods_fields'
-require 'public_xml_fields'
+require 'gdor/indexer/hash_mixin'
+require 'gdor/indexer/mods_fields'
+require 'gdor/indexer/public_xml_fields'
 
 # Class to build the Hash representing a Solr document for a particular druid
-class SolrDocBuilder
-  include GdorModsFields
-  include PublicXmlFields
+class GDor::Indexer::SolrDocBuilder
+  include GDor::Indexer::ModsFields
+  include GDor::Indexer::PublicXmlFields
 
   # The druid of the item
   attr_reader :druid
@@ -107,4 +107,4 @@ class SolrDocBuilder
     @public_xml ||= @harvestdor_client.public_xml @druid
   end
   
-end # SolrDocBuilder class
+end # GDor::Indexer::SolrDocBuilder class

@@ -1,15 +1,15 @@
 require 'spec_helper'
 
-describe RecordMerger do
+describe GDor::Indexer::RecordMerger do
   before(:all) do
     config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "walters_integration_spec.yml")
     solr_yml_path = File.join(File.dirname(__FILE__), "..", "config", "solr.yml")
     client_config_path = File.join(File.dirname(__FILE__), "..", "config", "dor-fetcher-client.yml")
-    @indexer = Indexer.new(config_yml_path, client_config_path, solr_yml_path)
+    @indexer = GDor::Indexer.new(config_yml_path, client_config_path, solr_yml_path)
     @catkey = '666'
   end
   before(:each) do
-    @solr_input_doc = RecordMerger.fetch_sw_solr_input_doc @catkey
+    @solr_input_doc = GDor::Indexer::RecordMerger.fetch_sw_solr_input_doc @catkey
   end
 
   context "#fetch_sw_solr_input_doc" do
@@ -22,7 +22,7 @@ describe RecordMerger do
     it "should call SolrmarcWrapper.get_solr_input_doc_from_marcxml" do
       ckey = '123456'
       SolrmarcWrapper.any_instance.should_receive(:get_solr_input_doc_from_marcxml).with(ckey)
-      RecordMerger.fetch_sw_solr_input_doc ckey
+      GDor::Indexer::RecordMerger.fetch_sw_solr_input_doc ckey
     end
   end
   
@@ -33,17 +33,17 @@ describe RecordMerger do
         'b' => '2',
         'c' => '3'
       }
-      RecordMerger.add_hash_to_solr_input_doc(@solr_input_doc, hash)
+      GDor::Indexer::RecordMerger.add_hash_to_solr_input_doc(@solr_input_doc, hash)
       hash.each_pair { |name, val|  
         @solr_input_doc.getField(name).getValue.should == val
       }
     end
     it "should convert symbol field names into strings" do
-      RecordMerger.add_hash_to_solr_input_doc(@solr_input_doc, {:a => 'val'})
+      GDor::Indexer::RecordMerger.add_hash_to_solr_input_doc(@solr_input_doc, {:a => 'val'})
       @solr_input_doc.getField('a').getValue.should == 'val'
     end
     it "should add each value if the hash value is an Array" do
-      RecordMerger.add_hash_to_solr_input_doc(@solr_input_doc, {:a => ['1', '2']})
+      GDor::Indexer::RecordMerger.add_hash_to_solr_input_doc(@solr_input_doc, {:a => ['1', '2']})
       valCollection = @solr_input_doc.getField('a').getValues
       valCollection.size.should == 2
       valCollection.contains('1').should == true
@@ -51,7 +51,7 @@ describe RecordMerger do
     end
     it "should raise an error if a hash value isn't an Array or String" do
       expect { 
-        RecordMerger.add_hash_to_solr_input_doc(@solr_input_doc, {:a => Hash.new}) 
+        GDor::Indexer::RecordMerger.add_hash_to_solr_input_doc(@solr_input_doc, {:a => Hash.new}) 
       }.to raise_error(RuntimeError, /^hash to add to merged solr document has incorrectly typed field value for a: /)
     end
   end
@@ -61,13 +61,13 @@ describe RecordMerger do
       @hash =  {'a' => '1', 'b' => '2'}
     end
     it "should call add_hash_to_solr_input_doc with hash passed in to merge_and_index" do
-      RecordMerger.should_receive(:add_hash_to_solr_input_doc).with(anything, @hash)
+      GDor::Indexer::RecordMerger.should_receive(:add_hash_to_solr_input_doc).with(anything, @hash)
       SolrjWrapper.any_instance.should_receive(:add_doc_to_ix)
-      RecordMerger.merge_and_index(@catkey, @hash)
+      GDor::Indexer::RecordMerger.merge_and_index(@catkey, @hash)
     end
     it "should call SolrjWrapper.add_doc_to_index with fields from the passed hash" do
       SolrjWrapper.any_instance.should_receive(:add_doc_to_ix).with(hash_including('a', 'b'), @catkey)
-      RecordMerger.merge_and_index(@catkey, @hash)
+      GDor::Indexer::RecordMerger.merge_and_index(@catkey, @hash)
     end
   end
 end
