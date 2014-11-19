@@ -18,6 +18,7 @@ describe GDor::Indexer do
     @indexer = GDor::Indexer.new(@config_yml_path, @client_config_path, @solr_yml_path)
     @hdor_client = @indexer.send(:harvestdor_client)
     allow(@hdor_client).to receive(:public_xml).and_return(@ng_pub_xml)
+    allow(@indexer.solr_client).to receive(:add)
   end
   
   context "logging" do
