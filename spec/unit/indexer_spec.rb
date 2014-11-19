@@ -192,11 +192,12 @@ describe GDor::Indexer do
         @indexer.index_item @fake_druid
       end
       it "calls validate_item" do
-        expect_any_instance_of(GDor::Indexer::SolrDocHash).to receive(:validate_item)
+        expect_any_instance_of(GDor::Indexer::SolrDocHash).to receive(:validate_item).and_return([])
         @indexer.index_item @fake_druid
       end
       it "calls GDor::Indexer::SolrDocBuilder.validate_mods" do
-        expect_any_instance_of(GDor::Indexer::SolrDocHash).to receive(:validate_mods)
+        allow_any_instance_of(GDor::Indexer::SolrDocHash).to receive(:validate_item).and_return([])
+        expect_any_instance_of(GDor::Indexer::SolrDocHash).to receive(:validate_mods).and_return([])
         @indexer.index_item @fake_druid
       end
       it "calls add_coll_info" do
@@ -481,9 +482,7 @@ describe GDor::Indexer do
         @indexer.index_coll_obj_per_config
       end
       it "validates the collection doc via validate_collection" do
-        doc_hash = GDor::Indexer::SolrDocHash.new
-        allow_any_instance_of(GDor::Indexer::SolrDocBuilder).to receive(:doc_hash).and_return(doc_hash) # speed up the test
-        expect(doc_hash).to receive(:validate_collection)
+        expect_any_instance_of(GDor::Indexer::SolrDocHash).to receive(:validate_collection)
         @indexer.index_coll_obj_per_config
       end
       it "should add a doc to Solr with gdor fields and collection specific fields" do

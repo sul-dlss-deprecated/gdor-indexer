@@ -200,7 +200,7 @@ module GDor
           logger.info "Indexing collection object #{coll_druid} (unmerged)"
           doc_hash = coll_sdb.doc_hash
           doc_hash.combine fields_to_add
-          @validation_messages = fields_to_add.validate_collection(config)
+          @validation_messages = doc_hash.validate_collection(config)
           @validation_messages.concat doc_hash.validate_mods(config)
           solr_add(doc_hash, coll_druid) unless coll_druid.nil?
           @success_count += 1
