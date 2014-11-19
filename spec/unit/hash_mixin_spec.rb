@@ -1,4 +1,4 @@
-require 'hash_mixin'
+require 'spec_helper'
 
 describe Hash do
   context "#field_present?" do

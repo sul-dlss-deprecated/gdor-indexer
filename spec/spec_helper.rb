@@ -1,6 +1,10 @@
+$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
+$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..'))
+
 require 'indexer'
 require 'equivalent-xml'
 require 'vcr'
+require 'stringio'
 
 # for test coverage
 require 'simplecov'
@@ -18,9 +22,6 @@ SimpleCov.start do
   add_filter "config/deploy"
   add_filter "config/deploy.rb"
 end
-
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..'))
 
 VCR.configure do |c|
   c.cassette_library_dir = 'spec/vcr_cassettes'

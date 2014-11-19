@@ -1,6 +1,4 @@
 require 'spec_helper'
-require 'rsolr'
-require 'record_merger'
 
 describe Indexer do
   

@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'record_merger'
 
 describe RecordMerger do
   before(:all) do
