@@ -2,7 +2,7 @@ require 'logger'
 
 require 'harvestdor'
 require 'stanford-mods'
-require 'gdor/indexer/hash_mixin'
+require 'gdor/indexer/solr_doc_hash'
 require 'gdor/indexer/mods_fields'
 require 'gdor/indexer/public_xml_fields'
 
@@ -34,15 +34,12 @@ class GDor::Indexer::SolrDocBuilder
   # Create a Hash representing the Solr doc to be written to Solr, based on MODS and public_xml
   # @return [Hash] Hash representing the Solr document
   def doc_hash
-    if not @doc_hash
-      @doc_hash = {
-        :id => @druid, 
-        :modsxml => "#{@smods_rec.to_xml}",
-      }
+    @doc_hash ||= begin
+      doc_hash = GDor::Indexer::SolrDocHash.new id: @druid, modsxml: @smods_rec.to_xml
       hash_from_mods = doc_hash_from_mods # defined in gdor_mods_fields
-      @doc_hash.merge!(hash_from_mods) if hash_from_mods
+      doc_hash.merge!(hash_from_mods) if hash_from_mods
+      doc_hash
     end
-    @doc_hash
   end
   
   # validate fields that should be in doc hash for every unmerged gryphonDOR object in SearchWorks Solr

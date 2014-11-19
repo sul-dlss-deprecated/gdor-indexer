@@ -16,8 +16,8 @@ module GDor
   class Indexer < Harvestdor::Indexer
 
     # local files
+    require 'gdor/indexer/solr_doc_hash'
     require 'gdor/indexer/solr_doc_builder'
-    require 'gdor/indexer/hash_mixin'
     require 'gdor/indexer/nokogiri_xml_node_mixin' if defined? JRUBY_VERSION
     require 'gdor/indexer/record_merger'
 
@@ -109,13 +109,13 @@ module GDor
         begin
           sdb = GDor::Indexer::SolrDocBuilder.new(druid, harvestdor_client, logger)
 
-          fields_to_add = {
+          fields_to_add = GDor::Indexer::SolrDocHash.new({
             :druid => druid,
             :url_fulltext => "http://purl.stanford.edu/#{druid}",
             :access_facet => 'Online',
             :display_type => sdb.display_type,  # defined in public_xml_fields
             :building_facet => 'Stanford Digital Repository'  # INDEX-53 add building_facet = Stanford Digital Repository here for item
-          }
+          })
           fields_to_add[:file_id] = sdb.file_ids unless !sdb.file_ids  # defined in public_xml_fields
 
           ckey = sdb.catkey
@@ -170,7 +170,7 @@ module GDor
       # we have already affirmed that coll_druid_from_config is a collection record in harvest_and_index method
       begin
         coll_druid = coll_druid_from_config
-        fields_to_add = {
+        fields_to_add = GDor::Indexer::SolrDocHash.new({
           :druid => coll_druid,
           :url_fulltext => "http://purl.stanford.edu/#{coll_druid}",
           :access_facet => 'Online',

@@ -47,7 +47,7 @@ describe GDor::Indexer::SolrDocBuilder do
     context "#validation_mods" do
       it 'should have no validation messages for a complete record' do
         sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-        sdb.stub(:doc_hash).and_return({
+        sdb.stub(:doc_hash).and_return(GDor::Indexer::SolrDocHash.new({
           :modsxml => 'whatever',
           :title_display => 'title',
           :pub_year_tisim => 'some year',
@@ -55,15 +55,15 @@ describe GDor::Indexer::SolrDocBuilder do
           :format_main_ssim => 'Image',
           :format => 'Image',
           :language => 'English'
-        })
+        }))
         sdb.validate_mods.length.should == 0
       end
       it 'should have validation messages for each missing field' do
         sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
         # note that passing in args this time
-        doc_hash = {
+        doc_hash = GDor::Indexer::SolrDocHash.new({
           :id => 'whatever',
-        }
+        })
         sdb.validate_mods('druid', doc_hash).length.should == 7
       end
     end  
