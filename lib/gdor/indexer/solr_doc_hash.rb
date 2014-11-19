@@ -11,24 +11,18 @@ class GDor::Indexer
     # when exp_val is a Regexp, looks for String value that matches, or Array with a String member that matches
     # @return true if the field is non-trivially present in the hash, false otherwise
     def field_present? field, exp_val = nil
-      if self[field] && (self[field].instance_of?(String) || self[field].instance_of?(Array)) && self[field].length > 0 
-        actual = self[field]
-        return true if exp_val == nil && ( !actual.instance_of?(Array) || actual.index { |s| s && s.length > 0 } )
-        if exp_val.instance_of?(String)
-          if actual.instance_of?(String)
-            return true if actual == exp_val
-          elsif actual.instance_of?(Array)
-            return true if actual.include? exp_val
-          end
-        elsif exp_val.instance_of?(Regexp)
-          if actual.instance_of?(String)
-            return true if exp_val.match(actual)
-          elsif actual.instance_of?(Array)
-            return true if actual.index { |s| exp_val.match(s) }
-          end
+      !!(if self.include?(field) && Array(self[field]).any? { |v| !v.blank? }
+        actual = Array(self[field])
+
+        case exp_val
+          when nil
+            true
+          when Regexp
+            actual.index { |s| exp_val.match(s) }
+          else
+            actual.include? exp_val
         end
-      end
-      false
+      end)
     end
     
     # merge in field values from the new hash, with the following guarantees:

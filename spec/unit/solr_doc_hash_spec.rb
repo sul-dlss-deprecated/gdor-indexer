@@ -5,7 +5,7 @@ describe GDor::Indexer::SolrDocHash do
     
     context "actual field value is boolean true" do
       it "true if expected value is nil" do
-        GDor::Indexer::SolrDocHash.new({:a => true}).field_present?(:a).should == false
+        GDor::Indexer::SolrDocHash.new({:a => true}).field_present?(:a).should == true
       end
       it "false if expected value is String" do
         GDor::Indexer::SolrDocHash.new({:a => true}).field_present?(:a, 'true').should == false
