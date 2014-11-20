@@ -36,7 +36,6 @@ describe GDor::Indexer::SolrDocBuilder do
       expect(@doc_hash).to_not have_key(:file_id)
     end
     it "should have the full MODS in the modsxml field for non-merged record" do
-      # this fails with equivalent-xml 0.4.1 or 0.4.2, but passes with 0.4.0
       expect(@doc_hash[:modsxml]).to be_equivalent_to @mods_xml
     end 
     it "should call doc_hash_from_mods to populate hash fields from MODS" do

@@ -24,11 +24,11 @@ end
 
 # testing
 group :test do
-	gem 'rspec'
+	gem 'rspec', "~> 3.1"
 	gem 'simplecov', :require => false
 	gem 'simplecov-rcov', :require => false
 #  gem 'jettywrapper'
-  gem 'equivalent-xml', '0.4.0' # 0.4.1 causes a failure 
+  gem 'equivalent-xml', "~> 0.5"
   gem 'vcr'
   gem 'webmock'
 end

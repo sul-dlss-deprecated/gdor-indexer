@@ -317,7 +317,7 @@ describe GDor::Indexer::ModsFields do
           expect(@author_doc_hash[:author_1xx_search]).to eq("Crusty The Clown")
         end
         it "author_7xx_search" do
-          pending "Should this return all authors? or only 7xx authors?"
+          skip "Should this return all authors? or only 7xx authors?"
           expect(@author_doc_hash[:author_7xx_search]).to match_array ["q", "Watchful Eye", "Exciting Prints", "conference"]
         end
         it "author_8xx_search should not be populated from MODS" do
@@ -735,24 +735,9 @@ describe GDor::Indexer::ModsFields do
       end # pub_year_tisim method
 
       context "difficult pub dates" do
-        it "should handle multiple pub dates" do
-          pending "to be implemented - esp for date slider"
-        end
-        it "should choose the latest date???" do
-          pending "to be implemented - esp for sorting and date slider"
-          m = "<mods #{@ns_decl}><originInfo>
-                <dateCreated>1904</dateCreated>
-                <dateCreated>1905</dateCreated>
-                <dateIssued>1906</dateIssued>
-              </originInfo></mods>"
-          allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(Nokogiri::XML(m))
-          sdb = GDor::Indexer::SolrDocBuilder.new(@fake_druid, @hdor_client, Logger.new(@strio))
-          doc_hash = sdb.doc_hash_from_mods
-          expect(doc_hash[:pub_date_sort]).to eq('1904')
-          expect(doc_hash[:pub_year_tisim]).to eq('1904')
-          expect(doc_hash[:pub_date]).to eq('1904')
-          expect(doc_hash[:pub_year_tisim]).to match_array ['1904','1905','1906']
-        end
+        it "should handle multiple pub dates (to be implemented - esp for date slider)"
+
+        it "should choose the latest date??? (to be implemented - esp for sorting and date slider)"
 
         it 'should handle nnth century dates' do
           m = "<mods #{@ns_decl}><originInfo>
