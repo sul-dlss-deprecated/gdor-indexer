@@ -5,6 +5,7 @@ require 'rsolr'
 require 'mail'
 require 'threach'
 require 'dor-fetcher'
+require 'hooks'
 
 # stdlib
 require 'logger'
@@ -14,6 +15,10 @@ require 'net/smtp'
 # Base class to harvest from DOR via harvestdor gem
 module GDor
   class Indexer < Harvestdor::Indexer
+
+    include Hooks
+
+    define_hooks :before_index, :before_merge
 
     # local files
     require 'gdor/indexer/solr_doc_hash'
@@ -136,6 +141,7 @@ module GDor
             add_coll_info fields_to_add, sdb.coll_druids_from_rels_ext # defined in public_xml_fields
             @validation_messages = fields_to_add.validate_item(config)
             require 'gdor/indexer/record_merger'
+            run_hook :before_merge, sdb, fields_to_add
             merged = GDor::Indexer::RecordMerger.merge_and_index(ckey, fields_to_add)
             if merged
               logger.info "item #{druid} merged into #{ckey}"
@@ -161,6 +167,7 @@ module GDor
           add_coll_info doc_hash, sdb.coll_druids_from_rels_ext # defined in public_xml_fields
           @validation_messages = fields_to_add.validate_item(config)
           @validation_messages.concat doc_hash.validate_mods(config)
+          run_hook :before_index, sdb, doc_hash
           solr_add(doc_hash, druid)
           @success_count += 1
         end
@@ -187,6 +194,7 @@ module GDor
         if coll_catkey
           @validation_messages = fields_to_add.validate_collection(config)
           require 'gdor/indexer/record_merger'
+          run_hook :before_merge, nil, fields_to_add
           merged = GDor::Indexer::RecordMerger.merge_and_index(coll_catkey, fields_to_add)
           if merged
             logger.info "Collection object #{coll_druid} merged into #{coll_catkey}"
@@ -202,6 +210,7 @@ module GDor
           doc_hash.combine fields_to_add
           @validation_messages = doc_hash.validate_collection(config)
           @validation_messages.concat doc_hash.validate_mods(config)
+          run_hook :before_index, nil, doc_hash
           solr_add(doc_hash, coll_druid) unless coll_druid.nil?
           @success_count += 1
         end

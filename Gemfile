@@ -15,6 +15,7 @@ gem 'threach'
 gem 'activesupport'
 gem 'mail'
 gem 'rest-client'
+gem 'hooks'
 
 # documentation
 group :doc do

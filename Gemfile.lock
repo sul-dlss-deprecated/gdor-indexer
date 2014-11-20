@@ -54,6 +54,8 @@ GEM
       retries
       rsolr
       stanford-mods
+    hooks (0.4.0)
+      uber (~> 0.0.4)
     i18n (0.6.11)
     iso-639 (0.2.5)
     jruby-openssl (0.9.5-java)
@@ -135,6 +137,7 @@ GEM
     trollop (2.0)
     tzinfo (1.2.2)
       thread_safe (~> 0.1)
+    uber (0.0.11)
     vcr (2.9.3)
     webmock (1.20.4)
       addressable (>= 2.3.6)
@@ -150,9 +153,10 @@ DEPENDENCIES
   capistrano (~> 3.2)
   capistrano-bundler
   capistrano-rvm
-  equivalent-xml
+  equivalent-xml (~> 0.5)
   harvestdor (>= 0.0.14)
   harvestdor-indexer (= 1.0.4)
+  hooks
   jruby-openssl
   lyberteam-capistrano-devel
   mail
