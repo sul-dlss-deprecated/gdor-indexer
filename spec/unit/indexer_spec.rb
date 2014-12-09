@@ -276,11 +276,13 @@ describe GDor::Indexer do
         @indexer.index_item @fake_druid
       end
       it "calls add_coll_info" do
-        expect(@indexer).to receive(:add_coll_info)
+        expect(@indexer).to receive(:add_coll_info).at_least(1).times
+        expect(GDor::Indexer::RecordMerger).to receive(:merge_and_index)
         @indexer.index_item @fake_druid
       end
       it "calls validate_item" do
-        expect_any_instance_of(GDor::Indexer::SolrDocHash).to receive(:validate_item)
+        expect_any_instance_of(GDor::Indexer::SolrDocHash).to receive(:validate_item).at_least(1).times.and_return([])
+        expect(GDor::Indexer::RecordMerger).to receive(:merge_and_index)
         @indexer.index_item @fake_druid
       end
       it "should add a doc to Solr with item fields added" do
