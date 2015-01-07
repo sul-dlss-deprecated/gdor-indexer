@@ -13,7 +13,7 @@ set :deploy_to, "/home/#{fetch(:user)}/#{fetch(:application)}"
 set :linked_dirs, %w(logs config/collections tmp solrmarc-sw)
 set :linked_files, %w{.ruby-version config/solr.yml bin/index-prod-image.sh bin/index-prod-hydrus.sh config/dor-fetcher-client.yml}
 
-set :stages, %W(dev stage prod fetcher)
+set :stages, %W(dev stage prod fetcher oembed)
 
 # Default value for :log_level is :debug
 set :log_level, :info

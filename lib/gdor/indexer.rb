@@ -49,6 +49,8 @@ module GDor
       @@config.configure(YAML.load_file(yml_path)) if yml_path && File.exists?(yml_path)
       # GDor::Indexer.config.configure options
       GDor::Indexer.config[:solr] = {:url => solr_config["solr"]["url"], :read_timeout => 3600, :open_timeout => 3600}
+      # Set merge_policy to never to remove item-level merge
+      GDor::Indexer.config[:merge_policy] = "never"
       client_config = YAML.load_file(client_config_path) if client_config_path && File.exists?(client_config_path)
       @dor_fetcher_client=DorFetcher::Client.new({:service_url => client_config["dor_fetcher_service_url"], :skip_heartbeat => true})
       yield(GDor::Indexer.config) if block_given?
