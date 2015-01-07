@@ -253,7 +253,7 @@ describe GDor::Indexer::SolrDocHash do
 
   context "#validate_item" do
     let(:collection_druid) { "xyz" }
-    let(:mock_config) { { default_set: "is_member_of_collection_#{collection_druid}" } }
+    let(:mock_config) { Confstruct::Configuration.new }
 
     before do
       GDor::Indexer::SolrDocHash.any_instance.stub(validate_gdor_fields: [])
@@ -308,7 +308,7 @@ describe GDor::Indexer::SolrDocHash do
   end # validate_item
 
   context "#validate_collection" do
-    let(:mock_config) { { } }
+    let(:mock_config) { Confstruct::Configuration.new }
 
     before do
       GDor::Indexer::SolrDocHash.any_instance.stub(validate_gdor_fields: [])
@@ -344,8 +344,14 @@ describe GDor::Indexer::SolrDocHash do
 
   context "#validate_gdor_fields" do
     let(:druid) { 'druid' }
-    let(:purl_url) { 'http://some.uri' }
-    let(:mock_config) { double purl: purl_url }
+    let(:purl_url) { mock_config.harvestdor.purl }
+    let(:mock_config) do 
+      Confstruct::Configuration.new do
+        harvestdor do
+          purl 'http://some.uri'
+        end
+      end
+    end
 
     it "should return an empty Array when there are no problems" do
       hash = GDor::Indexer::SolrDocHash.new({

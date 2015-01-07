@@ -91,9 +91,6 @@ end
   puts "Indexing #{coll} into Solr server #{GDor::Indexer.config[:solr][:url]}"
   puts "Logging output to #{GDor::Indexer.config[:log_dir]}/#{GDor::Indexer.config[:log_name]}"
   time do
-    if @indexer.collection_is_mergable?
-      puts 'A collection record merge will happen!'
-    end
     @indexer.harvest_and_index @opts[:nocommit]
   end
 end

@@ -65,9 +65,11 @@ class GDor::Indexer
     # @return [Array<String>] Array of messages suitable for notificaiton email and/or logs
     def validate_item config
       result = validate_gdor_fields(config)
-      collection_druid = GDor::Indexer.coll_druid(config)
-      result << "#{druid} missing collection of harvest\n" unless field_present?(:collection, collection_druid)
-      result << "#{druid} missing collection_with_title (or collection #{collection_druid} is missing title)\n" unless field_present?(:collection_with_title, Regexp.new("#{collection_druid}-\\|-.+"))
+      result << "#{druid} missing collection\n" unless field_present?(:collection)
+    
+      Array(self[:collection]).each do |collection_druid|
+        result << "#{druid} missing collection_with_title (or collection #{collection_druid} is missing title)\n" unless field_present?(:collection_with_title, Regexp.new("#{collection_druid}-\\|-.+"))
+      end
       result << "#{druid} missing file_id(s)\n" unless field_present?(:file_id)
       result
     end
@@ -86,7 +88,7 @@ class GDor::Indexer
     def validate_gdor_fields config
       result = []
       result << "#{druid} missing druid field\n" unless field_present?(:druid, druid)
-      result << "#{druid} missing url_fulltext for purl\n" unless field_present?(:url_fulltext, "#{config.purl}/#{druid}")
+      result << "#{druid} missing url_fulltext for purl\n" unless field_present?(:url_fulltext, "#{config.harvestdor.purl}/#{druid}")
       result << "#{druid} missing access_facet 'Online'\n" unless field_present?(:access_facet, 'Online')
       result << "#{druid} missing or bad display_type, possibly caused by unrecognized @type attribute on <contentMetadata>\n" unless field_present?(:display_type, /(file)|(image)|(media)|(book)/)
       result << "#{druid} missing building_facet 'Stanford Digital Repository'\n" unless field_present?(:building_facet, 'Stanford Digital Repository')

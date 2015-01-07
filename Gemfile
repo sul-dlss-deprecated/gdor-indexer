@@ -1,10 +1,10 @@
 source 'https://rubygems.org'
 
 # sul-gems
-gem 'harvestdor-indexer', '=1.0.4'
+gem 'harvestdor-indexer', github: "sul-dlss/harvestdor-indexer", branch: "refactor"
 gem 'harvestdor', '>=0.0.14'
 gem 'stanford-mods'
-gem 'jruby-openssl'
+gem 'jruby-openssl' if defined? JRUBY_VERSION
 gem 'nokogiri'
 gem 'rake'
 gem 'rsolr'
@@ -16,7 +16,7 @@ gem 'activesupport'
 gem 'mail'
 gem 'rest-client'
 gem 'hooks'
-
+gem 'byebug', platform: :mri
 # documentation
 group :doc do
 	gem 'rdoc'

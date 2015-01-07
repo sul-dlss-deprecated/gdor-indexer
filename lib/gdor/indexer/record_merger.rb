@@ -4,14 +4,19 @@ if defined? JRUBY_VERSION
 end
 
 class GDor::Indexer::RecordMerger
+  attr_reader :indexer
+
+  def initialize indexer
+    @indexer = indexer
+  end
   
-  def self.fetch_sw_solr_input_doc catkey
+  def fetch_sw_solr_input_doc catkey
     @sw_solr_input_doc = smwrapper.get_solr_input_doc_from_marcxml(catkey)
   end
   
   # @param [SolrInputDocumnet] solr_input_doc - java SolrInputDocument per solrj; the solr document object
   # @param [Hash<String, Object>] field_hash the keys are Solr field names, the values are either String or an Array of Strings
-  def self.add_hash_to_solr_input_doc solr_input_doc, field_hash
+  def add_hash_to_solr_input_doc solr_input_doc, field_hash
     field_hash.each_pair { |name, val| 
       name = name.to_s if name.is_a?(Symbol) 
       if val.is_a?(String)
@@ -28,9 +33,9 @@ class GDor::Indexer::RecordMerger
   
   # @param [String] catkey - the Symphony record catkey of the record we will be merging with
   # @param [Hash<String, Object>] doc_hash_to_add - the keys are Solr field names, the values are either String or an Array of Strings
-  def self.merge_and_index catkey, doc_hash_to_add
+  def merge_and_index catkey, doc_hash_to_add
     if defined? ::SolrjWrapper
-      doc = GDor::Indexer::RecordMerger.fetch_sw_solr_input_doc catkey
+      doc = fetch_sw_solr_input_doc catkey
       return false if !doc
       add_hash_to_solr_input_doc(doc, doc_hash_to_add)
       solrj.add_doc_to_ix(doc, catkey)
@@ -41,16 +46,16 @@ class GDor::Indexer::RecordMerger
   end
   
   # cache SolrJWrapper object at class level
-  def self.solrj
+  def solrj
     @@solrj ||= ::SolrjWrapper.new('../solrmarc-sw/lib/solrj-lib', GDor::Indexer.config.solr.url)
   end
   
   # cache SolrmarcWrapper object at class level
-  def self.smwrapper
+  def smwrapper
     @@smwrapper ||= begin
-      dist_dir = GDor::Indexer.config.solrmarc.dist_dir
-      sw_solr_url = GDor::Indexer.config.solrmarc.sw_solr_url
-      config_file = GDor::Indexer.config.solrmarc.config_file
+      dist_dir = indexer.config.solrmarc.dist_dir
+      sw_solr_url = indexer.config.solrmarc.sw_solr_url
+      config_file = indexer.config.solrmarc.config_file
 
       unless defined? ::SolrmarcWrapper
         raise "Unable to use SolrjWrapper; are you running under JRuby?"
