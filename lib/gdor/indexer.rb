@@ -195,7 +195,7 @@ module GDor
         })
         if coll_catkey
           if config.merge_policy == 'never'
-            logger.warn("#{druid} to be indexed from MODS; has ckey #{ckey} but merge_policy is 'never'")
+            logger.warn("#{coll_druid} to be indexed from MODS; has catkey #{coll_catkey} but merge_policy is 'never'")
             merged = false
           else
             @validation_messages = fields_to_add.validate_collection(config)
