@@ -51,6 +51,8 @@ module GDor
       solr_config = YAML.load_file(solr_config_path) if solr_config_path && File.exists?(solr_config_path)
       @config ||= Confstruct::Configuration.new()
       @config.configure(YAML.load_file(yml_path)) if yml_path && File.exists?(yml_path)
+      # Set merge_policy to never to remove item-level merge
+      @config[:merge_policy] = "never"
       yield @config if block_given?
       self.class.config = @config
       @harvestdor = Harvestdor::Indexer.new @config
