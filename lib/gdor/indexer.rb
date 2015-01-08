@@ -239,9 +239,10 @@ module GDor
         coll_druids.each { |coll_druid|
           cache_coll_title coll_druid
           cache_display_type_for_collection coll_druid, doc_hash[:display_type]
-          coll_id = coll_catkey ? coll_catkey : coll_druid
-          doc_hash[:collection] << coll_id
-          doc_hash[:collection_with_title] << "#{coll_id}-|-#{coll_druid_2_title_hash[coll_druid]}"
+          # Merge removed so don't use catkey as the collection id, instead use the collection druid
+          #coll_id = coll_catkey ? coll_catkey : coll_druid
+          doc_hash[:collection] << coll_druid
+          doc_hash[:collection_with_title] << "#{coll_druid}-|-#{coll_druid_2_title_hash[coll_druid]}"
         }
       end
     end
