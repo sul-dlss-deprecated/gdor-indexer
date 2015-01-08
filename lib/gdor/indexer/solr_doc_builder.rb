@@ -25,12 +25,12 @@ class GDor::Indexer::SolrDocBuilder
   def druid
     resource.druid
   end
-  
+
   # Create a Hash representing the Solr doc to be written to Solr, based on MODS and public_xml
   # @return [Hash] Hash representing the Solr document
   def doc_hash
     @doc_hash ||= begin
-      doc_hash = GDor::Indexer::SolrDocHash.new id: druid, modsxml: smods_rec.to_xml
+      doc_hash = GDor::Indexer::SolrDocHash.new id: resource.bare_druid, modsxml: smods_rec.to_xml
       hash_from_mods = doc_hash_from_mods # defined in gdor_mods_fields
       doc_hash.merge!(hash_from_mods) if hash_from_mods
       doc_hash
