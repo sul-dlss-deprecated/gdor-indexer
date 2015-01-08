@@ -26,7 +26,7 @@ module GDor
     require 'gdor/indexer/nokogiri_xml_node_mixin' if defined? JRUBY_VERSION
 
     attr_accessor :harvestdor
-    attr_reader :druid_item_array, :config
+    attr_reader :config, :druids_failed_to_ix
 
     class <<self
       attr_accessor :config
@@ -34,9 +34,7 @@ module GDor
 
     # Initialize with configuration files
     # @param yml_path [String] /path/to
-    def initialize yml_path, client_config_path, solr_config_path, options = {}
-      @dor_fetcher_count = 0
-      @whitelist_count = 0
+    def initialize yml_path, options = {}
       @success_count = 0
       @error_count = 0
       @total_time_to_solr = 0
@@ -45,11 +43,8 @@ module GDor
       @yml_path = yml_path
       @druids_failed_to_ix = []
       @validation_messages = []
-      @druid_item_array = []   # Local cache of items returned by dor-fetcher-service
-      @collection = File.basename(yml_path, ".yml")
-      solr_config = YAML.load_file(solr_config_path) if solr_config_path && File.exists?(solr_config_path)
       @config ||= Confstruct::Configuration.new()
-      @config.configure(YAML.load_file(yml_path)) if yml_path && File.exists?(yml_path)
+      @config.configure(YAML.load_file(yml_path))# if yml_path && File.exists?(yml_path)
       # Set merge_policy to never to remove item-level merge
       @config[:merge_policy] = "never"
       yield @config if block_given?
@@ -78,7 +73,11 @@ module GDor
     #   create a Solr document for each druid suitable for SearchWorks and
     #   write the result to the SearchWorks Solr index
     #  (all members of the collection + coll rec itself)
-    def harvest_and_index(nocommit = false)
+    def harvest_and_index(nocommit = nil)
+      if nocommit.nil?
+        nocommit = config.nocommit
+      end
+
       start_time=Time.now
       logger.info("Started harvest_and_index at #{start_time}")
 
@@ -86,11 +85,11 @@ module GDor
         index_with_exception_handling resource
       end
       
-      if !nocommit && coll_sdb.collection?
+      unless nocommit
         logger.info("Beginning Commit.")
         solr_client.commit!
         logger.info("Finished Commit.")
-      elsif nocommit
+      else
         logger.info("Skipping commit per nocommit flag")
       end
 

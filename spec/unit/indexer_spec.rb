@@ -32,6 +32,7 @@ describe GDor::Indexer do
     allow(r).to receive(:public_xml).and_return Nokogiri::XML(@pub_xml)
     allow(r).to receive(:public_xml?).and_return true
     allow(r).to receive(:content_metadata).and_return nil
+    allow(r).to receive(:collection?).and_return false
     r
   end
   
@@ -51,6 +52,68 @@ describe GDor::Indexer do
     it "should write the log file to the directory indicated by log_dir" do
       @indexer.logger.info("walters_integration_spec logging test message")
       expect(File).to exist(File.join(@yaml['harvestdor']['log_dir'], @yaml['harvestdor']['log_name']))
+    end
+  end
+
+  describe "#harvest_and_index" do
+    before :each do
+      allow(@indexer.harvestdor).to receive(:each_resource)
+      allow(@indexer).to receive(:solr_client).and_return(double(commit!: nil))
+      allow(@indexer).to receive(:log_results)
+      allow(@indexer).to receive(:email_results)
+    end
+    it "should log and email results" do
+      expect(@indexer).to receive(:log_results)
+      expect(@indexer).to receive(:email_results)
+      
+      @indexer.harvest_and_index
+    end
+    it "should index each resource" do
+      allow(@indexer).to receive(:harvestdor).and_return(Class.new do
+        def initialize *items
+          @items = items
+        end
+        def each_resource opts = {}
+          @items.each { |x| yield x }
+        end
+        def logger
+          Logger.new(STDERR)
+        end
+      end.new(collection, resource))
+
+      expect(@indexer).to receive(:index).with(collection)
+      expect(@indexer).to receive(:index).with(resource)
+
+      @indexer.harvest_and_index
+    end
+    it "should send a solr commit" do
+      expect(@indexer.solr_client).to receive(:commit!)
+      @indexer.harvest_and_index
+    end
+    it "should not commit if nocommit is set" do
+      expect(@indexer.solr_client).to_not receive(:commit!)
+      @indexer.harvest_and_index(true)
+    end
+  end
+
+  describe "#index" do
+    it "should index collections as collections" do
+      expect(@indexer).to receive(:index_coll_obj_per_config).with(collection)
+      @indexer.index collection
+    end
+
+    it "should index other resources as items" do
+      expect(@indexer).to receive(:index_item).with(resource)
+      @indexer.index resource
+    end
+  end
+
+  describe "#index_with_exception_handling" do
+    it "should capture, log, and re-raise any exception thrown by the indexing process" do
+      expect(@indexer).to receive(:index).with(resource).and_raise "xyz"
+      expect(@indexer.logger).to receive(:error)
+      expect { @indexer.index_with_exception_handling(resource) }.to raise_error RuntimeError
+      expect(@indexer.druids_failed_to_ix).to include resource.druid
     end
   end
   
@@ -362,15 +425,64 @@ describe GDor::Indexer do
       @indexer.instance_variable_set(:@druids_failed_to_ix, ['a', 'b'])
       expect(subject).to match /records that may have failed to index \(merged recs as druids, not ckeys\): \na\nb\n\n/
     end
-    
+
     it "email body include validation messages" do
       @indexer.instance_variable_set(:@validation_messages, ['this is a validation message'])
       expect(subject).to match /this is a validation message/
     end
-    
 
     it "email includes reference to full log" do
       expect(subject).to match /full log is at gdor_indexer\/shared\/spec\/test_logs\/testcoll\.log/
+    end
+  end
+
+  describe "#email_results" do
+    before :each do
+      @indexer.config.notification = "notification-list@example.com"
+      allow(@indexer).to receive(:send_email)
+      allow(@indexer).to receive(:email_report_body).and_return("Report Body")
+    end
+
+    it "should have an appropriate subject" do
+      expect(@indexer).to receive(:send_email) do |to, opts|
+        expect(opts[:subject]).to match /is finished/
+      end
+
+      @indexer.email_results
+    end
+
+    it "should send the email to the notification list" do
+      expect(@indexer).to receive(:send_email) do |to, opts|
+        expect(to).to eq @indexer.config.notification
+      end
+
+      @indexer.email_results
+    end
+
+    it "should have the report body" do
+      expect(@indexer).to receive(:send_email) do |to, opts|
+        expect(opts[:body]).to eq "Report Body"
+      end
+      
+      @indexer.email_results
+    end
+  end
+
+  describe "#send_email" do
+    it "should send an email to the right list" do
+      expect_any_instance_of(Mail::Message).to receive(:deliver!) do |mail|
+        expect(mail.to).to match_array ["notification-list@example.com"]
+      end
+      @indexer.send_email "notification-list@example.com", {}
+    end
+
+    it "should have the appropriate options set" do
+      expect_any_instance_of(Mail::Message).to receive(:deliver!) do |mail|
+        expect(mail.subject).to eq "Subject"
+        expect(mail.from).to match_array ["rspec"]
+        expect(mail.body).to eq "Body"
+      end
+      @indexer.send_email "notification-list@example.com", {from: "rspec", subject: "Subject", body: "Body"}
     end
   end
 
