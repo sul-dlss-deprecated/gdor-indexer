@@ -17,7 +17,7 @@ describe GDor::Indexer do
     @ng_pub_xml = Nokogiri::XML("<publicObject id='druid#{@fake_druid}'></publicObject>")
   end
   before(:each) do
-    @indexer = GDor::Indexer.new(@config_yml_path, @client_config_path, @solr_yml_path) do |config|
+    @indexer = GDor::Indexer.new(@config_yml_path) do |config|
       config.whitelist = ["druid:ww121ss5000"]
     end
     @hdor_client = @indexer.send(:harvestdor_client)
@@ -486,10 +486,10 @@ describe GDor::Indexer do
     end
   end
 
-  context "skip heartbeat" do
-    it "allows me to use a fake url for dor-fetcher-client" do
-      expect {GDor::Indexer.new(@config_yml_path, @client_config_path, @solr_yml_path)}.not_to raise_error
-    end
-  end
+  # context "skip heartbeat" do
+  #   it "allows me to use a fake url for dor-fetcher-client" do
+  #     expect {GDor::Indexer.new(@config_yml_path)}.not_to raise_error
+  #   end
+  # end
 
 end
