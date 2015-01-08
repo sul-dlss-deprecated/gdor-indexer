@@ -194,15 +194,20 @@ module GDor
           :building_facet => 'Stanford Digital Repository'  # INDEX-53 add building_facet = Stanford Digital Repository here for collection
         })
         if coll_catkey
-          @validation_messages = fields_to_add.validate_collection(config)
-          require 'gdor/indexer/record_merger'
-          run_hook :before_merge, nil, fields_to_add
-          merged = GDor::Indexer::RecordMerger.merge_and_index(coll_catkey, fields_to_add)
-          if merged
-            logger.info "Collection object #{coll_druid} merged into #{coll_catkey}"
-            @success_count += 1
+          if config.merge_policy == 'never'
+            logger.warn("#{druid} to be indexed from MODS; has ckey #{ckey} but merge_policy is 'never'")
+            merged = false
           else
-            logger.error("#{coll_druid} to be indexed from MODS:  MARC record #{coll_catkey} not found in SW Solr index (may be shadowed in Symphony)")
+            @validation_messages = fields_to_add.validate_collection(config)
+            require 'gdor/indexer/record_merger'
+            run_hook :before_merge, nil, fields_to_add
+            merged = GDor::Indexer::RecordMerger.merge_and_index(coll_catkey, fields_to_add)
+            if merged
+              logger.info "Collection object #{coll_druid} merged into #{coll_catkey}"
+              @success_count += 1
+            else
+              logger.error("#{coll_druid} to be indexed from MODS:  MARC record #{coll_catkey} not found in SW Solr index (may be shadowed in Symphony)")
+            end
           end
         end
 
