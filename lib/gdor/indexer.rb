@@ -44,7 +44,7 @@ module GDor
       @druids_failed_to_ix = []
       @validation_messages = []
       @config ||= Confstruct::Configuration.new()
-      @config.configure(YAML.load_file(yml_path))# if yml_path && File.exists?(yml_path)
+      @config.configure(YAML.load_file(yml_path)) if yml_path && File.exists?(yml_path)
       # Set merge_policy to never to remove item-level merge
       @config[:merge_policy] = "never"
       yield @config if block_given?
