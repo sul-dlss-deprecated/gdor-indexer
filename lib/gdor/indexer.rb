@@ -3,7 +3,6 @@ require 'confstruct'
 require 'harvestdor-indexer'
 require 'rsolr'
 require 'mail'
-require 'threach'
 require 'dor-fetcher'
 require 'hooks'
 
@@ -21,6 +20,7 @@ module GDor
     define_hooks :before_index, :before_merge
 
     # local files
+    require 'gdor/indexer/version'
     require 'gdor/indexer/solr_doc_hash'
     require 'gdor/indexer/solr_doc_builder'
     require 'gdor/indexer/nokogiri_xml_node_mixin' if defined? JRUBY_VERSION
