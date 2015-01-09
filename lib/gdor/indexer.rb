@@ -102,10 +102,16 @@ module GDor
     end
 
     def index resource
+      doc_hash = solr_document resource
+      run_hook :before_index, resource, doc_hash
+      solr_client.add(doc_hash)
+    end
+
+    def solr_document resource    
       if resource.collection?
-        index_coll_obj_per_config resource
+        collection_solr_document resource
       else
-        index_item resource
+        item_solr_document resource
       end
     end
 
@@ -122,7 +128,7 @@ module GDor
 
     # create Solr doc for the druid and add it to Solr, unless it is on the blacklist.
     #  NOTE: don't forget to send commit to Solr, either once at end (already in harvest_and_index), or for each add, or ...
-    def index_item resource
+    def item_solr_document resource
       sdb = GDor::Indexer::SolrDocBuilder.new(resource, logger)
 
       fields_to_add = GDor::Indexer::SolrDocHash.new({
@@ -141,14 +147,13 @@ module GDor
       validation_messages = fields_to_add.validate_item(config)
       validation_messages.concat doc_hash.validate_mods(config)
       @validation_messages.concat(validation_messages)
-      run_hook :before_index, sdb, doc_hash
-      solr_client.add(doc_hash)
+      doc_hash.to_h
     end
 
     # Create Solr document for the collection druid suitable for SearchWorks
     #  and write the result to the SearchWorks Solr Index
     # @param [String] druid
-    def index_coll_obj_per_config resource
+    def collection_solr_document resource
       coll_sdb = GDor::Indexer::SolrDocBuilder.new(resource, logger)
 
       fields_to_add = GDor::Indexer::SolrDocHash.new({
@@ -168,8 +173,7 @@ module GDor
       validation_messages = doc_hash.validate_collection(config)
       validation_messages.concat doc_hash.validate_mods(config)
       @validation_messages.concat(validation_messages)
-      run_hook :before_index, nil, doc_hash
-      solr_client.add(doc_hash)
+      doc_hash.to_h
     end
 
     # add coll level data to this solr doc and/or cache collection level information

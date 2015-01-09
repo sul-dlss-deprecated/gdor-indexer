@@ -98,12 +98,12 @@ describe GDor::Indexer do
 
   describe "#index" do
     it "should index collections as collections" do
-      expect(@indexer).to receive(:index_coll_obj_per_config).with(collection)
+      expect(@indexer).to receive(:collection_solr_document).with(collection)
       @indexer.index collection
     end
 
     it "should index other resources as items" do
-      expect(@indexer).to receive(:index_item).with(resource)
+      expect(@indexer).to receive(:item_solr_document).with(resource)
       @indexer.index resource
     end
   end
@@ -117,53 +117,28 @@ describe GDor::Indexer do
     end
   end
   
-  context "#index_item" do
-    context "merge or not?" do
-      context "config.merge_policy" do
-        before(:each) do
-          @sdb = double
-          allow(@sdb).to receive(:coll_druids_from_rels_ext)
-          allow(@sdb).to receive(:public_xml)
-          allow(@sdb).to receive(:display_type)
-          allow(@sdb).to receive(:file_ids)
-          # for unmerged items only
-          allow(@sdb).to receive(:doc_hash).and_return(GDor::Indexer::SolrDocHash.new)
-          allow(@sdb.doc_hash).to receive(:validate_mods).and_return([])
-        end
-        context "no catkey" do
-          before(:each) do
-            allow(GDor::Indexer::SolrDocBuilder).to receive(:new).and_return(@sdb)
-          end
-          it "merge_policy not set uses the MODS without error message" do
-            expect(@indexer.logger).not_to receive(:error)
-            expect(@indexer.solr_client).to receive(:add)
-            @indexer.index_item resource
-          end
-        end # no catkey
-      end # config.merge_policy
-    end # merge or not?
-
+  context "#item_solr_document" do
     context "unmerged" do
 
       before(:each) do
         allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(@ng_mods_xml)
       end
       it "calls Harvestdor::Indexer.solr_add" do
-        expect(@indexer.solr_client).to receive(:add).with(hash_including(id: @fake_druid))
-        @indexer.index_item resource
+        doc_hash = @indexer.item_solr_document(resource)
+        expect(doc_hash).to include id: @fake_druid
       end
       it "calls validate_item" do
         expect_any_instance_of(GDor::Indexer::SolrDocHash).to receive(:validate_item).and_return([])
-        @indexer.index_item resource
+        @indexer.item_solr_document resource
       end
       it "calls GDor::Indexer::SolrDocBuilder.validate_mods" do
         allow_any_instance_of(GDor::Indexer::SolrDocHash).to receive(:validate_item).and_return([])
         expect_any_instance_of(GDor::Indexer::SolrDocHash).to receive(:validate_mods).and_return([])
-        @indexer.index_item resource
+        @indexer.item_solr_document resource
       end
       it "calls add_coll_info" do
         expect(@indexer).to receive(:add_coll_info)
-        @indexer.index_item resource
+        @indexer.item_solr_document resource
       end
       it "should have fields populated from the collection record" do
         sdb = double
@@ -173,143 +148,97 @@ describe GDor::Indexer do
         allow(sdb.doc_hash).to receive(:validate_mods).and_return([])
         allow(GDor::Indexer::SolrDocBuilder).to receive(:new).and_return(sdb)
         allow(resource).to receive(:collections).and_return([double(druid: "foo", bare_druid: "foo", identity_md_obj_label: "bar")])
-        expect(@indexer.solr_client).to receive(:add).with(hash_including(druid: @fake_druid, :collection => ['foo'], :collection_with_title => ['foo-|-bar']))
-        @indexer.index_item resource
+        doc_hash = @indexer.item_solr_document resource
+        expect(doc_hash).to include druid: @fake_druid, :collection => ['foo'], :collection_with_title => ['foo-|-bar']
       end
       it "should have fields populated from the MODS" do
         title = 'fake title in mods'
         ng_mods = Nokogiri::XML("<mods #{@ns_decl}><titleInfo><title>#{title}</title></titleInfo></mods>")
         allow(resource).to receive(:mods).and_return(ng_mods)
-        expect(@indexer.solr_client).to receive(:add).with(hash_including(id: @fake_druid, :title_display => title))
-        @indexer.index_item resource
+        doc_hash = @indexer.item_solr_document resource
+        expect(doc_hash).to include id: @fake_druid, :title_display => title
       end
       it "should populate url_fulltext field with purl page url" do
-        expect(@indexer.solr_client).to receive(:add).with(hash_including(id: @fake_druid, :url_fulltext => "#{@yaml['harvestdor']['purl']}/#{@fake_druid}"))
-        @indexer.index_item resource
+        doc_hash = @indexer.item_solr_document resource
+        expect(doc_hash).to include id: @fake_druid, :url_fulltext => "#{@yaml['harvestdor']['purl']}/#{@fake_druid}"
       end
       it "should populate druid and access_facet fields" do
-        expect(@indexer.solr_client).to receive(:add).with(hash_including(id: @fake_druid, :druid => @fake_druid, :access_facet => 'Online'))
-        @indexer.index_item resource
+        doc_hash = @indexer.item_solr_document resource
+        expect(doc_hash).to include id: @fake_druid, :druid => @fake_druid, :access_facet => 'Online'
       end
       it "should populate display_type field by calling display_type method" do
         expect_any_instance_of(GDor::Indexer::SolrDocBuilder).to receive(:display_type).and_return("foo")
-        expect(@indexer.solr_client).to receive(:add).with(hash_including(id: @fake_druid, :display_type => "foo"))
-        @indexer.index_item resource
+        doc_hash = @indexer.item_solr_document resource
+        expect(doc_hash).to include id: @fake_druid, :display_type => "foo"
       end
       it "should populate file_id field by calling file_ids method" do
         expect_any_instance_of(GDor::Indexer::SolrDocBuilder).to receive(:file_ids).at_least(1).times.and_return(["foo"])
-        expect(@indexer.solr_client).to receive(:add).with(hash_including(id: @fake_druid, :file_id => ["foo"]))
-        @indexer.index_item resource
+        doc_hash = @indexer.item_solr_document resource
+        expect(doc_hash).to include id: @fake_druid, :file_id => ["foo"]
       end
       it "should populate building_facet field with Stanford Digital Repository" do
-        expect(@indexer.solr_client).to receive(:add).with(hash_including(id: @fake_druid, :building_facet => 'Stanford Digital Repository'))
-        @indexer.index_item resource
+        doc_hash = @indexer.item_solr_document resource
+        expect(doc_hash).to include id: @fake_druid, :building_facet => 'Stanford Digital Repository'
       end
     end # unmerged item
 
-  end # index_item 
+  end # item_solr_document 
 
-  context "#index_coll_obj_per_config" do
-    context "merge or not?" do
-    
-      before(:each) do
-        @sdb = double
-        allow(@sdb).to receive(:coll_druids_from_rels_ext)
-        allow(@sdb).to receive(:public_xml)
-        allow(@sdb).to receive(:display_type)
-        allow(@sdb).to receive(:file_ids)
-        # for unmerged items only
-        allow(@sdb).to receive(:doc_hash).and_return(GDor::Indexer::SolrDocHash.new)
-        allow(@sdb.doc_hash).to receive(:validate_mods).and_return([])
-      end
-      context "no catkey" do
-        before(:each) do
-          allow(GDor::Indexer::SolrDocBuilder).to receive(:new).and_return(@sdb)
-        end
-        shared_examples_for 'uses the MODS without error message' do | policy |
-          it "" do
-            @indexer.config[:merge_policy] = policy
-            expect(@indexer.logger).not_to receive(:error)
-            expect(@indexer.solr_client).to receive(:add)
-            @indexer.index_coll_obj_per_config collection
-          end
-        end
-        context "merge_policy 'always'" do
-          it_behaves_like 'uses the MODS without error message', 'always'
-        end
-        context "merge_policy 'never'" do
-          it_behaves_like 'uses the MODS without error message', 'never'
-        end
-        context "merge_policy not set" do
-          it_behaves_like 'uses the MODS without error message'
-        end
-      end # no catkey
-    end # merge or not?
-    
+  context "#collection_solr_document" do
     context "unmerged" do
-      before do
-
-      end
-      it "adds the collection doc to the index" do
-        allow_any_instance_of(GDor::Indexer::SolrDocBuilder).to receive(:doc_hash).and_return(GDor::Indexer::SolrDocHash.new) # speed up the test
-        expect(@indexer.solr_client).to receive(:add)
-        @indexer.index_coll_obj_per_config collection
-      end
       it "calls validate_collection" do
         doc_hash = GDor::Indexer::SolrDocHash.new
         allow_any_instance_of(GDor::Indexer::SolrDocBuilder).to receive(:doc_hash).and_return(doc_hash) # speed up the test
         expect(doc_hash).to receive(:validate_collection).and_return([])
-        @indexer.index_coll_obj_per_config collection
+        doc_hash = @indexer.collection_solr_document collection
       end
       it "calls GDor::Indexer::SolrDocBuilder.validate_mods" do
         doc_hash = GDor::Indexer::SolrDocHash.new
         allow_any_instance_of(GDor::Indexer::SolrDocBuilder).to receive(:doc_hash).and_return(doc_hash) # speed up the test
         expect(doc_hash).to receive(:validate_mods).and_return([])
-        @indexer.index_coll_obj_per_config collection
+        doc_hash = @indexer.collection_solr_document collection
       end
       it "populates druid and access_facet fields" do
-        expect(@indexer.solr_client).to receive(:add).with(hash_including(:druid => @coll_druid_from_test_config, 
-                                                                                        :access_facet => 'Online'))
-        @indexer.index_coll_obj_per_config collection
+        doc_hash = @indexer.collection_solr_document collection
+        expect(doc_hash).to include :druid => @coll_druid_from_test_config, :access_facet => 'Online'
       end
       it "populates url_fulltext field with purl page url" do
-        expect(@indexer.solr_client).to receive(:add).with(hash_including(:url_fulltext => "#{@yaml['harvestdor']['purl']}/#{@coll_druid_from_test_config}"))
-        @indexer.index_coll_obj_per_config collection
+        
+        doc_hash = @indexer.collection_solr_document collection
+        expect(doc_hash).to include :url_fulltext => "#{@yaml['harvestdor']['purl']}/#{@coll_druid_from_test_config}"
       end
       it "collection_type should be 'Digital Collection'" do
         allow_any_instance_of(GDor::Indexer::SolrDocBuilder).to receive(:doc_hash).and_return(GDor::Indexer::SolrDocHash.new) # speed up the test
-        expect(@indexer.solr_client).to receive(:add).with(hash_including(:collection_type => 'Digital Collection'))
-        @indexer.index_coll_obj_per_config collection
+        
+        doc_hash = @indexer.collection_solr_document collection
+        expect(doc_hash).to include :collection_type => 'Digital Collection'
       end
       context "add format_main_ssim Archive/Manuscript" do
         it "no other values" do
           allow_any_instance_of(GDor::Indexer::SolrDocBuilder).to receive(:doc_hash).and_return(GDor::Indexer::SolrDocHash.new)
-          expect(@indexer.solr_client).to receive(:add).with(hash_including(:format_main_ssim => 'Archive/Manuscript'))
-          @indexer.index_coll_obj_per_config collection
+          
+          doc_hash = @indexer.collection_solr_document collection
+          expect(doc_hash).to include :format_main_ssim => 'Archive/Manuscript'
         end
         it "other values present" do
           allow_any_instance_of(GDor::Indexer::SolrDocBuilder).to receive(:doc_hash).and_return(GDor::Indexer::SolrDocHash.new({:format_main_ssim => ['Image', 'Video']}))
-          expect(@indexer.solr_client).to receive(:add).with(hash_including(:format_main_ssim => ['Image', 'Video', 'Archive/Manuscript']))
-          @indexer.index_coll_obj_per_config collection
+          
+          doc_hash = @indexer.collection_solr_document collection
+          expect(doc_hash).to include :format_main_ssim => ['Image', 'Video', 'Archive/Manuscript']
         end
         it "already has values Archive/Manuscript" do
           allow_any_instance_of(GDor::Indexer::SolrDocBuilder).to receive(:doc_hash).and_return(GDor::Indexer::SolrDocHash.new({:format_main_ssim => 'Archive/Manuscript'}))
-          expect(@indexer.solr_client).to receive(:add).with(hash_including(:format_main_ssim => ['Archive/Manuscript']))
-          @indexer.index_coll_obj_per_config collection
+          
+          doc_hash = @indexer.collection_solr_document collection
+          expect(doc_hash).to include :format_main_ssim => ['Archive/Manuscript']
         end
       end
       it "populates building_facet field with Stanford Digital Repository" do
-        expect(@indexer.solr_client).to receive(:add).with(hash_including(:building_facet => 'Stanford Digital Repository'))
-        @indexer.index_coll_obj_per_config collection
+        
+        doc_hash = @indexer.collection_solr_document collection
+        expect(doc_hash).to include :building_facet => 'Stanford Digital Repository'
       end
     end # unmerged collection
-
-    context "merged with marc" do
-      it "validates the collection doc via validate_collection" do
-        expect_any_instance_of(GDor::Indexer::SolrDocHash).to receive(:validate_collection).and_return([])
-        @indexer.index_coll_obj_per_config collection
-      end
-    end # merged collection
   end #  index_coll_obj_per_config
   
   context "#add_coll_info and supporting methods" do
