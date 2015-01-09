@@ -52,10 +52,6 @@ module GDor
       @harvestdor = Harvestdor::Indexer.new @config
     end
 
-    def harvestdor_client
-      harvestdor.harvestdor_client
-    end
-
     def logger
       harvestdor.logger
     end

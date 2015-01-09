@@ -20,8 +20,6 @@ describe GDor::Indexer do
     @indexer = GDor::Indexer.new(@config_yml_path) do |config|
       config.whitelist = ["druid:ww121ss5000"]
     end
-    @hdor_client = @indexer.send(:harvestdor_client)
-    allow(@hdor_client).to receive(:public_xml).and_return(@ng_pub_xml)
     allow(@indexer.solr_client).to receive(:add)
   end
   
@@ -119,10 +117,6 @@ describe GDor::Indexer do
   
   context "#item_solr_document" do
     context "unmerged" do
-
-      before(:each) do
-        allow(@hdor_client).to receive(:mods).with(@fake_druid).and_return(@ng_mods_xml)
-      end
       it "calls Harvestdor::Indexer.solr_add" do
         doc_hash = @indexer.item_solr_document(resource)
         expect(doc_hash).to include id: @fake_druid
@@ -288,7 +282,6 @@ describe GDor::Indexer do
 
     context "#coll_display_types_from_items" do
       before(:each) do
-        allow(@hdor_client).to receive(:public_xml).and_return(@ng_pub_xml)
         @indexer.coll_display_types_from_items(collection)
       end
       it "gets single item display_type for single collection (and no dups)" do
