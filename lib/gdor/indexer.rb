@@ -5,6 +5,7 @@ require 'rsolr'
 require 'mail'
 require 'dor-fetcher'
 require 'hooks'
+require 'active_support/core_ext/array/extract_options'
 
 # stdlib
 require 'logger'
@@ -34,21 +35,21 @@ module GDor
 
     # Initialize with configuration files
     # @param yml_path [String] /path/to
-    def initialize yml_path, options = {}
+    # @param options [Hash]
+    def initialize *args
+      options = args.extract_options!
+      yml_path = args.first
+
       @success_count = 0
       @error_count = 0
       @total_time_to_solr = 0
       @total_time_to_parse = 0
       @retries = 0
-      @yml_path = yml_path
       @druids_failed_to_ix = []
       @validation_messages = []
-      @config ||= Confstruct::Configuration.new()
+      @config ||= Confstruct::Configuration.new options
       @config.configure(YAML.load_file(yml_path)) if yml_path && File.exists?(yml_path)
-      # Set merge_policy to never to remove item-level merge
-      @config[:merge_policy] = "never"
       yield @config if block_given?
-      self.class.config = @config
       @harvestdor = Harvestdor::Indexer.new @config
     end
 
