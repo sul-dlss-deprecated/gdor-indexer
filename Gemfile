@@ -5,7 +5,7 @@ gemspec
 
 
 # sul-gems
-gem 'harvestdor-indexer', github: "sul-dlss/harvestdor-indexer", branch: "refactor"
+gem 'harvestdor-indexer'
 
 group :deployment do
   gem "capistrano", '~> 3.2'
