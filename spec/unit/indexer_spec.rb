@@ -309,7 +309,7 @@ describe GDor::Indexer do
         @item_response = {'response' => {'numFound'=>'265','docs'=>[{'id'=>'dm212rn7381'}]}}
     end
 
-    it 'should count the items and the collection object in the solr index after indexing' do
+    xit 'should count the items and the collection object in the solr index after indexing' do
       allow(@indexer).to receive(:coll_druid_from_config).and_return('dm212rn7381')
       allow(@indexer.solr_client).to receive(:get) do |wt, params|
         if params[:params][:fq].include?('id:"dm212rn7381"')
