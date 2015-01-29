@@ -84,9 +84,8 @@ end
 
 # process each collection from the command line
 @collections.each do |coll|
-  solr_config_path = File.join(File.dirname(__FILE__), "..", "config", "solr.yml")
   config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "collections", "#{coll}.yml")
-  @indexer = GDor::Indexer.new(config_yml_path, solr_config_path)
+  @indexer = GDor::Indexer.new(config_yml_path)
 	puts "Indexing into Solr server #{@indexer.config[:solr][:url]}"
 	puts "Logging output to #{@indexer.config[:harvestdor][:log_dir]}/#{@indexer.config[:harvestdor][:log_name]}"
 
