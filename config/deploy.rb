@@ -7,7 +7,7 @@ set :repo_url, 'https://github.com/sul-dlss/gdor-indexer.git'
 # gdor-indexer needs jruby until merge-manager
 #set :rvm_ruby_version, "jruby-1.7.10"
 
-set :user, "lyberadmin"
+set :user, "harvestdor"
 set :deploy_to, "/home/#{fetch(:user)}/#{fetch(:application)}"
 
 set :linked_dirs, %w(logs config/collections tmp solrmarc-sw)
