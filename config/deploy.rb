@@ -5,7 +5,7 @@ set :repo_url, 'https://github.com/sul-dlss/gdor-indexer.git'
 # ask :branch, proc { `git rev-parse --abbrev-ref HEAD`.chomp }
 
 # gdor-indexer needs jruby until merge-manager
-set :rvm_ruby_version, "jruby-1.7.10"
+#set :rvm_ruby_version, "jruby-1.7.10"
 
 set :user, "lyberadmin"
 set :deploy_to, "/home/#{fetch(:user)}/#{fetch(:application)}"
