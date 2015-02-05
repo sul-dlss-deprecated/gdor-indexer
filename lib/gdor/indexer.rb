@@ -183,7 +183,7 @@ module GDor
 
         collections.each { |collection|
           collection.items.each {|item|
-            cache_display_type_for_collection collection, doc_hash[:display_type]
+            cache_display_type_for_collection collection, item.doc_hash[:display_type]
           }
           doc_hash[:collection] << collection.bare_druid
           doc_hash[:collection_with_title] << "#{collection.bare_druid}-|-#{coll_title(collection)}"
