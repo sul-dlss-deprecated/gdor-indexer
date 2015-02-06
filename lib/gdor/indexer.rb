@@ -140,7 +140,8 @@ module GDor
       logger.info "indexing item #{resource.bare_druid}"
       doc_hash = sdb.doc_hash
       doc_hash.combine fields_to_add
-      add_coll_info doc_hash, resource.collections # defined in public_xml_fields
+      add_coll_info doc_hash, sdb.coll_druids_from_rels_ext # defined in public_xml_fields
+#      add_coll_info doc_hash, resource.collections # defined in public_xml_fields
       validation_messages = fields_to_add.validate_item(config)
       validation_messages.concat doc_hash.validate_mods(config)
       @validation_messages.concat(validation_messages)
