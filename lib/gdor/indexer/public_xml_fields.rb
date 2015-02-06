@@ -53,6 +53,22 @@ module GDor::Indexer::PublicXmlFields
     resource.collections
   end
 
+  # get the druids from isMemberOfCollection relationships in rels-ext from public_xml
+  # @return [Array<String>] the druids (e.g. ww123yy1234) this object has isMemberOfColletion relationship with, or nil if none
+  def coll_druids_from_rels_ext
+    @coll_druids_from_rels_ext ||= begin
+      ns_hash = {'rdf' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#', 'fedora' => "info:fedora/fedora-system:def/relations-external#", '' => ''}
+      is_member_of_nodes ||= public_xml.xpath('/publicObject/rdf:RDF/rdf:Description/fedora:isMemberOfCollection/@rdf:resource', ns_hash)
+      # from public_xml rels-ext
+      druids = []
+      is_member_of_nodes.each { |n| 
+        druids << n.value.split('druid:').last unless n.value.empty?
+      }
+      return nil if druids.empty?
+      druids
+    end
+  end
+  
   protected #---------------------------------------------------------------------
   
   # the value of the type attribute for a DOR object's contentMetadata

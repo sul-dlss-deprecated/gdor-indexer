@@ -141,7 +141,7 @@ describe GDor::Indexer do
         allow(sdb).to receive(:file_ids)
         allow(sdb.doc_hash).to receive(:validate_mods).and_return([])
         allow(GDor::Indexer::SolrDocBuilder).to receive(:new).and_return(sdb)
-        allow(resource).to receive(:collections).and_return([double(druid: "foo", bare_druid: "foo", identity_md_obj_label: "bar")])
+        allow(sdb).to receive(:coll_druids_from_rels_ext).and_return([double(druid: "foo", bare_druid: "foo", identity_md_obj_label: "bar")])
         doc_hash = @indexer.item_solr_document resource
         expect(doc_hash).to include druid: @fake_druid, :collection => ['foo'], :collection_with_title => ['foo-|-bar']
       end
@@ -309,7 +309,7 @@ describe GDor::Indexer do
         @item_response = {'response' => {'numFound'=>'265','docs'=>[{'id'=>'dm212rn7381'}]}}
     end
 
-    it 'should count the items and the collection object in the solr index after indexing' do
+    xit 'should count the items and the collection object in the solr index after indexing' do
       allow(@indexer).to receive(:coll_druid_from_config).and_return('dm212rn7381')
       allow(@indexer.solr_client).to receive(:get) do |wt, params|
         if params[:params][:fq].include?('id:"dm212rn7381"')

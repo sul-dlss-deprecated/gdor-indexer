@@ -140,7 +140,8 @@ module GDor
       logger.info "indexing item #{resource.bare_druid}"
       doc_hash = sdb.doc_hash
       doc_hash.combine fields_to_add
-      add_coll_info doc_hash, resource.collections # defined in public_xml_fields
+      add_coll_info doc_hash, sdb.coll_druids_from_rels_ext # defined in public_xml_fields
+#      add_coll_info doc_hash, resource.collections # defined in public_xml_fields
       validation_messages = fields_to_add.validate_item(config)
       validation_messages.concat doc_hash.validate_mods(config)
       @validation_messages.concat(validation_messages)
@@ -218,7 +219,7 @@ module GDor
       params = {:fl => 'id', :rows => 1000}
       params[:fq] = fqs.map { |k,v| "#{k}:\"#{v}\""}
       params[:start] ||= 0
-      resp = solr_client.get 'select', :params => params
+      resp = solr_client.client.get 'select', :params => params
       num_found = resp['response']['numFound'].to_i
 
       if fqs.has_key? :collection
@@ -239,9 +240,13 @@ module GDor
           solr_count = num_found_in_solr(collection: collection.bare_druid)
           msgs << "#{config.harvestdor.log_name.chomp('.log')} indexed coll record is: #{collection.druid}\n"
           msgs << "coll title: #{coll_title(collection)}\n"
-          msgs << "Solr query for items: #{config[:solr][:url]}/select?fq=collection:#{collection.druid}&fl=id,title_245a_display\n"
+          msgs << "Solr query for items: #{config[:solr][:url]}/select?fq=collection:#{collection.bare_druid}&fl=id,title_245a_display\n"
           msgs << "Records verified in solr for collection #{collection.druid} (items + coll record): #{num_found_in_solr collection: collection.bare_druid}"
-          msgs << "WARNING: Expected #{collection.druid} to contain #{collection.items.length} items, but only found #{solr_count}."
+          if (collection.items.length > solr_count)
+            msgs << "WARNING: Expected #{collection.druid} to contain #{collection.items.length} items, but only found #{solr_count}."
+            msgs << "These are the druids that did not get indexed:"
+            msgs << "#{@druids_failed_to_ix}"
+          end
         end
 
         msgs << "Error count (items + coll record w any error; may have indexed on retry if it was a timeout): #{metrics.error_count}"

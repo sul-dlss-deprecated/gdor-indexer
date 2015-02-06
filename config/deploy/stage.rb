@@ -14,7 +14,7 @@
 # definition into the server list. The second argument
 # something that quacks like a hash can be used to set
 # extended properties on the server.
-server 'harvestdor-stage.stanford.edu', user: 'lyberadmin', roles: %w{web app db}
+server 'harvestdor-stage.stanford.edu', user: 'harvestdor', roles: %w{web app db}
 
 Capistrano::OneTimeKey.generate_one_time_key!
 

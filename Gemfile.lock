@@ -198,7 +198,7 @@ GEM
       colorize (>= 0.7.0)
       net-scp (>= 1.1.2)
       net-ssh (>= 2.8.0)
-    stanford-mods (1.1.1)
+    stanford-mods (1.1.2)
       mods
     thor (0.19.1)
     thread_safe (0.3.4)
