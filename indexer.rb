@@ -115,6 +115,7 @@ class Indexer < Harvestdor::Indexer
         }
         fields_to_add[:file_id] = sdb.file_ids unless !sdb.file_ids  # defined in public_xml_fields
 
+        logger.info("Merge policy #{config.merge_policy}")
         ckey = sdb.catkey
         if ckey
           if config.merge_policy == 'never'
@@ -178,14 +179,19 @@ class Indexer < Harvestdor::Indexer
         :building_facet => 'Stanford Digital Repository'  # INDEX-53 add building_facet = Stanford Digital Repository here for collection
       }
       if coll_catkey
-        @validation_messages = validate_collection(coll_druid, fields_to_add)
-        require 'record_merger'
-        merged = RecordMerger.merge_and_index(coll_catkey, fields_to_add)
-        if merged
-          logger.info "Collection object #{coll_druid} merged into #{coll_catkey}"
-          @success_count += 1
+        if config.merge_policy == 'never'
+          logger.warn("#{coll_druid} to be indexed from MODS; has catkey #{coll_catkey} but merge_policy is 'never'")
+          merged = false
         else
-          logger.error("#{coll_druid} to be indexed from MODS:  MARC record #{coll_catkey} not found in SW Solr index (may be shadowed in Symphony)")
+          @validation_messages = validate_collection(coll_druid, fields_to_add)
+          require 'record_merger'
+          merged = RecordMerger.merge_and_index(coll_catkey, fields_to_add)
+          if merged
+            logger.info "Collection object #{coll_druid} merged into #{coll_catkey}"
+            @success_count += 1
+          else
+            logger.error("#{coll_druid} to be indexed from MODS:  MARC record #{coll_catkey} not found in SW Solr index (may be shadowed in Symphony)")
+          end
         end
       end
 
@@ -216,9 +222,10 @@ class Indexer < Harvestdor::Indexer
       coll_druids.each { |coll_druid|
         cache_coll_title coll_druid
         cache_display_type_for_collection coll_druid, doc_hash[:display_type]
-        coll_id = coll_catkey ? coll_catkey : coll_druid
-        doc_hash[:collection] << coll_id
-        doc_hash[:collection_with_title] << "#{coll_id}-|-#{coll_druid_2_title_hash[coll_druid]}"
+        # Merge removed so don't use catkey as the collection id, instead use the collection druid
+        #coll_id = coll_catkey ? coll_catkey : coll_druid
+        doc_hash[:collection] << coll_druid
+        doc_hash[:collection_with_title] << "#{coll_druid}-|-#{coll_druid_2_title_hash[coll_druid]}"
       }
     end
   end
@@ -280,9 +287,9 @@ class Indexer < Harvestdor::Indexer
   # called by indexing script (in bin directory)
   # @return [boolean] true if the collection has a catkey
   def collection_is_mergable?
-    if coll_catkey
-      logger.info "Collection #{coll_druid_from_config} is being merged with cat key #{coll_catkey}"
-    end
+    # if coll_catkey
+    #   logger.info "Collection #{coll_druid_from_config} is being merged with cat key #{coll_catkey}"
+    # end
     false
   end
 
