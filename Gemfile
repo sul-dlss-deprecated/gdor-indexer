@@ -14,7 +14,7 @@ gem 'solrj_wrapper'
 gem 'threach'
 gem 'activesupport'
 gem 'mail'
-gem 'rest-client'
+#gem 'rest-client'
 
 # documentation
 group :doc do
