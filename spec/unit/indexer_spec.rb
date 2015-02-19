@@ -545,7 +545,7 @@ describe Indexer do
         doc_hash = {}
         @indexer.stub(:coll_catkey).and_return('666')
         @indexer.add_coll_info(doc_hash, @coll_druids_array)
-        doc_hash[:collection].should == ['666']
+        doc_hash[:collection].should == ['ww121ss5000']
       end
       # other tests show it uses druid when coll rec isn't merged
     end
@@ -573,7 +573,7 @@ describe Indexer do
         @indexer.stub(:coll_catkey).and_return('666')
         doc_hash = {}
         @indexer.add_coll_info(doc_hash, [coll_druid])
-        doc_hash[:collection_with_title].should == ['666-|-zzz']
+        doc_hash[:collection_with_title].should == ["#{coll_druid}-|-zzz"]
       end
       # other tests show it uses druid when coll rec isn't merged
     end
