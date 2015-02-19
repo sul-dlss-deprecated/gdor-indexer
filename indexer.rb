@@ -342,7 +342,8 @@ class Indexer < Harvestdor::Indexer
   def num_found_in_solr
     @num_found_in_solr ||= begin
       params = {:fl => 'id', :rows => 1000}
-      coll_rec_id = coll_catkey ? coll_catkey : coll_druid_from_config
+#      coll_rec_id = coll_catkey ? coll_catkey : coll_druid_from_config
+      coll_rec_id = coll_druid_from_config
       params[:fq] = "collection:\"#{coll_rec_id}\""
       params[:start] ||= 0
       resp = solr_client.get 'select', :params => params
@@ -410,7 +411,8 @@ class Indexer < Harvestdor::Indexer
     if Socket.gethostname.index("harvestdor")
       to_email = config.notification ? config.notification : 'gdor-indexing-notification@lists.stanford.edu'
 
-      coll_rec_id = coll_catkey ? coll_catkey : coll_druid_from_config
+#      coll_rec_id = coll_catkey ? coll_catkey : coll_druid_from_config
+      coll_rec_id = coll_druid_from_config
 
       body = "#{config.log_name.chomp('.log')} indexed coll record is: #{coll_rec_id}\n"
       body += "coll title: #{coll_druid_2_title_hash[coll_druid_from_config]}\n"
