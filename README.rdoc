@@ -1,5 +1,5 @@
 = gdor-indexer
-[![Dependency Status](https://gemnasium.com/sul-dlss/gdor-indexer.svg)](https://gemnasium.com/sul-dlss/gdor-indexer)
+{<img src="https://gemnasium.com/sul-dlss/gdor-indexer.png" alt="Dependency Status" />}[https://gemnasium.com/sul-dlss/gdor-indexer]
 
 Code to harvest DOR druids via dor-fetcher, mods from PURL, and use it to index items into the Searchworks index.
 
