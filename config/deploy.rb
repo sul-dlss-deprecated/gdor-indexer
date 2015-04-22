@@ -13,7 +13,7 @@ set :deploy_to, "/opt/app/#{fetch(:user)}/#{fetch(:application)}"
 set :linked_dirs, %w(logs config/collections tmp)
 set :linked_files, %w{config/solr.yml bin/index-prod.sh bin/index-test.sh config/dor-fetcher-client.yml}
 
-set :stages, %W(dev stage prod fetcher unmerged)
+set :stages, %W(dev stage prod)
 
 # Default value for :log_level is :debug
 set :log_level, :info
