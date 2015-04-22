@@ -1,19 +1,18 @@
 = gdor-indexer
+[![Dependency Status](https://gemnasium.com/sul-dlss/gdor-indexer.svg)](https://gemnasium.com/sul-dlss/gdor-indexer)
 
-{<img src="https://gemnasium.com/sul-dlss/gdor-indexer.png" alt="Dependency Status" />}[https://gemnasium.com/sul-dlss/gdor-indexer] 
+Code to harvest DOR druids via dor-fetcher, mods from PURL, and use it to index items into the Searchworks index.
 
-Code to harvest DOR druids via OAI, mods from PURL, and use it to index items into the Searchworks index.
+Relationship used for dor-fetcher:  "is_member_of_collection_ww121ss5000"
 
-Relationship used for OAI harvest:  "is_member_of_collection_ww121ss5000"
+== State of branches
 
+There are three branches:
+  before-chris-mods - the code reverted back to the state of the master before the modifications by Chris Beer in 2014, with the removal of the code that merges the DOR and MARC record for SearchWorks.
+  master - the code re-written by Chris Beer in 2014 to streamline the indexing of one druid at a time and including the removal of the code that merges the DOR and MARC record for SearchWorks.
+  master-b4-redesign - the code prior to the redesign of the SearchWorks UI Summer of 2014.
 
-== Install steps for running locally
-
-You must use jruby in 1.9 compatibility mode to run this app. Version 1.7.9 is known to work. An rvmrc file with the below is known to work :
-  # export JRUBY_OPTS="--1.9"  # this is the default so it is no longer needed
-  rvm use jruby-1.7.9
-  
-  bundle install
+  No more modifications to this code are expected because StanfordSync will be replacing this code in 2015.
 
 ===Configure environments
 
@@ -22,17 +21,6 @@ Copy the example solr.yml file from the spec/config directory into the config di
 
 Copy the example dor-fetcher-client.yml file from the spec/config directory into the config directory and change as required.  This will indicate which dor-fetcher-service the indexer will pull objects from.
   cp spec/config/dor-fetcher-client.yml config
-
-=== Cloning solrmarc
-
-You must also clone the solrmarc code from git and build the project with ant
-  git clone https://github.com/sul-dlss/solrmarc-sw.git
-  cd /path/to/solrmarc-sw
-  ant dist_site
-  
-Add a symbolic link in the top level of the gdor-indexer code to the cloned version of solrmarc-sw:
-  cd /path/to/gdor-indexer
-  ln -s /path/to/solrmarc-sw . 
 
 == Running the tests
 
