@@ -81,7 +81,7 @@ module GDor
       harvestdor.each_resource(in_threads: 3) do |resource|
         index_with_exception_handling resource
       end
-      
+
       unless nocommit
         logger.info("Beginning Commit.")
         solr_client.commit!
@@ -104,7 +104,7 @@ module GDor
       solr_client.add(doc_hash)
     end
 
-    def solr_document resource    
+    def solr_document resource
       if resource.collection?
         collection_solr_document resource
       else
@@ -196,7 +196,7 @@ module GDor
         resource.identity_md_obj_label
       end
     end
-    
+
     # cache of display_type from each item so we have this info for indexing collection record
     # @return [Hash<String, Array<String>>] collection druids as keys, array of item display_types as values
     def coll_display_types_from_items resource
@@ -218,7 +218,7 @@ module GDor
       params = {:fl => 'id', :rows => 1000}
       params[:fq] = fqs.map { |k,v| "#{k}:\"#{v}\""}
       params[:start] ||= 0
-      resp = solr_client.get 'select', :params => params
+      resp = solr_client.client.get 'select', :params => params
       num_found = resp['response']['numFound'].to_i
 
       if fqs.has_key? :collection
@@ -265,23 +265,23 @@ module GDor
     end
 
     def email_report_body
-      
+
       body = ""
-      
+
       body += "\n" + record_count_msgs.join("\n") + "\n"
-      
+
       if @druids_failed_to_ix.size > 0
         body += "\n"
         body += "records that may have failed to index (merged recs as druids, not ckeys): \n"
         body += @druids_failed_to_ix.join("\n") + "\n"
       end
-      
+
       body += "\n"
       body += "full log is at gdor_indexer/shared/#{config.harvestdor.log_dir}/#{config.harvestdor.log_name} on #{Socket.gethostname}"
       body += "\n"
-      
+
       body += @validation_messages.join("\n") + "\n"
-      
+
     end
 
     # email the results of indexing if we are on one of the harvestdor boxes
@@ -315,7 +315,7 @@ module GDor
       end
       mail.deliver!
     end
-    
+
     def elapsed_time(start_time,units=:seconds)
       elapsed_seconds=Time.now-start_time
       case units
@@ -327,7 +327,7 @@ module GDor
         return (elapsed_seconds/3600.0).round(2)
       else
         return elapsed_seconds
-      end 
+      end
     end
   end
 end
