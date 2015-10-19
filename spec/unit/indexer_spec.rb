@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe GDor::Indexer do
-  
+
   before(:all) do
     @config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "walters_integration_spec.yml")
     @solr_yml_path = File.join(File.dirname(__FILE__), "..", "config", "solr.yml")
@@ -22,7 +22,7 @@ describe GDor::Indexer do
     end
     allow(@indexer.solr_client).to receive(:add)
   end
-  
+
   let :resource do
     r = Harvestdor::Indexer::Resource.new(double, @fake_druid)
     allow(r).to receive(:collections).and_return []
@@ -33,7 +33,7 @@ describe GDor::Indexer do
     allow(r).to receive(:collection?).and_return false
     r
   end
-  
+
   let :collection do
     r = Harvestdor::Indexer::Resource.new(double, @coll_druid_from_test_config)
     allow(r).to receive(:collections).and_return []
@@ -63,7 +63,7 @@ describe GDor::Indexer do
     it "should log and email results" do
       expect(@indexer).to receive(:log_results)
       expect(@indexer).to receive(:email_results)
-      
+
       @indexer.harvest_and_index
     end
     it "should index each resource" do
@@ -114,7 +114,7 @@ describe GDor::Indexer do
       expect(@indexer.druids_failed_to_ix).to include resource.druid
     end
   end
-  
+
   context "#item_solr_document" do
     context "unmerged" do
       it "calls Harvestdor::Indexer.solr_add" do
@@ -176,7 +176,7 @@ describe GDor::Indexer do
       end
     end # unmerged item
 
-  end # item_solr_document 
+  end # item_solr_document
 
   context "#collection_solr_document" do
     context "unmerged" do
@@ -197,44 +197,44 @@ describe GDor::Indexer do
         expect(doc_hash).to include :druid => @coll_druid_from_test_config, :access_facet => 'Online'
       end
       it "populates url_fulltext field with purl page url" do
-        
+
         doc_hash = @indexer.collection_solr_document collection
         expect(doc_hash).to include :url_fulltext => "#{@yaml['harvestdor']['purl']}/#{@coll_druid_from_test_config}"
       end
       it "collection_type should be 'Digital Collection'" do
         allow_any_instance_of(GDor::Indexer::SolrDocBuilder).to receive(:doc_hash).and_return(GDor::Indexer::SolrDocHash.new) # speed up the test
-        
+
         doc_hash = @indexer.collection_solr_document collection
         expect(doc_hash).to include :collection_type => 'Digital Collection'
       end
       context "add format_main_ssim Archive/Manuscript" do
         it "no other values" do
           allow_any_instance_of(GDor::Indexer::SolrDocBuilder).to receive(:doc_hash).and_return(GDor::Indexer::SolrDocHash.new)
-          
+
           doc_hash = @indexer.collection_solr_document collection
           expect(doc_hash).to include :format_main_ssim => 'Archive/Manuscript'
         end
         it "other values present" do
           allow_any_instance_of(GDor::Indexer::SolrDocBuilder).to receive(:doc_hash).and_return(GDor::Indexer::SolrDocHash.new({:format_main_ssim => ['Image', 'Video']}))
-          
+
           doc_hash = @indexer.collection_solr_document collection
           expect(doc_hash).to include :format_main_ssim => ['Image', 'Video', 'Archive/Manuscript']
         end
         it "already has values Archive/Manuscript" do
           allow_any_instance_of(GDor::Indexer::SolrDocBuilder).to receive(:doc_hash).and_return(GDor::Indexer::SolrDocHash.new({:format_main_ssim => 'Archive/Manuscript'}))
-          
+
           doc_hash = @indexer.collection_solr_document collection
           expect(doc_hash).to include :format_main_ssim => ['Archive/Manuscript']
         end
       end
       it "populates building_facet field with Stanford Digital Repository" do
-        
+
         doc_hash = @indexer.collection_solr_document collection
         expect(doc_hash).to include :building_facet => 'Stanford Digital Repository'
       end
     end # unmerged collection
   end #  index_coll_obj_per_config
-  
+
   context "#add_coll_info and supporting methods" do
     before(:each) do
       @coll_druids_array = [collection]
@@ -247,7 +247,7 @@ describe GDor::Indexer do
       expect(doc_hash[:collection_with_title]).to be_nil
       expect(doc_hash[:display_type]).to be_nil
     end
-    
+
     context "collection field" do
       it "should be added field to doc hash" do
         doc_hash = GDor::Indexer::SolrDocHash.new({})
@@ -304,14 +304,13 @@ describe GDor::Indexer do
   end #add_coll_info
 
   context "#num_found_in_solr" do
-    before :each do 
+    before :each do
       @unmerged_collection_response = {'response' => {'numFound'=>'1','docs'=>[{'id'=>'dm212rn7381', 'url_fulltext' => ['http://purl.stanford.edu/dm212rn7381']}]}}
         @item_response = {'response' => {'numFound'=>'265','docs'=>[{'id'=>'dm212rn7381'}]}}
     end
 
     it 'should count the items and the collection object in the solr index after indexing' do
-      allow(@indexer).to receive(:coll_druid_from_config).and_return('dm212rn7381')
-      allow(@indexer.solr_client).to receive(:get) do |wt, params|
+      allow(@indexer.solr_client.client).to receive(:get) do |wt, params|
         if params[:params][:fq].include?('id:"dm212rn7381"')
           @unmerged_collection_response
         else
@@ -385,7 +384,7 @@ describe GDor::Indexer do
       expect(@indexer).to receive(:send_email) do |to, opts|
         expect(opts[:body]).to eq "Report Body"
       end
-      
+
       @indexer.email_results
     end
   end
