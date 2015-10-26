@@ -17,8 +17,8 @@ require 'capistrano/deploy'
 # require 'capistrano/rbenv'
 # require 'capistrano/chruby'
 require 'capistrano/bundler'
-#require 'capistrano/rails'
-require 'capistrano/rvm'  # gdor-indexer needs jruby until merge-manager
+# require 'capistrano/rails'
+require 'capistrano/rvm' # gdor-indexer needs jruby until merge-manager
 
 require 'dlss/capistrano'
 

@@ -38,9 +38,9 @@ class GDor::Indexer::SolrDocBuilder
   end
 
   # @return [String] value with SIRSI/Symphony numeric catkey in it, or nil if none exists
-  # first we look for 
+  # first we look for
   #  identityMetadata/otherId[@name='catkey']
-  # if not found, we look for 
+  # if not found, we look for
   #  identityMetadata/otherId[@name='barcode']
   #   if found, we look for catkey in MODS
   #     mods/recordInfo/recordIdentifier[@source="SIRSI"
@@ -51,13 +51,13 @@ class GDor::Indexer::SolrDocBuilder
       catkey = nil
       node = public_xml.xpath("/publicObject/identityMetadata/otherId[@name='catkey']") if public_xml
       catkey = node.first.content if node && node.first
-      if !catkey
+      unless catkey
         # if there's a barcode in the identity metadata then look for a ckey in the MODS
         node = public_xml.xpath("/publicObject/identityMetadata/otherId[@name='barcode']")
         if node.first
           rec_id = smods_rec.record_info.recordIdentifier
           if rec_id && !rec_id.empty? && rec_id.first.source == 'SIRSI'
-            catkey = rec_id.first.text.gsub('a','') # need to ensure catkey is numeric only
+            catkey = rec_id.first.text.delete('a') # need to ensure catkey is numeric only
           else
             logger.error("#{druid} has barcode #{node.first.content} in identityMetadata but no SIRSI catkey in mods")
           end
@@ -76,11 +76,10 @@ class GDor::Indexer::SolrDocBuilder
       mods_rec
     end
   end
-  
+
   # the public_xml for the druid as a Nokogiri::XML::Document object
   # @return [Nokogiri::XML::Document] containing the public xml for the druid
-  def public_xml 
+  def public_xml
     resource.public_xml
   end
-  
 end # GDor::Indexer::SolrDocBuilder class

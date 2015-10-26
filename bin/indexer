@@ -1,97 +1,71 @@
 #!/usr/bin/env ruby
 
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))  # Look in the lib directory for .rb files
+# Look in the lib directory for .rb files
+$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 
 require 'rubygems'
-require "bundler/setup"
+require 'bundler/setup'
 require 'trollop'
 require 'gdor/indexer'
 
 # Define the collections that this script knows how to harvest per yml files in the config/collections directory
 # @return Array
 def collections
-	config_dir = File.join(File.dirname(__FILE__), '..', 'config', 'collections')
-	files = Dir.glob("#{config_dir}/*.yml")
-	files.map! {|x| File.basename(x, ".yml") }
+  config_dir = File.join(File.dirname(__FILE__), '..', 'config', 'collections')
+  files = Dir.glob("#{config_dir}/*.yml")
+  files.map! { |x| File.basename(x, '.yml') }
 end
 
 # use Trollop to declare options and help text.
-@opts = Trollop::options do
-  version "indexer v0.2.0 (c) 2012-2014 Stanford University http://searchworks.stanford.edu"
+@opts = Trollop.options do
+  version 'indexer v0.2.0 (c) 2012-2014 Stanford University http://searchworks.stanford.edu'
   banner <<-EOM
-  The indexer script harvests records from SearchWorks OAI-PMH Provider,
+  The indexer script harvests items in a collection from DOR Fetcher Service,
+  harvests MODS from PURL pages, then
   maps them to Solr document hashes appropriate for SearchWorks, and writes them to Solr
   Usage:
-    ./index [options] 
+    ./indexer [options]
   where [options] are:
   EOM
-    
-  opt :collection, 
-    "Index a given collection. Possible values are #{collections.sort}",
-    :default => nil,
-    :short => 'c',
-    :type => String,
-    :multi => true
+
+  opt :collection,
+      'Index a given collection. Possible values are #{collections.sort}',
+      default: nil,
+      short: 'c',
+      type: String,
+      multi: true
   opt :nocommit,
-    "Index the collection but don't commit",
-    :default => nil,
-    :short => 'n'
-  opt :all, "Index all collections"
-#  opt :set, 
-#    "Harvest results from the given set",
-#    :default => nil,
-#    :short => 's',
-#    :type => String
-#  opt :from, 
-#    "Filter results starting from the given date",
-#    :default => nil,
-#    :short => 'f',
-#    :type => String
-#  opt :until,
-#    "Filter results until the given date",
-#    :default => nil,
-#    :short => 'u',
-#    :type => String
+      "Index the collection but don't commit",
+      default: nil,
+      short: 'n'
+  opt :all, 'Index all collections'
 end
 
 # Trollop::die :collection, "must be a known collection. Possible values are: #{collections.inspect} You entered #{@opts[:collection]}" unless collections.include?@opts[:collection]
 
-# [:from, :until].each do |d| 
-#   if opts[d]
-#     begin
-#       opts[d] = Time.parse opts[d]
-#     rescue Exception => e
-#       puts "Error, option --#{d.to_s} is not a valid date"
-#       exit(1)
-#     end
-#   end
-# end
-
 def time
-  start = Time.now
+  start = Time.now.getlocal
   yield
-  elapsed = Time.now - start
+  elapsed = Time.now.getlocal - start
   puts "This set took #{elapsed} seconds to run."
 end
 
 # Get all of the specified collections (from the command line) into an Array
 @collections = []
 if @opts[:collection].instance_of? Array
-  @collections = @opts[:collection] 
-else 
+  @collections = @opts[:collection]
+else
   @collections << @opts[:collection]
 end
 
 # process each collection from the command line
 @collections.each do |coll|
-  solr_config_path = File.join(File.dirname(__FILE__), "..", "config", "solr.yml")
-  config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "collections", "#{coll}.yml")
-  @indexer = GDor::Indexer.new(config_yml_path, solr_config_path)
-	puts "Indexing into Solr server #{@indexer.config[:solr][:url]}"
-	puts "Logging output to #{@indexer.config[:harvestdor][:log_dir]}/#{@indexer.config[:harvestdor][:log_name]}"
+  config_yml_path = File.join(File.dirname(__FILE__), '..', 'config', 'collections', "#{coll}.yml")
+  @indexer = GDor::Indexer.new(config_yml_path)
+  puts "Indexing into Solr server #{@indexer.config[:solr][:url]}"
+  puts "Logging output to #{@indexer.config[:harvestdor][:log_dir]}/#{@indexer.config[:harvestdor][:log_name]}"
 
   time do
     @indexer.harvest_and_index
   end
 end
-
