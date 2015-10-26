@@ -6,6 +6,7 @@
 .travis
 .rvmrc
 .ruby-version
+Gemfile.lock
 InstalledFiles
 _yardoc
 coverage
