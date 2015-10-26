@@ -1,15 +1,15 @@
 [![Dependency Status](https://gemnasium.com/sul-dlss/gdor-indexer.svg)](https://gemnasium.com/sul-dlss/gdor-indexer) [![Gem Version](https://badge.fury.io/rb/gdor-indexer.svg)](http://badge.fury.io/rb/gdor-indexer)
 
-h1. gdor-indexer
+# gdor-indexer
 
 Code to harvest DOR druids via DOR Fetcher service, mods from PURL, and use it to index items into a Solr index, such as that for SearchWorks.
 
-h2. Prerequisites
+## Prerequisites
 
 1. ruby
 2. bundler gem must be installed
 
-h2. Install steps for running locally
+## Install steps for running locally
 
 Add this line to your application's Gemfile:
 
@@ -19,14 +19,14 @@ Then execute:
 
     $ bundle
 
-h2. Configuration
+## Configuration
 
-h4. Create a collections folder in the config directory:
+#### Create a collections folder in the config directory:
 
     $ cd /path/to/gdor-indexer/config
     $ mkdir collections
 
-h4. Create a yml config file for your collection(s) to be harvested and indexed.
+#### Create a yml config file for your collection(s) to be harvested and indexed.
 
 See ```spec/config/walters_integration_spec.yml``` for an example.  Copy that file to ```config/collections``` and change the following settings:
 
@@ -35,7 +35,7 @@ See ```spec/config/walters_integration_spec.yml``` for an example.  Copy that fi
 * harvestdor log_dir and log_name
 * solr_url
 
-h5. whitelist
+##### whitelist
 
 The whitelist is how you specify which objects to index.  The whitelist can be
 
@@ -47,16 +47,16 @@ If a druid, per the object's identityMetadata at purl page, is for a
 * collection record:  then we process all the item druids in that collection (as if they were included individually in the whitelist)
 * non-collection record: then we process the druid as an individual item
 
-h4. Run the indexer script
+#### Run the indexer script
 
     $ cd /path/to/gdor-indexer
     $ nohup ./bin/indexer -c my_collection &>path/to/nohup.output
 
-h2. Running the tests
+## Running the tests
 
   ```$ rake```
 
-h2. Contributing
+## Contributing
 
 * Fork it (https://help.github.com/articles/fork-a-repo/)
 * Create your feature branch (`git checkout -b my-new-feature`)
