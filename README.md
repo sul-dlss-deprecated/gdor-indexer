@@ -1,4 +1,4 @@
-[![Dependency Status](https://gemnasium.com/sul-dlss/gdor-indexer.svg)](https://gemnasium.com/sul-dlss/gdor-indexer)
+[![Dependency Status](https://gemnasium.com/sul-dlss/gdor-indexer.svg)](https://gemnasium.com/sul-dlss/gdor-indexer) [![Gem Version](https://badge.fury.io/rb/gdor-indexer.svg)](http://badge.fury.io/rb/gdor-indexer)
 
 h1. gdor-indexer
 
