@@ -15,7 +15,6 @@ require 'set'
 # Base class to harvest from DOR via harvestdor gem
 module GDor
   class Indexer
-
     include Hooks
 
     define_hooks :before_index, :before_merge
@@ -36,7 +35,7 @@ module GDor
     # Initialize with configuration files
     # @param yml_path [String] /path/to
     # @param options [Hash]
-    def initialize *args
+    def initialize(*args)
       options = args.extract_options!
       yml_path = args.first
 
@@ -48,7 +47,7 @@ module GDor
       @druids_failed_to_ix = []
       @validation_messages = []
       @config ||= Confstruct::Configuration.new options
-      @config.configure(YAML.load_file(yml_path)) if yml_path && File.exists?(yml_path)
+      @config.configure(YAML.load_file(yml_path)) if yml_path && File.exist?(yml_path)
       yield @config if block_given?
       @harvestdor = Harvestdor::Indexer.new @config
     end
@@ -71,11 +70,9 @@ module GDor
     #   write the result to the SearchWorks Solr index
     #  (all members of the collection + coll rec itself)
     def harvest_and_index(nocommit = nil)
-      if nocommit.nil?
-        nocommit = config.nocommit
-      end
+      nocommit = config.nocommit if nocommit.nil?
 
-      start_time=Time.now.getlocal
+      start_time = Time.now.getlocal
       logger.info("Started harvest_and_index at #{start_time}")
 
       harvestdor.each_resource(in_threads: 3) do |resource|
@@ -83,28 +80,28 @@ module GDor
       end
 
       unless nocommit
-        logger.info("Beginning Commit.")
+        logger.info('Beginning Commit.')
         solr_client.commit!
-        logger.info("Finished Commit.")
+        logger.info('Finished Commit.')
       else
-        logger.info("Skipping commit per nocommit flag")
+        logger.info('Skipping commit per nocommit flag')
       end
 
       @total_time = elapsed_time(start_time)
       logger.info("Finished harvest_and_index at #{Time.now.getlocal}")
-      logger.info("Total elapsed time for harvest and index: #{(@total_time/60).round(2)} minutes")
+      logger.info("Total elapsed time for harvest and index: #{(@total_time / 60).round(2)} minutes")
 
       log_results
       email_results
     end
 
-    def index resource
+    def index(resource)
       doc_hash = solr_document resource
       run_hook :before_index, resource, doc_hash
       solr_client.add(doc_hash)
     end
 
-    def solr_document resource
+    def solr_document(resource)
       if resource.collection?
         collection_solr_document resource
       else
@@ -112,31 +109,29 @@ module GDor
       end
     end
 
-    def index_with_exception_handling resource
-      begin
-        index resource
-      rescue => e
-        @error_count += 1
-        @druids_failed_to_ix << resource.druid
-        logger.error "Failed to index item #{resource.druid}: #{e.message} #{e.backtrace}"
-        raise e
-      end
+    def index_with_exception_handling(resource)
+      index resource
+    rescue => e
+      @error_count += 1
+      @druids_failed_to_ix << resource.druid
+      logger.error "Failed to index item #{resource.druid}: #{e.message} #{e.backtrace}"
+      raise e
     end
 
     # create Solr doc for the druid and add it to Solr, unless it is on the blacklist.
     #  NOTE: don't forget to send commit to Solr, either once at end (already in harvest_and_index), or for each add, or ...
     # @param [Harvestdor::Indexer::Resource] resource an item record (a member of a collection)
-    def item_solr_document resource
+    def item_solr_document(resource)
       sdb = GDor::Indexer::SolrDocBuilder.new(resource, logger)
 
-      fields_to_add = GDor::Indexer::SolrDocHash.new({
-        :druid => resource.bare_druid,
-        :url_fulltext => "https://purl.stanford.edu/#{resource.bare_druid}",
-        :access_facet => 'Online',
-        :display_type => sdb.display_type,  # defined in public_xml_fields
-        :building_facet => 'Stanford Digital Repository'  # INDEX-53 add building_facet = Stanford Digital Repository here for item
-      })
-      fields_to_add[:file_id] = sdb.file_ids unless !sdb.file_ids  # defined in public_xml_fields
+      fields_to_add = GDor::Indexer::SolrDocHash.new(
+        druid: resource.bare_druid,
+        url_fulltext: "https://purl.stanford.edu/#{resource.bare_druid}",
+        access_facet: 'Online',
+        display_type: sdb.display_type, # defined in public_xml_fields
+        building_facet: 'Stanford Digital Repository' # INDEX-53 add building_facet = Stanford Digital Repository here for item
+      )
+      fields_to_add[:file_id] = sdb.file_ids if sdb.file_ids # defined in public_xml_fields
 
       logger.info "indexing item #{resource.bare_druid}"
       doc_hash = sdb.doc_hash
@@ -151,19 +146,19 @@ module GDor
     # Create Solr document for the collection druid suitable for SearchWorks
     #  and write the result to the SearchWorks Solr Index
     # @param [Harvestdor::Indexer::Resource] resource a collection record
-    def collection_solr_document resource
+    def collection_solr_document(resource)
       coll_sdb = GDor::Indexer::SolrDocBuilder.new(resource, logger)
 
-      fields_to_add = GDor::Indexer::SolrDocHash.new({
-        :druid => resource.bare_druid,
-        :url_fulltext => "https://purl.stanford.edu/#{resource.bare_druid}",
-        :access_facet => 'Online',
-        :collection_type => 'Digital Collection',
-        :display_type => coll_display_types_from_items(resource),
-        :format_main_ssim => 'Archive/Manuscript',  # per INDEX-12, add this to all collection records (does not add dups)
-        :format => 'Manuscript/Archive',  # per INDEX-144, add this to all collection records (does not add dups)
-        :building_facet => 'Stanford Digital Repository'  # INDEX-53 add building_facet = Stanford Digital Repository here for collection
-      })
+      fields_to_add = GDor::Indexer::SolrDocHash.new(
+        druid: resource.bare_druid,
+        url_fulltext: "https://purl.stanford.edu/#{resource.bare_druid}",
+        access_facet: 'Online',
+        collection_type: 'Digital Collection',
+        display_type: coll_display_types_from_items(resource),
+        format_main_ssim: 'Archive/Manuscript', # per INDEX-12, add this to all collection records (does not add dups)
+        format: 'Manuscript/Archive', # per INDEX-144, add this to all collection records (does not add dups)
+        building_facet: 'Stanford Digital Repository' # INDEX-53 add building_facet = Stanford Digital Repository here for collection
+      )
 
       logger.info "Indexing collection object #{resource.druid} (unmerged)"
       doc_hash = coll_sdb.doc_hash
@@ -177,21 +172,21 @@ module GDor
     # add coll level data to this solr doc and/or cache collection level information
     # @param [Hash] doc_hash representing the Solr document (for an item)
     # @param [Array<Harvestdor::Indexer::Resource>] collections  the collections the item is a member of
-    def add_coll_info doc_hash, collections
+    def add_coll_info(doc_hash, collections)
       if collections
         doc_hash[:collection] = []
         doc_hash[:collection_with_title] = []
 
-        collections.each { |collection|
+        collections.each do |collection|
           cache_display_type_for_collection collection, doc_hash[:display_type]
           doc_hash[:collection] << collection.bare_druid
           doc_hash[:collection_with_title] << "#{collection.bare_druid}-|-#{coll_title(collection)}"
-        }
+        end
       end
     end
 
     # cache the coll title so we don't have to look it up more than once
-    def coll_title resource
+    def coll_title(resource)
       @collection_titles ||= {}
       @collection_titles[resource.druid] ||= begin
         resource.identity_md_obj_label
@@ -200,14 +195,14 @@ module GDor
 
     # cache of display_type from each item so we have this info for indexing collection record
     # @return [Hash<String, Array<String>>] collection druids as keys, array of item display_types as values
-    def coll_display_types_from_items resource
+    def coll_display_types_from_items(resource)
       @collection_display_types ||= {}
       @collection_display_types[resource.druid] ||= Set.new
     end
 
     # cache the display_type of this (item) object with a collection, so when the collection rec
     # is being indexed, it can get all of the display_types of the members
-    def cache_display_type_for_collection resource, display_type
+    def cache_display_type_for_collection(resource, display_type)
       if display_type && display_type.instance_of?(String)
         coll_display_types_from_items(resource) << display_type
       end
@@ -215,14 +210,14 @@ module GDor
 
     # count the number of records in solr for this collection (and the collection record itself)
     #  and check for a purl in the collection record
-    def num_found_in_solr fqs
-      params = {:fl => 'id', :rows => 1000}
-      params[:fq] = fqs.map { |k,v| "#{k}:\"#{v}\""}
+    def num_found_in_solr(fqs)
+      params = { fl: 'id', rows: 1000 }
+      params[:fq] = fqs.map { |k, v| "#{k}:\"#{v}\"" }
       params[:start] ||= 0
-      resp = solr_client.client.get 'select', :params => params
+      resp = solr_client.client.get 'select', params: params
       num_found = resp['response']['numFound'].to_i
 
-      if fqs.has_key? :collection
+      if fqs.key? :collection
         num_found += num_found_in_solr id: fqs[:collection]
       end
 
@@ -236,7 +231,7 @@ module GDor
         msgs = []
         msgs << "Successful count (items + coll record indexed w/o error): #{metrics.success_count}"
 
-        harvestdor.resources.select { |x| x.collection? }.each do |collection|
+        harvestdor.resources.select(&:collection?).each do |collection|
           solr_count = num_found_in_solr(collection: collection.bare_druid)
           msgs << "#{config.harvestdor.log_name.chomp('.log')} indexed coll record is: #{collection.druid}\n"
           msgs << "coll title: #{coll_title(collection)}\n"
@@ -246,7 +241,7 @@ module GDor
         end
 
         msgs << "Error count (items + coll record w any error; may have indexed on retry if it was a timeout): #{metrics.error_count}"
-  #      msgs << "Retry count: #{@retries}"  # currently useless due to bug in harvestdor-indexer 0.0.12
+        #      msgs << "Retry count: #{@retries}"  # currently useless due to bug in harvestdor-indexer 0.0.12
         msgs << "Total records processed: #{metrics.total}"
         msgs
       end
@@ -254,20 +249,19 @@ module GDor
 
     # log details about the results of indexing
     def log_results
-      record_count_msgs.each { |msg|
+      record_count_msgs.each do |msg|
         logger.info msg
-      }
-      logger.info("Avg solr commit time per object (successful): #{(@total_time_to_solr/metrics.success_count).round(2)} seconds") unless metrics.success_count == 0
-      logger.info("Avg solr commit time per object (all): #{(@total_time_to_solr/metrics.total).round(2)} seconds") unless metrics.total == 0
-      logger.info("Avg parse time per object (successful): #{(@total_time_to_parse/metrics.success_count).round(2)} seconds") unless metrics.success_count == 0
-      logger.info("Avg parse time per object (all): #{(@total_time_to_parse/metrics.total).round(2)} seconds") unless metrics.total == 0
-      logger.info("Avg complete index time per object (successful): #{(@total_time/metrics.success_count).round(2)} seconds") unless metrics.success_count == 0
-      logger.info("Avg complete index time per object (all): #{(@total_time/metrics.total).round(2)} seconds") unless metrics.total == 0
+      end
+      logger.info("Avg solr commit time per object (successful): #{(@total_time_to_solr / metrics.success_count).round(2)} seconds") unless metrics.success_count == 0
+      logger.info("Avg solr commit time per object (all): #{(@total_time_to_solr / metrics.total).round(2)} seconds") unless metrics.total == 0
+      logger.info("Avg parse time per object (successful): #{(@total_time_to_parse / metrics.success_count).round(2)} seconds") unless metrics.success_count == 0
+      logger.info("Avg parse time per object (all): #{(@total_time_to_parse / metrics.total).round(2)} seconds") unless metrics.total == 0
+      logger.info("Avg complete index time per object (successful): #{(@total_time / metrics.success_count).round(2)} seconds") unless metrics.success_count == 0
+      logger.info("Avg complete index time per object (all): #{(@total_time / metrics.total).round(2)} seconds") unless metrics.total == 0
     end
 
     def email_report_body
-
-      body = ""
+      body = ''
 
       body += "\n" + record_count_msgs.join("\n") + "\n"
 
@@ -282,7 +276,6 @@ module GDor
       body += "\n"
 
       body += @validation_messages.join("\n") + "\n"
-
     end
 
     # email the results of indexing if we are on one of the harvestdor boxes
@@ -303,29 +296,29 @@ module GDor
     end
 
     def send_email(to, opts = {})
-      opts[:server]     ||= 'localhost'
-      opts[:from]       ||= 'gryphondor@stanford.edu'
+      opts[:server] ||= 'localhost'
+      opts[:from] ||= 'gryphondor@stanford.edu'
       opts[:from_alias] ||= 'gryphondor'
-      opts[:subject]    ||= "default subject"
-      opts[:body]       ||= "default message body"
+      opts[:subject] ||= 'default subject'
+      opts[:body] ||= 'default message body'
       mail = Mail.new do
-        from    opts[:from]
-        to      to
+        from opts[:from]
+        to to
         subject opts[:subject]
-        body    opts[:body]
+        body opts[:body]
       end
       mail.deliver!
     end
 
-    def elapsed_time(start_time,units=:seconds)
-      elapsed_seconds=Time.now.getlocal - start_time
+    def elapsed_time(start_time, units = :seconds)
+      elapsed_seconds = Time.now.getlocal - start_time
       case units
       when :seconds
         return elapsed_seconds.round(2)
       when :minutes
-        return (elapsed_seconds/60.0).round(1)
+        return (elapsed_seconds / 60.0).round(1)
       when :hours
-        return (elapsed_seconds/3600.0).round(2)
+        return (elapsed_seconds / 3600.0).round(2)
       else
         return elapsed_seconds
       end

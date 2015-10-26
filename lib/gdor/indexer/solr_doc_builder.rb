@@ -51,13 +51,13 @@ class GDor::Indexer::SolrDocBuilder
       catkey = nil
       node = public_xml.xpath("/publicObject/identityMetadata/otherId[@name='catkey']") if public_xml
       catkey = node.first.content if node && node.first
-      if !catkey
+      unless catkey
         # if there's a barcode in the identity metadata then look for a ckey in the MODS
         node = public_xml.xpath("/publicObject/identityMetadata/otherId[@name='barcode']")
         if node.first
           rec_id = smods_rec.record_info.recordIdentifier
           if rec_id && !rec_id.empty? && rec_id.first.source == 'SIRSI'
-            catkey = rec_id.first.text.gsub('a','') # need to ensure catkey is numeric only
+            catkey = rec_id.first.text.delete('a') # need to ensure catkey is numeric only
           else
             logger.error("#{druid} has barcode #{node.first.content} in identityMetadata but no SIRSI catkey in mods")
           end

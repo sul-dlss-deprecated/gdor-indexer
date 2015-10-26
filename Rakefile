@@ -11,19 +11,19 @@ rescue Bundler::BundlerError => e
 end
 
 # add tasks defined in lib/tasks
-#Dir.glob('lib/tasks/*.rake').each { |r| import r }
+# Dir.glob('lib/tasks/*.rake').each { |r| import r }
 
-#desc 'Open an irb session preloaded with this library'
-#task :console do
+# desc 'Open an irb session preloaded with this library'
+# task :console do
 #  sh 'irb -rubygems -I lib  -r ./frda_indexer.rb'
-#end
+# end
 
-task :default => [:ci, :rubocop]
+task default: [:ci, :rubocop]
 
 desc 'run continuous integration suite (tests, coverage, docs)'
-task :ci => [:rspec, :doc, :rubocop]
+task ci: [:rspec, :doc, :rubocop]
 
-task :spec => :rspec
+task spec: :rspec
 
 require 'rspec/core/rake_task'
 RSpec::Core::RakeTask.new(:rspec) do |spec|
@@ -46,7 +46,7 @@ begin
 
   YARD::Rake::YardocTask.new(:doc) do |yt|
     yt.files = Dir.glob(File.join(project_root, 'lib', '**', '*.rb')) +
-                 [ File.join(project_root, 'README.rdoc') ]
+      [File.join(project_root, 'README.rdoc')]
     yt.options = ['--output-dir', doc_dest_dir, '--readme', 'README.rdoc', '--title', 'Gryphondor Indexer Documentation']
   end
 rescue LoadError

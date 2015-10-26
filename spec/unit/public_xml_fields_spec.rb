@@ -1,7 +1,6 @@
 require 'spec_helper'
 
 describe GDor::Indexer::PublicXmlFields do
-
   before(:all) do
     @fake_druid = 'oo000oo0000'
     @ns_decl = "xmlns='#{Mods::MODS_NS}'"
@@ -13,52 +12,51 @@ describe GDor::Indexer::PublicXmlFields do
     Logger.new(StringIO.new)
   end
 
-  def sdb_for_pub_xml m
+  def sdb_for_pub_xml(m)
     resource = Harvestdor::Indexer::Resource.new(double, @fake_druid)
     allow(resource).to receive(:public_xml).and_return(Nokogiri::XML(m))
     allow(resource).to receive(:mods).and_return(@mods_xml)
     GDor::Indexer::SolrDocBuilder.new(resource, logger)
   end
-  def sdb_for_content_md m
+
+  def sdb_for_content_md(m)
     resource = Harvestdor::Indexer::Resource.new(double, @fake_druid)
     allow(resource).to receive(:content_metadata).and_return(Nokogiri::XML(m).root)
     allow(resource).to receive(:public_xml).and_return(@empty_pub_xml)
     allow(resource).to receive(:mods).and_return(@mods_xml)
     GDor::Indexer::SolrDocBuilder.new(resource, logger)
   end
-  
-    
-  # NOTE:  
+
+  # NOTE:
   # "Doubles, stubs, and message expectations are all cleaned out after each example."
   # per https://www.relishapp.com/rspec/rspec-mocks/docs/scope
-  
-  
-  context "contentMetadata fields and methods" do
+
+  context 'contentMetadata fields and methods' do
     before(:all) do
       @content_md_start = "<contentMetadata objectId='#{@fake_druid}'>"
-      @content_md_end = "</contentMetadata>"
+      @content_md_end = '</contentMetadata>'
       @cntnt_md_type = 'image'
       @cntnt_md_xml = "<contentMetadata type='#{@cntnt_md_type}' objectId='#{@fake_druid}'>#{@content_md_end}"
       @pub_xml = "<publicObject id='druid:#{@fake_druid}'>#{@cntnt_md_xml}</publicObject>"
       @ng_pub_xml = Nokogiri::XML(@pub_xml)
     end
 
-    context "dor_content_type" do
-      it "should be the value of the type attribute on <contentMetadata> element" do
+    context 'dor_content_type' do
+      it 'is the value of the type attribute on <contentMetadata> element' do
         val = 'foo'
         cntnt_md = "<contentMetadata type='#{val}'>#{@content_md_end}"
         sdb = sdb_for_content_md(cntnt_md)
         expect(sdb.send(:dor_content_type)).to eq(val)
       end
-      it "should log an error message if there is no content type" do
+      it 'logs an error message if there is no content type' do
         cntnt_md = "#{@content_md_start}#{@content_md_end}"
         sdb = sdb_for_content_md(cntnt_md)
         expect(sdb.logger).to receive(:error).with("#{@fake_druid} has no DOR content type (<contentMetadata> element may be missing type attribute)")
         sdb.send(:dor_content_type)
       end
     end
-    
-    context "display_type" do
+
+    context 'display_type' do
       let :sdb do
         sdb_for_pub_xml @empty_pub_xml
       end
@@ -88,11 +86,11 @@ describe GDor::Indexer::PublicXmlFields do
         expect(sdb.display_type).to eq('file')
       end
     end # display_type
-    
-    context "#file_ids" do
-      context "file display_type" do
-        context "contentMetadata type=file, resource type=file" do
-          it "should be id attrib of file element in single resource element with type=file" do
+
+    context '#file_ids' do
+      context 'file display_type' do
+        context 'contentMetadata type=file, resource type=file' do
+          it 'is id attrib of file element in single resource element with type=file' do
             m = '<contentMetadata type="file" objectId="xh812jt9999">
               <resource type="file" sequence="1" id="xh812jt9999_1">
                 <label>John A. Blume Earthquake Engineering Center Technical Report 180</label>
@@ -101,7 +99,7 @@ describe GDor::Indexer::PublicXmlFields do
             sdb = sdb_for_content_md(m)
             expect(sdb.file_ids).to match_array ['TR180_Shahi.pdf']
           end
-          it "should be id attrib of file elements in multiple resource elements with type=file" do
+          it 'is id attrib of file elements in multiple resource elements with type=file' do
             m = '<contentMetadata objectId="jt108hm9275" type="file">
               <resource id="jt108hm9275_1" sequence="1" type="file">
                <label>Access to Energy newsletter, 1973-1994</label>
@@ -120,10 +118,10 @@ describe GDor::Indexer::PublicXmlFields do
                 <file id="DougEngelbart041306.wav" mimetype="audio/x-wav" size="273705910" />
               </resource></contentMetadata>'
             sdb = sdb_for_content_md(m)
-            expect(sdb.file_ids).to match_array ['ATE.PDF', "SC0524_2013-047_b8_811.mp4", "SAILDART.zip", "DougEngelbart041306.wav"]
+            expect(sdb.file_ids).to match_array ['ATE.PDF', 'SC0524_2013-047_b8_811.mp4', 'SAILDART.zip', 'DougEngelbart041306.wav']
           end
         end # contentMetadata type=file, resource type=file
-        it "contentMetadata type=geo, resource type=object" do
+        it 'contentMetadata type=geo, resource type=object' do
           m = '<contentMetadata objectId="druid:qk786js7484" type="geo">
             <resource id="druid:qk786js7484_1" sequence="1" type="object">
               <label>Data</label>
@@ -138,13 +136,12 @@ describe GDor::Indexer::PublicXmlFields do
           sdb = sdb_for_content_md(m)
           expect(sdb.file_ids).to match_array ['data.zip', 'preview.jpg']
         end
-        
+
         # FIXME:  non-file resource types
-        
       end # file display_type
-      context "image display_type" do
-        context "contentMetadata type=image" do
-          it "resource type=image should be id attrib of file elements" do
+      context 'image display_type' do
+        context 'contentMetadata type=image' do
+          it 'resource type=image should be id attrib of file elements' do
             m = '<contentMetadata objectId="rg759wj0953" type="image">
               <resource id="rg759wj0953_1" sequence="1" type="image">
                 <label>Image 1</label>
@@ -161,7 +158,7 @@ describe GDor::Indexer::PublicXmlFields do
             sdb = sdb_for_content_md m
             expect(sdb.file_ids).to match_array ['rg759wj0953_00_0003.jp2', 'rg759wj0953_00_00_0001.jp2']
           end
-          it "resource type=object should be ignored" do
+          it 'resource type=object should be ignored' do
             m = '<contentMetadata objectId="ny981gz0831" type="image">
               <resource id="ny981gz0831_1" sequence="1" type="object">
                 <label>File 1</label>
@@ -173,8 +170,8 @@ describe GDor::Indexer::PublicXmlFields do
             expect(sdb.file_ids).to be_nil
           end
         end # contentMetadata type=image
-        context "contentMetadata type=map, resource type=image" do
-          it "should be id attrib of file elements" do
+        context 'contentMetadata type=map, resource type=image' do
+          it 'is id attrib of file elements' do
             m = '<contentMetadata objectId="druid:rf935xg1061" type="map">
               <resource id="0001" sequence="1" type="image">
                 <file id="rf935xg1061_00_0001.jp2" mimetype="image/jp2" size="20204910">
@@ -190,8 +187,8 @@ describe GDor::Indexer::PublicXmlFields do
             expect(sdb.file_ids).to match_array ['rf935xg1061_00_0001.jp2', 'rf935xg1061_00_0002.jp2']
           end
         end # contentMetadata type=map, resource type=image
-        context "contentMetadata type=manuscript" do
-          it "resource type=image" do
+        context 'contentMetadata type=manuscript' do
+          it 'resource type=image' do
             m = '<contentMetadata objectId="druid:my191bb7431" type="manuscript">
               <resource id="manuscript-image-1" sequence="1" type="image">
                 <label>Front Outer Board</label>
@@ -209,7 +206,7 @@ describe GDor::Indexer::PublicXmlFields do
             sdb = sdb_for_content_md(m)
             expect(sdb.file_ids).to match_array ['T0000001.jp2', 'T0000343.jp2']
           end
-          it "resource type=page should be ignored" do
+          it 'resource type=page should be ignored' do
             m = '<contentMetadata objectId="druid:Bodley342" type="manuscript">
               <resource type="page" sequence="1" id="image-1">
                 <label>1</label>
@@ -229,7 +226,7 @@ describe GDor::Indexer::PublicXmlFields do
         end # contentMetadata type=manuscript
       end # image display_type
 
-      it "should be nil for book display_type" do
+      it 'is nil for book display_type' do
         m = '<contentMetadata type="book" objectId="xm901jg3836">
           <resource type="image" sequence="1" id="xm901jg3836_1">
             <label>Item 1</label>
@@ -246,7 +243,7 @@ describe GDor::Indexer::PublicXmlFields do
         sdb = sdb_for_content_md(m)
         expect(sdb.file_ids).to be_nil
       end
-      it "should be id attrib of file elements for media display_type" do
+      it 'is id attrib of file elements for media display_type' do
         m = '<contentMetadata objectId="jy496kh1727" type="media">
           <resource sequence="1" id="jy496kh1727_1" type="audio">
             <label>Tape 1, Pass 1</label>
@@ -259,14 +256,14 @@ describe GDor::Indexer::PublicXmlFields do
             </file>
           </resource></contentMetadata>'
         sdb = sdb_for_content_md(m)
-        expect(sdb.file_ids).to match_array ["jy496kh1727_sl.mp3", "jy496kh1727_img_1.jp2"]
+        expect(sdb.file_ids).to match_array ['jy496kh1727_sl.mp3', 'jy496kh1727_img_1.jp2']
       end
-      it "should be nil if there are no <resource> elements in the contentMetadata" do
+      it 'is nil if there are no <resource> elements in the contentMetadata' do
         m = '<contentMetadata objectId="jy496kh1727" type="file"></contentMetadata>'
         sdb = sdb_for_content_md(m)
         expect(sdb.file_ids).to be_nil
       end
-      it "should be nil if there are no <file> elements in the contentMetadata" do
+      it 'is nil if there are no <file> elements in the contentMetadata' do
         m = '<contentMetadata objectId="jy496kh1727" type="file">
           <resource sequence="1" id="jy496kh1727_1" type="file">
             <label>Tape 1, Pass 1</label>
@@ -277,15 +274,13 @@ describe GDor::Indexer::PublicXmlFields do
         sdb = sdb_for_content_md(m)
         expect(sdb.file_ids).to be_nil
       end
-      it "should be nil if there are no id elements on file elements" do
+      it 'is nil if there are no id elements on file elements' do
         m = "#{@content_md_start}<resource type='image'><file/></resource>#{@content_md_end}"
         sdb = sdb_for_content_md(m)
         expect(sdb.file_ids).to be_nil
       end
 
       # TODO:  multiple file elements in a single resource element
-
     end # file_ids
-    
   end # contentMetadata fields and methods
 end

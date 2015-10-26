@@ -4,7 +4,7 @@
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 
 require 'rubygems'
-require "bundler/setup"
+require 'bundler/setup'
 require 'trollop'
 require 'gdor/indexer'
 
@@ -13,12 +13,12 @@ require 'gdor/indexer'
 def collections
   config_dir = File.join(File.dirname(__FILE__), '..', 'config', 'collections')
   files = Dir.glob("#{config_dir}/*.yml")
-  files.map! {|x| File.basename(x, ".yml") }
+  files.map! { |x| File.basename(x, '.yml') }
 end
 
 # use Trollop to declare options and help text.
 @opts = Trollop.options do
-  version "indexer v0.2.0 (c) 2012-2014 Stanford University http://searchworks.stanford.edu"
+  version 'indexer v0.2.0 (c) 2012-2014 Stanford University http://searchworks.stanford.edu'
   banner <<-EOM
   The indexer script harvests items in a collection from DOR Fetcher Service,
   harvests MODS from PURL pages, then
@@ -29,16 +29,16 @@ end
   EOM
 
   opt :collection,
-    'Index a given collection. Possible values are #{collections.sort}',
-    :default => nil,
-    :short => 'c',
-    :type => String,
-    :multi => true
+      'Index a given collection. Possible values are #{collections.sort}',
+      default: nil,
+      short: 'c',
+      type: String,
+      multi: true
   opt :nocommit,
-    "Index the collection but don't commit",
-    :default => nil,
-    :short => 'n'
-  opt :all, "Index all collections"
+      "Index the collection but don't commit",
+      default: nil,
+      short: 'n'
+  opt :all, 'Index all collections'
 end
 
 # Trollop::die :collection, "must be a known collection. Possible values are: #{collections.inspect} You entered #{@opts[:collection]}" unless collections.include?@opts[:collection]
@@ -60,7 +60,7 @@ end
 
 # process each collection from the command line
 @collections.each do |coll|
-  config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "collections", "#{coll}.yml")
+  config_yml_path = File.join(File.dirname(__FILE__), '..', 'config', 'collections', "#{coll}.yml")
   @indexer = GDor::Indexer.new(config_yml_path)
   puts "Indexing into Solr server #{@indexer.config[:solr][:url]}"
   puts "Logging output to #{@indexer.config[:harvestdor][:log_dir]}/#{@indexer.config[:harvestdor][:log_name]}"
@@ -69,4 +69,3 @@ end
     @indexer.harvest_and_index
   end
 end
-

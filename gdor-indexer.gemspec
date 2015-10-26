@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.version       = GDor::Indexer::VERSION
   spec.authors       = ['Naomi Dushay', 'Laney McGlohon', 'Chris Beer']
   spec.email         = ['cabeer@stanford.edu']
-  spec.summary       = %q(Gryphondor solr indexing logic)
+  spec.summary       = 'Gryphondor Solr indexing logic'
   spec.homepage      = 'https://github.com/sul-dlss/gdor-indexer'
   spec.license       = 'Apache 2'
 

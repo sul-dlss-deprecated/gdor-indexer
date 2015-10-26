@@ -11,62 +11,61 @@ describe GDor::Indexer::ModsFields do
     Logger.new StringIO.new
   end
 
-  def sdb_for_mods m
+  def sdb_for_mods(m)
     resource = Harvestdor::Indexer::Resource.new(double, @fake_druid)
     allow(resource).to receive(:public_xml).and_return(nil)
     allow(resource).to receive(:mods).and_return(Nokogiri::XML(m))
     GDor::Indexer::SolrDocBuilder.new(resource, logger)
   end
 
-  context "doc_hash_from_mods" do
-
+  context 'doc_hash_from_mods' do
     # see https://consul.stanford.edu/display/NGDE/Required+and+Recommended+Solr+Fields+for+SearchWorks+documents
 
-    context "summary_search solr field from <abstract>" do
-      it "should be populated when the MODS has a top level <abstract> element" do
+    context 'summary_search solr field from <abstract>' do
+      it 'is populated when the MODS has a top level <abstract> element' do
         m = "<mods #{@ns_decl}><abstract>blah blah</abstract></mods>"
         sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:summary_search]).to match_array ['blah blah']
       end
-      it "should have a value for each abstract element" do
+      it 'has a value for each abstract element' do
         m = "<mods #{@ns_decl}>
           <abstract>one</abstract>
           <abstract>two</abstract>
         </mods>"
         sdb = sdb_for_mods(m)
-        expect(sdb.doc_hash_from_mods[:summary_search]).to match_array ['one', 'two']
+        expect(sdb.doc_hash_from_mods[:summary_search]).to match_array %w(one two)
       end
-      it "should not be present when there is no top level <abstract> element" do
+      it 'does not be present when there is no top level <abstract> element' do
         m = "<mods #{@ns_decl}><relatedItem><abstract>blah blah</abstract></relatedItem></mods>"
         sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:summary_search]).to be_nil
       end
-      it "should not be present if there are only empty abstract elements in the MODS" do
+      it 'does not be present if there are only empty abstract elements in the MODS' do
         m = "<mods #{@ns_decl}><abstract/><note>notit</note></mods>"
         sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:summary_search]).to be_nil
       end
-      it "summary_display should not be populated - it is a copy field" do
+      it 'summary_display should not be populated - it is a copy field' do
         m = "<mods #{@ns_decl}><abstract>blah blah</abstract></mods>"
         sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:summary_display]).to be_nil
       end
     end # summary_search / <abstract>
 
-    it "language: should call sw_language_facet in stanford-mods gem to populate language field" do
+    it 'language: should call sw_language_facet in stanford-mods gem to populate language field' do
       sdb = sdb_for_mods(@mods_xml)
       smr = sdb.smods_rec
       expect(smr).to receive(:sw_language_facet)
       sdb.doc_hash_from_mods
     end
 
-    context "physical solr field from <physicalDescription><extent>" do
-      it "should be populated when the MODS has mods/physicalDescription/extent element" do
+    context 'physical solr field from <physicalDescription><extent>' do
+      it 'is populated when the MODS has mods/physicalDescription/extent element' do
         m = "<mods #{@ns_decl}><physicalDescription><extent>blah blah</extent></physicalDescription></mods>"
         sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:physical]).to match_array ['blah blah']
       end
-      it "should have a value for each extent element" do
+      it 'has a value for each extent element' do
         m = "<mods #{@ns_decl}>
           <physicalDescription>
             <extent>one</extent>
@@ -75,27 +74,27 @@ describe GDor::Indexer::ModsFields do
           <physicalDescription><extent>three</extent></physicalDescription>
         </mods>"
         sdb = sdb_for_mods(m)
-        expect(sdb.doc_hash_from_mods[:physical]).to match_array ['one', 'two', 'three']
+        expect(sdb.doc_hash_from_mods[:physical]).to match_array %w(one two three)
       end
-      it "should not be present when there is no top level <physicalDescription> element" do
+      it 'does not be present when there is no top level <physicalDescription> element' do
         m = "<mods #{@ns_decl}><relatedItem><physicalDescription><extent>foo</extent></physicalDescription></relatedItem></mods>"
         sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:physical]).to be_nil
       end
-      it "should not be present if there are only empty physicalDescription or extent elements in the MODS" do
+      it 'does not be present if there are only empty physicalDescription or extent elements in the MODS' do
         m = "<mods #{@ns_decl}><physicalDescription/><physicalDescription><extent/></physicalDescription><note>notit</note></mods>"
         sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:physical]).to be_nil
-      end      
+      end
     end # physical field from physicalDescription/extent
 
-    context "url_suppl solr field from /mods/relatedItem/location/url" do
-      it "should be populated when the MODS has mods/relatedItem/location/url " do
+    context 'url_suppl solr field from /mods/relatedItem/location/url' do
+      it 'is populated when the MODS has mods/relatedItem/location/url' do
         m = "<mods #{@ns_decl}><relatedItem><location><url>url.org</url></location></relatedItem></mods>"
         sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:url_suppl]).to match_array ['url.org']
       end
-      it "should have a value for each mods/relatedItem/location/url element" do
+      it 'has a value for each mods/relatedItem/location/url element' do
         m = "<mods #{@ns_decl}>
           <relatedItem>
             <location><url>one</url></location>
@@ -107,76 +106,76 @@ describe GDor::Indexer::ModsFields do
           <relatedItem><location><url>four</url></location></relatedItem>
         </mods>"
         sdb = sdb_for_mods(m)
-        expect(sdb.doc_hash_from_mods[:url_suppl]).to match_array ['one', 'two', 'three', 'four']
+        expect(sdb.doc_hash_from_mods[:url_suppl]).to match_array %w(one two three four)
       end
-      it "should not be populated from /mods/location/url element" do
+      it 'does not be populated from /mods/location/url element' do
         m = "<mods #{@ns_decl}><location><url>hi</url></location></mods>"
         sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:url_suppl]).to be_nil
       end
-      it "should not be present if there are only empty relatedItem/location/url elements in the MODS" do
+      it 'does not be present if there are only empty relatedItem/location/url elements in the MODS' do
         m = "<mods #{@ns_decl}>
           <relatedItem><location><url/></location></relatedItem>
           <relatedItem><location/></relatedItem>
           <relatedItem/><note>notit</note></mods>"
-          sdb = sdb_for_mods(m)
+        sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:url_suppl]).to be_nil
-      end      
+      end
     end
 
-    context "toc_search solr field from <tableOfContents>" do
-      it "should have a value for each tableOfContents element" do
+    context 'toc_search solr field from <tableOfContents>' do
+      it 'has a value for each tableOfContents element' do
         m = "<mods #{@ns_decl}>
         <tableOfContents>one</tableOfContents>
         <tableOfContents>two</tableOfContents>
         </mods>"
         sdb = sdb_for_mods(m)
-        expect(sdb.doc_hash_from_mods[:toc_search]).to match_array ['one', 'two']
+        expect(sdb.doc_hash_from_mods[:toc_search]).to match_array %w(one two)
       end
-      it "should not be present when there is no top level <tableOfContents> element" do
+      it 'does not be present when there is no top level <tableOfContents> element' do
         m = "<mods #{@ns_decl}><relatedItem><tableOfContents>foo</tableOfContents></relatedItem></mods>"
         sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:toc_search]).to be_nil
       end
-      it "should not be present if there are only empty tableOfContents elements in the MODS" do
+      it 'does not be present if there are only empty tableOfContents elements in the MODS' do
         m = "<mods #{@ns_decl}><tableOfContents/><note>notit</note></mods>"
         sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:toc_search]).to be_nil
-      end      
+      end
     end
 
-    context "format fields" do
-      context "format_main_ssim" do
-        it "should call #format_main_ssim method" do
+    context 'format fields' do
+      context 'format_main_ssim' do
+        it 'calls #format_main_ssim method' do
           m = "<mods #{@ns_decl}><note>nope</typeOfResource></mods>"
           sdb = sdb_for_mods(m)
           expect(sdb).to receive(:format_main_ssim)
           sdb.doc_hash_from_mods[:format_main_ssim]
         end
-        it "should have a value when MODS data provides" do
+        it 'has a value when MODS data provides' do
           m = "<mods #{@ns_decl}><typeOfResource>software, multimedia</typeOfResource><genre>dataset</genre></mods>"
           sdb = sdb_for_mods(m)
           expect(sdb.doc_hash_from_mods[:format_main_ssim]).to match_array ['Dataset']
         end
-        it "should return empty Array if there is no value" do
+        it 'returns empty Array if there is no value' do
           m = "<mods #{@ns_decl}><note>nope</typeOfResource></mods>"
           sdb = sdb_for_mods(m)
           expect(sdb.doc_hash_from_mods[:format_main_ssim]).to eq([])
         end
       end
-      context "format Solr field" do
-        it "should call #format method" do
+      context 'format Solr field' do
+        it 'calls #format method' do
           m = "<mods #{@ns_decl}><note>nope</typeOfResource></mods>"
           sdb = sdb_for_mods(m)
           expect(sdb).to receive(:format)
           sdb.doc_hash_from_mods[:format]
         end
-        it "should have a value when MODS data provides" do
+        it 'has a value when MODS data provides' do
           m = "<mods #{@ns_decl}><typeOfResource>software, multimedia</typeOfResource></mods>"
           sdb = sdb_for_mods(m)
           expect(sdb.doc_hash_from_mods[:format]).to match_array ['Computer File']
         end
-        it "should return empty Array if there is no value" do
+        it 'returns empty Array if there is no value' do
           m = "<mods #{@ns_decl}><note>nope</typeOfResource></mods>"
           sdb = sdb_for_mods(m)
           expect(sdb.doc_hash_from_mods[:format]).to eq([])
@@ -184,7 +183,7 @@ describe GDor::Indexer::ModsFields do
       end
     end
 
-    context "title fields" do
+    context 'title fields' do
       before(:all) do
         @title_mods = "<mods #{@ns_decl}>
         <titleInfo><title>Jerk</title><nonSort>The</nonSort><subTitle>is whom?</subTitle></titleInfo>
@@ -198,7 +197,7 @@ describe GDor::Indexer::ModsFields do
       before(:each) do
         @title_doc_hash = sdb.doc_hash_from_mods
       end
-      it "should call the appropriate methods in the stanford-mods gem to populate the fields" do
+      it 'calls the appropriate methods in the stanford-mods gem to populate the fields' do
         smr = sdb.smods_rec
         expect(smr).to receive(:sw_short_title).at_least(:once)
         expect(smr).to receive(:sw_full_title).at_least(:once)
@@ -207,34 +206,34 @@ describe GDor::Indexer::ModsFields do
         expect(smr).to receive(:sw_sort_title)
         sdb.doc_hash_from_mods
       end
-      context "search fields" do
-        it "title_245a_search" do
-          expect(@title_doc_hash[:title_245a_search]).to eq("The Jerk")
+      context 'search fields' do
+        it 'title_245a_search' do
+          expect(@title_doc_hash[:title_245a_search]).to eq('The Jerk')
         end
-        it "title_245_search" do
-          expect(@title_doc_hash[:title_245_search]).to eq("The Jerk : is whom?")
+        it 'title_245_search' do
+          expect(@title_doc_hash[:title_245_search]).to eq('The Jerk : is whom?')
         end
-        it "title_variant_search" do
-          expect(@title_doc_hash[:title_variant_search]).to match_array ["Joke", "Alternative"]
+        it 'title_variant_search' do
+          expect(@title_doc_hash[:title_variant_search]).to match_array %w(Joke Alternative)
         end
-        it "title_related_search should not be populated from MODS" do
+        it 'title_related_search should not be populated from MODS' do
           expect(@title_doc_hash[:title_related_search]).to be_nil
         end
       end
-      context "display fields" do
-        it "title_display" do
-          expect(@title_doc_hash[:title_display]).to eq("The Jerk : is whom?")
+      context 'display fields' do
+        it 'title_display' do
+          expect(@title_doc_hash[:title_display]).to eq('The Jerk : is whom?')
         end
-        it "title_245a_display" do
-          expect(@title_doc_hash[:title_245a_display]).to eq("The Jerk")
+        it 'title_245a_display' do
+          expect(@title_doc_hash[:title_245a_display]).to eq('The Jerk')
         end
-        it "title_245c_display should not be populated from MODS" do
+        it 'title_245c_display should not be populated from MODS' do
           expect(@title_doc_hash[:title_245c_display]).to be_nil
         end
-        it "title_full_display" do
-          expect(@title_doc_hash[:title_full_display]).to eq("The Jerk : is whom?")
+        it 'title_full_display' do
+          expect(@title_doc_hash[:title_full_display]).to eq('The Jerk : is whom?')
         end
-        it 'should remove trailing commas in title_display' do
+        it 'removes trailing commas in title_display' do
           title_mods = "<mods #{@ns_decl}>
           <titleInfo><title>Jerk</title><nonSort>The</nonSort><subTitle>is whom,</subTitle></titleInfo>
           <titleInfo><title>Joke</title></titleInfo>
@@ -243,18 +242,18 @@ describe GDor::Indexer::ModsFields do
           sdb = sdb_for_mods(title_mods)
           @title_doc_hash = sdb.doc_hash_from_mods
           @title_doc_hash
-          expect(@title_doc_hash[:title_display]).to eq("The Jerk : is whom")
+          expect(@title_doc_hash[:title_display]).to eq('The Jerk : is whom')
         end
-        it "title_variant_display should not be populated - it is a copy field" do
+        it 'title_variant_display should not be populated - it is a copy field' do
           expect(@title_doc_hash[:title_variant_display]).to be_nil
         end
       end
-      it "title_sort" do
-        expect(@title_doc_hash[:title_sort]).to eq("Jerk is whom")
+      it 'title_sort' do
+        expect(@title_doc_hash[:title_sort]).to eq('Jerk is whom')
       end
-    end # title fields  
+    end # title fields
 
-    context "author fields" do
+    context 'author fields' do
       before(:all) do
         @name_mods = "<mods #{@ns_decl}>
           <name type='personal'>
@@ -278,7 +277,7 @@ describe GDor::Indexer::ModsFields do
       before(:each) do
         @author_doc_hash = sdb.doc_hash_from_mods
       end
-      it "should call the appropriate methods in the stanford-mods gem to populate the fields" do
+      it 'calls the appropriate methods in the stanford-mods gem to populate the fields' do
         smr = sdb.smods_rec
         expect(smr).to receive(:sw_main_author)
         expect(smr).to receive(:sw_addl_authors)
@@ -289,46 +288,46 @@ describe GDor::Indexer::ModsFields do
         expect(smr).to receive(:sw_sort_author)
         sdb.doc_hash_from_mods
       end
-      context "search fields" do
-        it "author_1xx_search" do
-          expect(@author_doc_hash[:author_1xx_search]).to eq("Crusty The Clown")
+      context 'search fields' do
+        it 'author_1xx_search' do
+          expect(@author_doc_hash[:author_1xx_search]).to eq('Crusty The Clown')
         end
-        it "author_7xx_search" do
-          skip "Should this return all authors? or only 7xx authors?"
-          expect(@author_doc_hash[:author_7xx_search]).to match_array ["q", "Watchful Eye", "Exciting Prints", "conference"]
+        it 'author_7xx_search' do
+          skip 'Should this return all authors? or only 7xx authors?'
+          expect(@author_doc_hash[:author_7xx_search]).to match_array ['q', 'Watchful Eye', 'Exciting Prints', 'conference']
         end
-        it "author_8xx_search should not be populated from MODS" do
+        it 'author_8xx_search should not be populated from MODS' do
           expect(@author_doc_hash[:author_8xx_search]).to be_nil
         end
       end
-      context "facet fields" do
-        it "author_person_facet" do
-          expect(@author_doc_hash[:author_person_facet]).to match_array ["q", "Crusty The Clown"]
+      context 'facet fields' do
+        it 'author_person_facet' do
+          expect(@author_doc_hash[:author_person_facet]).to match_array ['q', 'Crusty The Clown']
         end
-        it "author_other_facet" do
-          expect(@author_doc_hash[:author_other_facet]).to match_array ["Watchful Eye", "Exciting Prints", "conference"]
-        end
-      end
-      context "display fields" do
-        it "author_person_display" do
-          expect(@author_doc_hash[:author_person_display]).to match_array ["q", "Crusty The Clown"]
-        end
-        it "author_person_full_display" do
-          expect(@author_doc_hash[:author_person_full_display]).to match_array ["q", "Crusty The Clown"]
-        end
-        it "author_corp_display" do
-          expect(@author_doc_hash[:author_corp_display]).to match_array ["Watchful Eye", "Exciting Prints"]
-        end
-        it "author_meeting_display" do
-          expect(@author_doc_hash[:author_meeting_display]).to match_array ["conference"]
+        it 'author_other_facet' do
+          expect(@author_doc_hash[:author_other_facet]).to match_array ['Watchful Eye', 'Exciting Prints', 'conference']
         end
       end
-      it "author_sort" do
-        expect(@author_doc_hash[:author_sort]).to eq("Crusty The Clown")
+      context 'display fields' do
+        it 'author_person_display' do
+          expect(@author_doc_hash[:author_person_display]).to match_array ['q', 'Crusty The Clown']
+        end
+        it 'author_person_full_display' do
+          expect(@author_doc_hash[:author_person_full_display]).to match_array ['q', 'Crusty The Clown']
+        end
+        it 'author_corp_display' do
+          expect(@author_doc_hash[:author_corp_display]).to match_array ['Watchful Eye', 'Exciting Prints']
+        end
+        it 'author_meeting_display' do
+          expect(@author_doc_hash[:author_meeting_display]).to match_array ['conference']
+        end
+      end
+      it 'author_sort' do
+        expect(@author_doc_hash[:author_sort]).to eq('Crusty The Clown')
       end
     end # author fields
 
-    context "subject fields" do
+    context 'subject fields' do
       before(:all) do
         @genre = 'genre top level'
         @cart_coord = '6 00 S, 71 30 E'
@@ -363,7 +362,7 @@ describe GDor::Indexer::ModsFields do
       before(:each) do
         @subject_doc_hash = sdb.doc_hash_from_mods
       end
-      it "should call the appropriate methods in stanford-mods to populate the Solr fields" do
+      it 'calls the appropriate methods in stanford-mods to populate the Solr fields' do
         expect(sdb.smods_rec).to receive(:topic_search)
         expect(sdb.smods_rec).to receive(:geographic_search)
         expect(sdb.smods_rec).to receive(:subject_other_search)
@@ -374,27 +373,27 @@ describe GDor::Indexer::ModsFields do
         expect(sdb.smods_rec).to receive(:era_facet)
         sdb.doc_hash_from_mods
       end
-      context "search fields" do
-        context "topic_search" do
-          it "should only include genre and topic" do
+      context 'search fields' do
+        context 'topic_search' do
+          it 'onlies include genre and topic' do
             expect(@subject_doc_hash[:topic_search]).to match_array [@genre, @topic]
           end
-          context "functional tests checking results from stanford-mods methods" do
-            it "should be nil if there are no values in the MODS" do
+          context 'functional tests checking results from stanford-mods methods' do
+            it 'is nil if there are no values in the MODS' do
               sdb = sdb_for_mods(@m_no_subject)
               expect(sdb.doc_hash_from_mods[:topic_search]).to be_nil
             end
-            it "should not be nil if there are only subject/topic elements (no <genre>)" do
+            it 'does not be nil if there are only subject/topic elements (no <genre>)' do
               m = "<mods #{@ns_decl}><subject><topic>#{@topic}</topic></subject></mods>"
               sdb = sdb_for_mods(m)
               expect(sdb.doc_hash_from_mods[:topic_search]).to match_array [@topic]
             end
-            it "should not be nil if there are only <genre> elements (no subject/topic elements)" do
+            it 'does not be nil if there are only <genre> elements (no subject/topic elements)' do
               m = "<mods #{@ns_decl}><genre>#{@genre}</genre></mods>"
               sdb = sdb_for_mods(m)
               expect(sdb.doc_hash_from_mods[:topic_search]).to match_array [@genre]
             end
-            it "should have a separate value for each topic subelement" do
+            it 'has a separate value for each topic subelement' do
               m = "<mods #{@ns_decl}>
               <subject>
                 <topic>first</topic>
@@ -403,22 +402,22 @@ describe GDor::Indexer::ModsFields do
               <subject><topic>third</topic></subject>
               </mods>"
               sdb = sdb_for_mods(m)
-              expect(sdb.doc_hash_from_mods[:topic_search]).to match_array ['first', 'second', 'third']
+              expect(sdb.doc_hash_from_mods[:topic_search]).to match_array %w(first second third)
             end
           end # functional tests checking results from stanford-mods methods
         end # topic_search
 
-        context "geographic_search" do
-          it "should include geographic and hierarchicalGeographic" do
+        context 'geographic_search' do
+          it 'includes geographic and hierarchicalGeographic' do
             expect(@subject_doc_hash[:geographic_search]).to match_array [@geo, @hier_geo_country]
           end
-          it "should call sw_geographic_search (from stanford-mods gem)" do
+          it 'calls sw_geographic_search (from stanford-mods gem)' do
             m = "<mods #{@ns_decl}><subject><geographic>#{@geo}</geographic></subject></mods>"
             sdb = sdb_for_mods(m)
             expect(sdb.smods_rec).to receive(:sw_geographic_search).at_least(1).times
             sdb.doc_hash_from_mods
           end
-          it "should log an info message when it encounters a geographicCode encoding it doesn't translate" do
+          it "logs an info message when it encounters a geographicCode encoding it doesn't translate" do
             m = "<mods #{@ns_decl}><subject><geographicCode authority='iso3166'>ca</geographicCode></subject></mods>"
             sdb = sdb_for_mods(m)
             expect(sdb.smods_rec.sw_logger).to receive(:info).with(/#{@fake_druid} has subject geographicCode element with untranslated encoding \(iso3166\): <geographicCode authority=.*>ca<\/geographicCode>/).at_least(1).times
@@ -426,31 +425,31 @@ describe GDor::Indexer::ModsFields do
           end
         end # geographic_search
 
-        context "subject_other_search" do
-          it "should include occupation, subject names, and subject titles" do
+        context 'subject_other_search' do
+          it 'includes occupation, subject names, and subject titles' do
             expect(@subject_doc_hash[:subject_other_search]).to match_array [@occupation, @s_name, @s_title]
           end
-          context "functional tests checking results from stanford-mods methods" do
-            it "should be nil if there are no values in the MODS" do
+          context 'functional tests checking results from stanford-mods methods' do
+            it 'is nil if there are no values in the MODS' do
               sdb = sdb_for_mods(@mods_xml)
               expect(sdb.doc_hash_from_mods[:subject_other_search]).to be_nil
             end
-            it "should not be nil if there are only subject/name elements" do
+            it 'does not be nil if there are only subject/name elements' do
               m = "<mods #{@ns_decl}><subject><name><namePart>#{@s_name}</namePart></name></subject></mods>"
               sdb = sdb_for_mods(m)
               expect(sdb.doc_hash_from_mods[:subject_other_search]).to match_array [@s_name]
             end
-            it "should not be nil if there are only subject/occupation elements" do
+            it 'does not be nil if there are only subject/occupation elements' do
               m = "<mods #{@ns_decl}><subject><occupation>#{@occupation}</occupation></subject></mods>"
               sdb = sdb_for_mods(m)
               expect(sdb.doc_hash_from_mods[:subject_other_search]).to match_array [@occupation]
             end
-            it "should not be nil if there are only subject/titleInfo elements" do
+            it 'does not be nil if there are only subject/titleInfo elements' do
               m = "<mods #{@ns_decl}><subject><titleInfo><title>#{@s_title}</title></titleInfo></subject></mods>"
               sdb = sdb_for_mods(m)
               expect(sdb.doc_hash_from_mods[:subject_other_search]).to match_array [@s_title]
             end
-            it "should have a separate value for each occupation subelement" do
+            it 'has a separate value for each occupation subelement' do
               m = "<mods #{@ns_decl}>
               <subject>
                 <occupation>first</occupation>
@@ -459,32 +458,32 @@ describe GDor::Indexer::ModsFields do
               <subject><occupation>third</occupation></subject>
               </mods>"
               sdb = sdb_for_mods(m)
-              expect(sdb.doc_hash_from_mods[:subject_other_search]).to match_array ['first', 'second', 'third']
+              expect(sdb.doc_hash_from_mods[:subject_other_search]).to match_array %w(first second third)
             end
           end # functional tests checking results from stanford-mods methods
         end # subject_other_search
 
-        context "subject_other_subvy_search" do
-          it "should include temporal and genre SUBelement" do
+        context 'subject_other_subvy_search' do
+          it 'includes temporal and genre SUBelement' do
             expect(@subject_doc_hash[:subject_other_subvy_search]).to match_array [@temporal, @s_genre]
           end
-          context "functional tests checking results from stanford-mods methods" do
-            it "should be nil if there are no values in the MODS" do
+          context 'functional tests checking results from stanford-mods methods' do
+            it 'is nil if there are no values in the MODS' do
               sdb = sdb_for_mods(@mods_xml)
               expect(sdb.doc_hash_from_mods[:subject_other_subvy_search]).to be_nil
             end
-            it "should not be nil if there are only subject/temporal elements (no subject/genre)" do
+            it 'does not be nil if there are only subject/temporal elements (no subject/genre)' do
               m = "<mods #{@ns_decl}><subject><temporal>#{@temporal}</temporal></subject></mods>"
               sdb = sdb_for_mods(m)
               expect(sdb.doc_hash_from_mods[:subject_other_subvy_search]).to match_array [@temporal]
             end
-            it "should not be nil if there are only subject/genre elements (no subject/temporal)" do
+            it 'does not be nil if there are only subject/genre elements (no subject/temporal)' do
               m = "<mods #{@ns_decl}><subject><genre>#{@s_genre}</genre></subject></mods>"
               sdb = sdb_for_mods(m)
               expect(sdb.doc_hash_from_mods[:subject_other_subvy_search]).to match_array [@s_genre]
             end
-            context "genre subelement" do
-              it "should have a separate value for each genre element" do
+            context 'genre subelement' do
+              it 'has a separate value for each genre element' do
                 m = "<mods #{@ns_decl}>
                 <subject>
                   <genre>first</genre>
@@ -493,23 +492,23 @@ describe GDor::Indexer::ModsFields do
                 <subject><genre>third</genre></subject>
                 </mods>"
                 sdb = sdb_for_mods(m)
-                expect(sdb.doc_hash_from_mods[:subject_other_subvy_search]).to match_array ['first', 'second', 'third']
+                expect(sdb.doc_hash_from_mods[:subject_other_subvy_search]).to match_array %w(first second third)
               end
             end # genre subelement
           end # "functional tests checking results from stanford-mods methods"
         end # subject_other_subvy_search
 
-        context "subject_all_search" do
-          it "should contain top level <genre> element data" do
+        context 'subject_all_search' do
+          it 'contains top level <genre> element data' do
             expect(@subject_doc_hash[:subject_all_search]).to include(@genre)
           end
-          it "should not contain cartographic sub element" do
+          it 'does not contain cartographic sub element' do
             expect(@subject_doc_hash[:subject_all_search]).not_to include(@cart_coord)
           end
-          it "should not include codes from hierarchicalGeographic sub element" do
+          it 'does not include codes from hierarchicalGeographic sub element' do
             expect(@subject_doc_hash[:subject_all_search]).not_to include(@geo_code)
           end
-          it "should contain all other subject subelement data" do
+          it 'contains all other subject subelement data' do
             expect(@subject_doc_hash[:subject_all_search]).to include(@s_genre)
             expect(@subject_doc_hash[:subject_all_search]).to include(@geo)
             expect(@subject_doc_hash[:subject_all_search]).to include(@hier_geo_country)
@@ -521,22 +520,22 @@ describe GDor::Indexer::ModsFields do
           end
         end # subject_all_search
       end # search fields
-      
-      context "facet fields" do
-        context "topic_facet" do
-          it "should include topic subelement" do
+
+      context 'facet fields' do
+        context 'topic_facet' do
+          it 'includes topic subelement' do
             expect(@subject_doc_hash[:topic_facet]).to include(@topic)
           end
-          it "should include sw_subject_names" do
+          it 'includes sw_subject_names' do
             expect(@subject_doc_hash[:topic_facet]).to include(@s_name)
           end
-          it "should include sw_subject_titles" do
+          it 'includes sw_subject_titles' do
             expect(@subject_doc_hash[:topic_facet]).to include(@s_title)
           end
-          it "should include occupation subelement" do
+          it 'includes occupation subelement' do
             expect(@subject_doc_hash[:topic_facet]).to include(@occupation)
           end
-          it "should have the trailing punctuation removed" do
+          it 'has the trailing punctuation removed' do
             m = "<mods #{@ns_decl}><subject>
             <topic>comma,</topic>
             <occupation>semicolon;</occupation>
@@ -551,12 +550,12 @@ describe GDor::Indexer::ModsFields do
             expect(doc_hash[:topic_facet]).to include('internal, punct;uation')
           end
         end # topic_facet
-        
-        context "geographic_facet" do
-          it "should include geographic subelement" do
+
+        context 'geographic_facet' do
+          it 'includes geographic subelement' do
             expect(@subject_doc_hash[:geographic_facet]).to include(@geo)
           end
-          it "should be like geographic_search with the trailing punctuation (and preceding spaces) removed" do
+          it 'is like geographic_search with the trailing punctuation (and preceding spaces) removed' do
             m = "<mods #{@ns_decl}><subject>
             <geographic>comma,</geographic>
             <geographic>semicolon;</geographic>
@@ -572,7 +571,7 @@ describe GDor::Indexer::ModsFields do
           end
         end
 
-        it "era_facet should be temporal subelement with the trailing punctuation removed" do
+        it 'era_facet should be temporal subelement with the trailing punctuation removed' do
           m = "<mods #{@ns_decl}><subject>
           <temporal>comma,</temporal>
           <temporal>semicolon;</temporal>
@@ -590,7 +589,7 @@ describe GDor::Indexer::ModsFields do
     end # subject fields
 
     context 'publication date fields' do
-      it 'should populate all date fields' do
+      it 'populates all date fields' do
         m = "<mods #{@ns_decl}><originInfo>
               <dateIssued>13th century AH / 19th CE</dateIssued>
             </originInfo></mods>"
@@ -603,37 +602,37 @@ describe GDor::Indexer::ModsFields do
         expect(doc_hash[:pub_date_display]).to eq('13th century AH / 19th CE')
         expect(doc_hash[:imprint_display]).to eq('13th century AH / 19th CE')
       end
-      it 'should not populate the date slider for BC dates' do
+      it 'does not populate the date slider for BC dates' do
         m = "<mods #{@ns_decl}><originInfo><dateIssued>199 B.C.</dateIssued></originInfo></mods>"
         sdb = sdb_for_mods(m)
         doc_hash = sdb.doc_hash_from_mods
         expect(doc_hash).to_not have_key(:pub_year_tisim)
       end
-      
+
       context 'pub_date_sort integration tests' do
         let :sdb do
           sdb = sdb_for_mods("<mods #{@ns_decl}> </mods>")
         end
-        it 'should work on normal dates' do
+        it 'works on normal dates' do
           allow(sdb.smods_rec).to receive(:pub_date).and_return('1945')
           expect(sdb.doc_hash_from_mods[:pub_date_sort]).to eq('1945')
         end
-        it 'should work on 3 digit dates' do
+        it 'works on 3 digit dates' do
           allow(sdb.smods_rec).to receive(:pub_date).and_return('945')
           expect(sdb.doc_hash_from_mods[:pub_date_sort]).to eq('0945')
         end
-        it 'should work on century dates' do
+        it 'works on century dates' do
           allow(sdb.smods_rec).to receive(:pub_date).and_return('16--')
           expect(sdb.doc_hash_from_mods[:pub_date_sort]).to eq('1600')
         end
-        it 'should work on 3 digit century dates' do
+        it 'works on 3 digit century dates' do
           allow(sdb.smods_rec).to receive(:pub_date).and_return('9--')
           expect(sdb.doc_hash_from_mods[:pub_date_sort]).to eq('0900')
         end
       end # pub_date_sort
 
-      context "pub_year_tisim for date slider" do
-        it "should take single dateCreated" do
+      context 'pub_year_tisim for date slider' do
+        it 'takes single dateCreated' do
           m = "<mods #{@ns_decl}><originInfo>
           <dateCreated>1904</dateCreated>
           </originInfo></mods>"
@@ -641,7 +640,7 @@ describe GDor::Indexer::ModsFields do
           doc_hash = sdb.doc_hash_from_mods
           expect(doc_hash[:pub_year_tisim]).to eq('1904')
         end
-        it "should correctly parse a ranged date" do
+        it 'correctlies parse a ranged date' do
           m = "<mods #{@ns_decl}><originInfo>
                 <dateCreated>Text dated June 4, 1594; miniatures added by 1596</dateCreated>
               </originInfo></mods>"
@@ -649,7 +648,7 @@ describe GDor::Indexer::ModsFields do
           doc_hash = sdb.doc_hash_from_mods
           expect(doc_hash[:pub_year_tisim]).to eq('1594')
         end
-        it "should find year in an expanded English form" do
+        it 'finds year in an expanded English form' do
           m = "<mods #{@ns_decl}><originInfo>
                 <dateCreated>Aug. 3rd, 1886</dateCreated>
               </originInfo></mods>"
@@ -657,7 +656,7 @@ describe GDor::Indexer::ModsFields do
           doc_hash = sdb.doc_hash_from_mods
           expect(doc_hash[:pub_year_tisim]).to eq('1886')
         end
-        it "should remove question marks and brackets" do
+        it 'removes question marks and brackets' do
           m = "<mods #{@ns_decl}><originInfo>
                 <dateCreated>Aug. 3rd, [18]86?</dateCreated>
               </originInfo></mods>"
@@ -665,7 +664,7 @@ describe GDor::Indexer::ModsFields do
           doc_hash = sdb.doc_hash_from_mods
           expect(doc_hash[:pub_year_tisim]).to eq('1886')
         end
-        it 'should ignore an s after the decade' do
+        it 'ignores an s after the decade' do
           m = "<mods #{@ns_decl}><originInfo>
                 <dateCreated>early 1890s</dateCreated>
               </originInfo></mods>"
@@ -673,7 +672,7 @@ describe GDor::Indexer::ModsFields do
           doc_hash = sdb.doc_hash_from_mods
           expect(doc_hash[:pub_year_tisim]).to eq('1890')
         end
-        it 'should choose a date ending with CE if there are multiple dates' do
+        it 'chooses a date ending with CE if there are multiple dates' do
           m = "<mods #{@ns_decl}><originInfo>
                 <dateIssued>7192 AM (li-Adam) / 1684 CE</dateIssued>
               </originInfo></mods>"
@@ -681,7 +680,7 @@ describe GDor::Indexer::ModsFields do
           doc_hash = sdb.doc_hash_from_mods
           expect(doc_hash[:pub_year_tisim]).to eq('1684')
         end
-        it 'should take first year from hyphenated range (for now)' do
+        it 'takes first year from hyphenated range (for now)' do
           m = "<mods #{@ns_decl}><originInfo>
                 <dateIssued>1282 AH / 1865-6 CE</dateIssued>
               </originInfo></mods>"
@@ -691,12 +690,12 @@ describe GDor::Indexer::ModsFields do
         end
       end # pub_year_tisim method
 
-      context "difficult pub dates" do
-        it "should handle multiple pub dates (to be implemented - esp for date slider)"
+      context 'difficult pub dates' do
+        it 'should handle multiple pub dates (to be implemented - esp for date slider)'
 
-        it "should choose the latest date??? (to be implemented - esp for sorting and date slider)"
+        it 'should choose the latest date??? (to be implemented - esp for sorting and date slider)'
 
-        it 'should handle nnth century dates' do
+        it 'handles nnth century dates' do
           m = "<mods #{@ns_decl}><originInfo>
                 <dateIssued>13th century AH / 19th CE</dateIssued>
               </originInfo></mods>"
@@ -708,7 +707,7 @@ describe GDor::Indexer::ModsFields do
           expect(doc_hash[:publication_year_isi]).to eq('1800')
           expect(doc_hash[:imprint_display]).to eq('13th century AH / 19th CE')
         end
-        it 'should handle multiple CE dates' do
+        it 'handles multiple CE dates' do
           m = "<mods #{@ns_decl}><originInfo>
                 <dateIssued>6 Dhu al-Hijjah 923 AH / 1517 CE -- 7 Rabi I 924 AH / 1518 CE</dateIssued>
               </originInfo></mods>"
@@ -718,7 +717,7 @@ describe GDor::Indexer::ModsFields do
           expect(doc_hash[:pub_date]).to eq('1517')
           expect(doc_hash[:pub_year_tisim]).to eq('1517')
         end
-        it 'should handle specific century case from walters' do
+        it 'handles specific century case from walters' do
           m = "<mods #{@ns_decl}><originInfo>
                 <dateIssued>Late 14th or early 15th century CE</dateIssued>
               </originInfo></mods>"
@@ -730,7 +729,7 @@ describe GDor::Indexer::ModsFields do
           expect(doc_hash[:pub_date]).to eq('15th century')
           expect(doc_hash[:imprint_display]).to eq('Late 14th or early 15th century CE')
         end
-        it 'should work on explicit 3 digit dates' do
+        it 'works on explicit 3 digit dates' do
           m = "<mods #{@ns_decl}><originInfo>
                 <dateIssued>966 CE</dateIssued>
               </originInfo></mods>"
@@ -742,7 +741,7 @@ describe GDor::Indexer::ModsFields do
           expect(doc_hash[:publication_year_isi]).to eq('0966')
           expect(doc_hash[:imprint_display]).to eq('966 CE')
         end
-        it 'should work on 3 digit century dates' do
+        it 'works on 3 digit century dates' do
           m = "<mods #{@ns_decl}><originInfo>
                 <dateIssued>3rd century AH / 9th CE</dateIssued>
               </originInfo></mods>"
@@ -754,7 +753,7 @@ describe GDor::Indexer::ModsFields do
           expect(doc_hash[:publication_year_isi]).to eq('0800')
           expect(doc_hash[:imprint_display]).to eq('3rd century AH / 9th CE')
         end
-        it 'should work on 3 digit BC dates' do
+        it 'works on 3 digit BC dates' do
           m = "<mods #{@ns_decl}><originInfo>
                 <dateCreated>300 B.C.</dateCreated>
               </originInfo></mods>"
@@ -767,49 +766,47 @@ describe GDor::Indexer::ModsFields do
           # doc_hash[:creation_year_isi].should =='-300'
         end
       end # difficult pub dates
-
     end # publication date fields
   end # doc_hash_from_mods
 
-  context "#format" do
-    it "should get format from call to stanford-mods searchworks format method " do
+  context '#format' do
+    it 'gets format from call to stanford-mods searchworks format method' do
       m = "<mods #{@ns_decl}><typeOfResource>still image</typeOfResouce></mods>"
       sdb = sdb_for_mods(m)
       expect(sdb.smods_rec).to receive(:format).and_call_original
       expect(sdb.format).to match_array ['Image']
     end
-    it "should return empty Array and log warning if there is no value" do
+    it 'returns empty Array and log warning if there is no value' do
       sdb = sdb_for_mods(@mods_xml)
       expect(sdb.logger).to receive(:warn).with("#{@fake_druid} has no SearchWorks format from MODS - check <typeOfResource> and other implicated MODS elements")
       expect(sdb.format).to eq([])
     end
   end # context #format
 
-  context "#format_main_ssim" do
-    it "should get format_main_ssim from call to stanford-mods searchworks format_main method " do
+  context '#format_main_ssim' do
+    it 'gets format_main_ssim from call to stanford-mods searchworks format_main method' do
       m = "<mods #{@ns_decl}><typeOfResource>still image</typeOfResouce></mods>"
       sdb = sdb_for_mods(m)
       expect(sdb.smods_rec).to receive(:format_main).and_call_original
       expect(sdb.format_main_ssim).to match_array ['Image']
     end
-    it "should return empty Array and log warning if there is no value" do
+    it 'returns empty Array and log warning if there is no value' do
       sdb = sdb_for_mods(@mods_xml)
       expect(sdb.logger).to receive(:warn).with("#{@fake_druid} has no SearchWorks Resource Type from MODS - check <typeOfResource> and other implicated MODS elements")
       expect(sdb.format_main_ssim).to eq([])
     end
   end # context format_main_ssim
 
-  context "genre_ssim" do
-    it "should get genre_ssim from call to stanford-mods searchworks sw_genre method " do
+  context 'genre_ssim' do
+    it 'gets genre_ssim from call to stanford-mods searchworks sw_genre method' do
       m = "<mods #{@ns_decl}><genre>technical report</genre></mods>"
       sdb = sdb_for_mods(m)
       expect(sdb.smods_rec).to receive(:sw_genre).and_call_original
       expect(sdb.genre_ssim).to match_array ['Technical report']
     end
-    it "should return empty Array if there is no value" do
+    it 'returns empty Array if there is no value' do
       sdb = sdb_for_mods(@mods_xml)
       expect(sdb.genre_ssim).to eq([])
     end
   end # context genre_ssim
-
 end
