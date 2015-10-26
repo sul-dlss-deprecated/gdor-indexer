@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe GDor::Indexer::SolrDocHash do
   context "#field_present?" do
-    
+
     context "actual field value is boolean true" do
       subject do
         GDor::Indexer::SolrDocHash.new({:a => true})
@@ -56,7 +56,7 @@ describe GDor::Indexer::SolrDocHash do
         expect(subject).not_to be_field_present(:foo)
       end
     end
-    
+
     context "expected value is a String" do
       subject { GDor::Indexer::SolrDocHash.new({}) }
 
@@ -81,7 +81,7 @@ describe GDor::Indexer::SolrDocHash do
         expect(subject).not_to be_field_present(:foo, 'a')
       end
     end
-    
+
     context "expected value is Regex" do
       subject { GDor::Indexer::SolrDocHash.new({}) }
 
@@ -345,10 +345,10 @@ describe GDor::Indexer::SolrDocHash do
   context "#validate_gdor_fields" do
     let(:druid) { 'druid' }
     let(:purl_url) { mock_config.harvestdor.purl }
-    let(:mock_config) do 
+    let(:mock_config) do
       Confstruct::Configuration.new do
         harvestdor do
-          purl 'http://some.uri'
+          purl 'https://some.uri'
         end
       end
     end
@@ -371,7 +371,7 @@ describe GDor::Indexer::SolrDocHash do
         :access_facet => 'Online',
         :druid => druid,
         :url_fulltext => "#{purl_url}/#{druid}",
-        :display_type => 'zzzz', 
+        :display_type => 'zzzz',
         :building_facet => 'Stanford Digital Repository'})
       expect(hash.validate_gdor_fields(mock_config).first).to match(/display_type/)
     end
@@ -380,7 +380,7 @@ describe GDor::Indexer::SolrDocHash do
         :access_facet => 'BAD',
         :druid => druid,
         :url_fulltext => "#{purl_url}/#{druid}",
-        :display_type => 'image', 
+        :display_type => 'image',
         :building_facet => 'Stanford Digital Repository'})
       expect(hash.validate_gdor_fields(mock_config).first).to match(/access_facet/)
     end
@@ -415,6 +415,6 @@ describe GDor::Indexer::SolrDocHash do
       })
       expect(hash.validate_mods(mock_config).length).to eq(7)
     end
-  end  
+  end
 
 end

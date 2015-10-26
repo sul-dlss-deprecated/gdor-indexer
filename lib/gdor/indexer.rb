@@ -131,7 +131,7 @@ module GDor
 
       fields_to_add = GDor::Indexer::SolrDocHash.new({
         :druid => resource.bare_druid,
-        :url_fulltext => "http://purl.stanford.edu/#{resource.bare_druid}",
+        :url_fulltext => "https://purl.stanford.edu/#{resource.bare_druid}",
         :access_facet => 'Online',
         :display_type => sdb.display_type,  # defined in public_xml_fields
         :building_facet => 'Stanford Digital Repository'  # INDEX-53 add building_facet = Stanford Digital Repository here for item
@@ -156,7 +156,7 @@ module GDor
 
       fields_to_add = GDor::Indexer::SolrDocHash.new({
         :druid => resource.bare_druid,
-        :url_fulltext => "http://purl.stanford.edu/#{resource.bare_druid}",
+        :url_fulltext => "https://purl.stanford.edu/#{resource.bare_druid}",
         :access_facet => 'Online',
         :collection_type => 'Digital Collection',
         :display_type => coll_display_types_from_items(resource),

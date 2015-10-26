@@ -303,7 +303,7 @@ describe GDor::Indexer do
 
   context "#num_found_in_solr" do
     before :each do
-      @unmerged_collection_response = {'response' => {'numFound'=>'1','docs'=>[{'id'=>'dm212rn7381', 'url_fulltext' => ['http://purl.stanford.edu/dm212rn7381']}]}}
+      @unmerged_collection_response = {'response' => {'numFound'=>'1','docs'=>[{'id'=>'dm212rn7381', 'url_fulltext' => ['https://purl.stanford.edu/dm212rn7381']}]}}
         @item_response = {'response' => {'numFound'=>'265','docs'=>[{'id'=>'dm212rn7381'}]}}
     end
 
