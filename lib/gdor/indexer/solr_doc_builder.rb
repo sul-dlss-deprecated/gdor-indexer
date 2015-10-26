@@ -38,9 +38,9 @@ class GDor::Indexer::SolrDocBuilder
   end
 
   # @return [String] value with SIRSI/Symphony numeric catkey in it, or nil if none exists
-  # first we look for 
+  # first we look for
   #  identityMetadata/otherId[@name='catkey']
-  # if not found, we look for 
+  # if not found, we look for
   #  identityMetadata/otherId[@name='barcode']
   #   if found, we look for catkey in MODS
   #     mods/recordInfo/recordIdentifier[@source="SIRSI"
@@ -76,11 +76,10 @@ class GDor::Indexer::SolrDocBuilder
       mods_rec
     end
   end
-  
+
   # the public_xml for the druid as a Nokogiri::XML::Document object
   # @return [Nokogiri::XML::Document] containing the public xml for the druid
-  def public_xml 
+  def public_xml
     resource.public_xml
   end
-  
 end # GDor::Indexer::SolrDocBuilder class

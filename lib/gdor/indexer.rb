@@ -75,7 +75,7 @@ module GDor
         nocommit = config.nocommit
       end
 
-      start_time=Time.now
+      start_time=Time.now.getlocal
       logger.info("Started harvest_and_index at #{start_time}")
 
       harvestdor.each_resource(in_threads: 3) do |resource|
@@ -91,7 +91,7 @@ module GDor
       end
 
       @total_time = elapsed_time(start_time)
-      logger.info("Finished harvest_and_index at #{Time.now}")
+      logger.info("Finished harvest_and_index at #{Time.now.getlocal}")
       logger.info("Total elapsed time for harvest and index: #{(@total_time/60).round(2)} minutes")
 
       log_results
@@ -125,6 +125,7 @@ module GDor
 
     # create Solr doc for the druid and add it to Solr, unless it is on the blacklist.
     #  NOTE: don't forget to send commit to Solr, either once at end (already in harvest_and_index), or for each add, or ...
+    # @param [Harvestdor::Indexer::Resource] resource an item record (a member of a collection)
     def item_solr_document resource
       sdb = GDor::Indexer::SolrDocBuilder.new(resource, logger)
 
@@ -149,7 +150,7 @@ module GDor
 
     # Create Solr document for the collection druid suitable for SearchWorks
     #  and write the result to the SearchWorks Solr Index
-    # @param [String] druid
+    # @param [Harvestdor::Indexer::Resource] resource a collection record
     def collection_solr_document resource
       coll_sdb = GDor::Indexer::SolrDocBuilder.new(resource, logger)
 
@@ -174,8 +175,8 @@ module GDor
     end
 
     # add coll level data to this solr doc and/or cache collection level information
-    # @param [Hash] Hash representing the Solr document (for an item)
-    # @param [Array<String>] coll_druids  the druids for collection object the item is a member of
+    # @param [Hash] doc_hash representing the Solr document (for an item)
+    # @param [Array<Harvestdor::Indexer::Resource>] collections  the collections the item is a member of
     def add_coll_info doc_hash, collections
       if collections
         doc_hash[:collection] = []
@@ -317,7 +318,7 @@ module GDor
     end
 
     def elapsed_time(start_time,units=:seconds)
-      elapsed_seconds=Time.now-start_time
+      elapsed_seconds=Time.now.getlocal - start_time
       case units
       when :seconds
         return elapsed_seconds.round(2)

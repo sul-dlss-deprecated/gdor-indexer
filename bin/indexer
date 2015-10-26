@@ -44,9 +44,9 @@ end
 # Trollop::die :collection, "must be a known collection. Possible values are: #{collections.inspect} You entered #{@opts[:collection]}" unless collections.include?@opts[:collection]
 
 def time
-  start = Time.now
+  start = Time.now.getlocal
   yield
-  elapsed = Time.now - start
+  elapsed = Time.now.getlocal - start
   puts "This set took #{elapsed} seconds to run."
 end
 
