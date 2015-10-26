@@ -4,8 +4,6 @@ describe GDor::Indexer do
 
   before(:all) do
     @config_yml_path = File.join(File.dirname(__FILE__), "..", "config", "walters_integration_spec.yml")
-    @solr_yml_path = File.join(File.dirname(__FILE__), "..", "config", "solr.yml")
-    @client_config_path = File.join(File.dirname(__FILE__), "..", "config", "dor-fetcher-client.yml")
     require 'yaml'
     @yaml = YAML.load_file(@config_yml_path)
     @ns_decl = "xmlns='#{Mods::MODS_NS}'"

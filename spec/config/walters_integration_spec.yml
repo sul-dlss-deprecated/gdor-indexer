@@ -1,6 +1,39 @@
+# Copy this file and change the following settings:
+# 1. whitelist
+# 2. dor_fetcher service_url
+# 3. harvestdor log_dir, log_name
+# 4. solr url
+
+# whitelist:  which objects will you index?
+# if this is missing, 0 records will be fetched from the Dor Fetcher service
+# the whitelist can be
+#   1. an array of druids inline here, e.g. ['druid:oo123oo1234', 'druid:oo234oo2345']
+#   2. a filename containing a list of druids (one per line)
+# if a druid is for a collection record (per the object's identityMetadata at purl page)
+#  then we process all the item druids in that collection (as if they were included individually in the whitelist)
+# if a druid is for an item object, then we process that druid
+#whitelist: ['druid:dq441rn2614']
+#  either give absolute path or path relative to where the command will be executed
+#whitelist: config/ap_whitelist.txt
+whitelist: ['druid:ms016pb9280']
+
 dor_fetcher:
+  # the baseurl of the DOR Fetcher service from which we get the item druids (per whitelist above)
+  #  do not include 'collections' at end.
   service_url: http://127.0.0.1:3000
+  # if skip_heartbeat set to true, this will skip a check that the dorfetcher service is alive before making API calls
+  #   (useful for testing)
   skip_heartbeat: true
+
+harvestdor:
+  # log_name: name of log file  (default: harvestdor.log)
+  log_name: testcoll.log
+
+  # log_dir:  directory for log file  (default logs, relative to harvestdor gem path)
+  log_dir: spec/test_logs
+
+  # purl: url for the DOR purl server (used to get ContentMetadata, etc.)
+  purl: https://purl.stanford.edu
 
 # ----------- SOLR index (that we're writing INTO) parameters ------------
 solr:
@@ -9,33 +42,3 @@ solr:
   read_timeout: 60
   open_timeout: 60
   max_retries: 10
-
-harvestdor:
-  # config for testing code
-
-  # log_name: name of log file  (default: harvestdor.log)
-  log_name: testcoll.log
-
-  # log_dir:  directory for log file  (default logs, relative to harvestdor gem path)
-  log_dir: spec/test_logs
-
-  # purl: url for the DOR purl server (used to get ContentMetadata, etc.)
-  purl: http://purl.stanford.edu
-
-  # Additional options to pass to Faraday http client (https://github.com/technoweenie/faraday)
-  http_options:
-    ssl:
-      verify: false
-    request:
-      # open/read timeout in seconds
-      timeout: 120
-      # connection open timeout in seconds
-      open_timeout: 120
-
-
-solrmarc:
-  dist_dir: solrmarc-sw/dist
-# the url of the searchworks solr url we're fetching FROM
-  sw_solr_url: http://searchworks-solr-lb.stanford.edu:8983/solr/
-# the name of the solrmarc config file to use
-  config_file: sw_config.properties
