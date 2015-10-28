@@ -284,7 +284,6 @@ describe GDor::Indexer do
         @indexer.add_coll_info(doc_hash, [double(druid: coll_druid1, bare_druid: coll_druid1, public_xml: @ng_pub_xml, identity_md_obj_label: 'foo'), double(druid: coll_druid2, bare_druid: coll_druid2, public_xml: @ng_pub_xml, identity_md_obj_label: 'bar')])
         expect(doc_hash[:collection_with_title]).to match_array ["#{coll_druid1}-|-foo", "#{coll_druid2}-|-bar"]
       end
-      # other tests show it uses druid when coll rec isn't merged
     end
 
     context '#coll_display_types_from_items' do
@@ -312,14 +311,14 @@ describe GDor::Indexer do
 
   context '#num_found_in_solr' do
     before :each do
-      @unmerged_collection_response = { 'response' => { 'numFound' => '1', 'docs' => [{ 'id' => 'dm212rn7381', 'url_fulltext' => ['https://purl.stanford.edu/dm212rn7381'] }] } }
+      @collection_response = { 'response' => { 'numFound' => '1', 'docs' => [{ 'id' => 'dm212rn7381', 'url_fulltext' => ['https://purl.stanford.edu/dm212rn7381'] }] } }
       @item_response = { 'response' => { 'numFound' => '265', 'docs' => [{ 'id' => 'dm212rn7381' }] } }
     end
 
     it 'counts the items and the collection object in the solr index after indexing' do
       allow(@indexer.solr_client.client).to receive(:get) do |_wt, params|
         if params[:params][:fq].include?('id:"dm212rn7381"')
-          @unmerged_collection_response
+          @collection_response
         else
           @item_response
         end
@@ -351,7 +350,7 @@ describe GDor::Indexer do
 
     it 'email body includes failed to index druids' do
       @indexer.instance_variable_set(:@druids_failed_to_ix, %w(a b))
-      expect(subject).to match /records that may have failed to index \(merged recs as druids, not ckeys\): \na\nb\n\n/
+      expect(subject).to match /records that may have failed to index: \na\nb\n\n/
     end
 
     it 'email body include validation messages' do

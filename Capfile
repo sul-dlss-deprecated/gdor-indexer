@@ -18,7 +18,7 @@ require 'capistrano/deploy'
 # require 'capistrano/chruby'
 require 'capistrano/bundler'
 # require 'capistrano/rails'
-require 'capistrano/rvm' # gdor-indexer needs jruby until merge-manager
+require 'capistrano/rvm' # gdor-indexer used to need jruby (for merged records using solrmarc-sw)
 
 require 'dlss/capistrano'
 

@@ -4,7 +4,7 @@ set :repo_url, 'https://github.com/sul-dlss/gdor-indexer.git'
 # Default branch is :master
 # ask :branch, proc { `git rev-parse --abbrev-ref HEAD`.chomp }
 
-# gdor-indexer needs jruby until merge-manager
+# gdor-indexer used to need jruby (for merged records using solrmarc-sw)
 set :rvm_ruby_version, 'jruby-1.7.10'
 
 set :user, 'lyberadmin'

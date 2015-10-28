@@ -36,7 +36,7 @@ describe GDor::Indexer::SolrDocBuilder do
     before(:each) do
       @doc_hash = doc_hash
     end
-    it 'id field should be set to druid for non-merged record' do
+    it 'id field should be set to druid' do
       expect(@doc_hash[:id]).to eq(@fake_druid)
     end
     it 'does not have the gdor fields set in indexer.rb' do
@@ -46,7 +46,7 @@ describe GDor::Indexer::SolrDocBuilder do
       expect(@doc_hash).to_not have_key(:display_type)
       expect(@doc_hash).to_not have_key(:file_id)
     end
-    it 'has the full MODS in the modsxml field for non-merged record' do
+    it 'has the full MODS in the modsxml field' do
       expect(@doc_hash[:modsxml]).to be_equivalent_to @mods_xml
     end
   end # doc hash
