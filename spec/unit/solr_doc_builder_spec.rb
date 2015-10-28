@@ -9,7 +9,9 @@ describe GDor::Indexer::SolrDocBuilder do
   end
 
   let :logger do
-    Logger.new(StringIO.new)
+    lgr = Logger.new(StringIO.new)
+    lgr.level = Logger::WARN
+    lgr
   end
 
   def sdb_for_data(mods, pub_xml)

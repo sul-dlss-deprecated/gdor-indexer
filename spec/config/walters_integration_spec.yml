@@ -42,3 +42,7 @@ solr:
   read_timeout: 60
   open_timeout: 60
   max_retries: 10
+
+# the severity level of messages to be logged.  Valid values are debug, info, warn, error, fatal
+# default: debug
+log_level: info

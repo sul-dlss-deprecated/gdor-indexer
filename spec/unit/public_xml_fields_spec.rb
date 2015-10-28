@@ -9,7 +9,9 @@ describe GDor::Indexer::PublicXmlFields do
   end
 
   let :logger do
-    Logger.new(StringIO.new)
+    lgr = Logger.new(StringIO.new)
+    lgr.level = Logger::WARN
+    lgr
   end
 
   def sdb_for_pub_xml(m)

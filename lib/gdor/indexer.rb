@@ -53,6 +53,15 @@ module GDor
     end
 
     def logger
+      config_level =
+        case config.log_level
+        when 'debug' then Logger::DEBUG
+        when 'info' then Logger::INFO
+        when 'warn' then Logger::WARN
+        when 'error' then Logger::ERROR
+        when 'fatal' then Logger::FATAL
+        end
+      harvestdor.logger.level = config_level ? config_level : Logger::INFO
       harvestdor.logger
     end
 
