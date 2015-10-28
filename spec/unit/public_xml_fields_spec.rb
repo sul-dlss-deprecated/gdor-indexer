@@ -8,11 +8,7 @@ describe GDor::Indexer::PublicXmlFields do
     @empty_pub_xml = "<publicObject id='druid:#{@fake_druid}'></publicObject>"
   end
 
-  let :logger do
-    lgr = Logger.new(StringIO.new)
-    lgr.level = Logger::WARN
-    lgr
-  end
+  let(:logger) { Logger.new(StringIO.new) }
 
   def sdb_for_pub_xml(m)
     resource = Harvestdor::Indexer::Resource.new(double, @fake_druid)

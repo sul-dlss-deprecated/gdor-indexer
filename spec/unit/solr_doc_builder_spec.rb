@@ -18,6 +18,9 @@ describe GDor::Indexer::SolrDocBuilder do
     resource = Harvestdor::Indexer::Resource.new(double, @fake_druid)
     allow(resource).to receive(:mods).and_return(Nokogiri::XML(mods))
     allow(resource).to receive(:public_xml).and_return(Nokogiri::XML(pub_xml))
+    i = Harvestdor::Indexer.new
+    i.logger.level = Logger::WARN
+    allow(resource).to receive(:indexer).and_return i
     GDor::Indexer::SolrDocBuilder.new(resource, logger)
   end
 

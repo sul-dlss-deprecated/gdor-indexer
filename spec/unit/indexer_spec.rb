@@ -28,6 +28,9 @@ describe GDor::Indexer do
     allow(r).to receive(:public_xml?).and_return true
     allow(r).to receive(:content_metadata).and_return nil
     allow(r).to receive(:collection?).and_return false
+    i = Harvestdor::Indexer.new
+    i.logger.level = Logger::WARN
+    allow(r).to receive(:indexer).and_return i
     r
   end
 
@@ -40,6 +43,9 @@ describe GDor::Indexer do
     allow(r).to receive(:content_metadata).and_return nil
     allow(r).to receive(:identity_md_obj_label).and_return ''
     allow(r).to receive(:collection?).and_return true
+    i = Harvestdor::Indexer.new
+    i.logger.level = Logger::WARN
+    allow(r).to receive(:indexer).and_return i
     r
   end
 
