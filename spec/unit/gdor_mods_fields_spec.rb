@@ -7,15 +7,16 @@ describe GDor::Indexer::ModsFields do
     @mods_xml = "<mods #{@ns_decl}><note>gdor_mods_fields testing</note></mods>"
   end
 
-  let :logger do
-    Logger.new StringIO.new
-  end
-
   def sdb_for_mods(m)
     resource = Harvestdor::Indexer::Resource.new(double, @fake_druid)
     allow(resource).to receive(:public_xml).and_return(nil)
     allow(resource).to receive(:mods).and_return(Nokogiri::XML(m))
-    GDor::Indexer::SolrDocBuilder.new(resource, logger)
+    i = Harvestdor::Indexer.new
+    i.logger.level = Logger::WARN
+    allow(resource).to receive(:indexer).and_return(i)
+    lgr = Logger.new(StringIO.new)
+    lgr.level = Logger::WARN
+    GDor::Indexer::SolrDocBuilder.new(resource, lgr)
   end
 
   context 'doc_hash_from_mods' do

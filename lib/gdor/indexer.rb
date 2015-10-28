@@ -17,7 +17,7 @@ module GDor
   class Indexer
     include Hooks
 
-    define_hooks :before_index, :before_merge
+    define_hooks :before_index
 
     # local files
     require 'gdor/indexer/version'
@@ -53,6 +53,15 @@ module GDor
     end
 
     def logger
+      config_level =
+        case config.log_level
+        when 'debug' then Logger::DEBUG
+        when 'info' then Logger::INFO
+        when 'warn' then Logger::WARN
+        when 'error' then Logger::ERROR
+        when 'fatal' then Logger::FATAL
+        end
+      harvestdor.logger.level = config_level ? config_level : Logger::INFO
       harvestdor.logger
     end
 
@@ -160,7 +169,7 @@ module GDor
         building_facet: 'Stanford Digital Repository' # INDEX-53 add building_facet = Stanford Digital Repository here for collection
       )
 
-      logger.info "Indexing collection object #{resource.druid} (unmerged)"
+      logger.info "Indexing collection object #{resource.druid}"
       doc_hash = coll_sdb.doc_hash
       doc_hash.combine fields_to_add
       validation_messages = doc_hash.validate_collection(config)
@@ -267,7 +276,7 @@ module GDor
 
       if @druids_failed_to_ix.size > 0
         body += "\n"
-        body += "records that may have failed to index (merged recs as druids, not ckeys): \n"
+        body += "records that may have failed to index: \n"
         body += @druids_failed_to_ix.join("\n") + "\n"
       end
 

@@ -9,13 +9,18 @@ describe GDor::Indexer::SolrDocBuilder do
   end
 
   let :logger do
-    Logger.new(StringIO.new)
+    lgr = Logger.new(StringIO.new)
+    lgr.level = Logger::WARN
+    lgr
   end
 
   def sdb_for_data(mods, pub_xml)
     resource = Harvestdor::Indexer::Resource.new(double, @fake_druid)
     allow(resource).to receive(:mods).and_return(Nokogiri::XML(mods))
     allow(resource).to receive(:public_xml).and_return(Nokogiri::XML(pub_xml))
+    i = Harvestdor::Indexer.new
+    i.logger.level = Logger::WARN
+    allow(resource).to receive(:indexer).and_return i
     GDor::Indexer::SolrDocBuilder.new(resource, logger)
   end
 
@@ -34,7 +39,7 @@ describe GDor::Indexer::SolrDocBuilder do
     before(:each) do
       @doc_hash = doc_hash
     end
-    it 'id field should be set to druid for non-merged record' do
+    it 'id field should be set to druid' do
       expect(@doc_hash[:id]).to eq(@fake_druid)
     end
     it 'does not have the gdor fields set in indexer.rb' do
@@ -44,7 +49,7 @@ describe GDor::Indexer::SolrDocBuilder do
       expect(@doc_hash).to_not have_key(:display_type)
       expect(@doc_hash).to_not have_key(:file_id)
     end
-    it 'has the full MODS in the modsxml field for non-merged record' do
+    it 'has the full MODS in the modsxml field' do
       expect(@doc_hash[:modsxml]).to be_equivalent_to @mods_xml
     end
   end # doc hash
