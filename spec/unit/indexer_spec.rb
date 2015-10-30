@@ -419,6 +419,19 @@ describe GDor::Indexer do
     end
   end
 
+  describe '#solr_client' do
+    it 'defaults to the harvestdor-configured client' do
+      expect(@indexer.solr_client).to eq @indexer.harvestdor.solr
+    end
+
+    it 'can be set as an option' do
+      solr_client = double
+      @indexer = described_class.new(solr_client: solr_client)
+
+      expect(@indexer.solr_client).to eq solr_client
+    end
+  end
+
   # context "skip heartbeat" do
   #   it "allows me to use a fake url for dor-fetcher-client" do
   #     expect {GDor::Indexer.new(@config_yml_path)}.not_to raise_error

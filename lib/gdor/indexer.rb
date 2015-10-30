@@ -39,6 +39,7 @@ module GDor
       options = args.extract_options!
       yml_path = args.first
 
+      @solr_client = options.delete(:solr_client)
       @success_count = 0
       @error_count = 0
       @total_time_to_solr = 0
@@ -66,7 +67,7 @@ module GDor
     end
 
     def solr_client
-      harvestdor.solr
+      @solr_client ||= harvestdor.solr
     end
 
     def metrics

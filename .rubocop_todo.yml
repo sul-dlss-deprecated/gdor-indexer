@@ -37,7 +37,8 @@ Metrics/AbcSize:
 # Offense count: 1
 # Configuration parameters: CountComments.
 Metrics/ClassLength:
-  Max: 242
+  Exclude:
+    - 'lib/gdor/indexer.rb'
 
 # Offense count: 5
 Metrics/CyclomaticComplexity:
