@@ -29,11 +29,11 @@ module GDor::Indexer::PublicXmlFields
       ids = []
       if content_md
         if display_type == 'image'
-          content_md.xpath('./resource[@type="image"]/file/@id').each do |node|
+          content_md.root.xpath('resource[@type="image"]/file/@id').each do |node|
             ids << node.text unless node.text.empty?
           end
         elsif display_type == 'file'
-          content_md.xpath('./resource/file/@id').each do |node|
+          content_md.root.xpath('resource/file/@id').each do |node|
             ids << node.text unless node.text.empty?
           end
         end
@@ -61,7 +61,7 @@ module GDor::Indexer::PublicXmlFields
   # @return [String]
   def dor_content_type
     @dor_content_type ||= begin
-      dct = content_md ? content_md.xpath('@type').text : nil
+      dct = content_md ? content_md.root.xpath('@type').text : nil
       logger.error "#{druid} has no DOR content type (<contentMetadata> element may be missing type attribute)" if !dct || dct.empty?
       dct
     end
