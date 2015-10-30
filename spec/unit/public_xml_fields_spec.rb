@@ -19,7 +19,7 @@ describe GDor::Indexer::PublicXmlFields do
 
   def sdb_for_content_md(m)
     resource = Harvestdor::Indexer::Resource.new(double, @fake_druid)
-    allow(resource).to receive(:content_metadata).and_return(Nokogiri::XML(m).root)
+    allow(resource).to receive(:content_metadata).and_return(Nokogiri::XML(m))
     allow(resource).to receive(:public_xml).and_return(@empty_pub_xml)
     allow(resource).to receive(:mods).and_return(@mods_xml)
     GDor::Indexer::SolrDocBuilder.new(resource, logger)
