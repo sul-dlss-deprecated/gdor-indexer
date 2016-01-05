@@ -36,7 +36,6 @@ module GDor::Indexer::ModsFields
       era_facet: smods_rec.era_facet,
 
       format_main_ssim: format_main_ssim,
-      format: format, # for backwards compatibility
 
       language: smods_rec.sw_language_facet,
       physical: smods_rec.term_values([:physical_description, :extent]),
@@ -65,18 +64,6 @@ module GDor::Indexer::ModsFields
     doc_hash
   end
 
-  # select one or more format values from the controlled vocabulary here:
-  #   http://searchworks-solr-lb.stanford.edu:8983/solr/select?facet.field=format&rows=0&facet.sort=index
-  # via stanford-mods gem
-  # @return [Array<String>] value(s) in the SearchWorks controlled vocabulary, or []
-  def format
-    vals = smods_rec.format
-    if vals.empty?
-      logger.warn "#{druid} has no SearchWorks format from MODS - check <typeOfResource> and other implicated MODS elements"
-    end
-    vals
-  end
-
   # call stanford-mods format_main to get results
   # @return [Array<String>] value(s) in the SearchWorks controlled vocabulary, or []
   def format_main_ssim
@@ -85,12 +72,6 @@ module GDor::Indexer::ModsFields
       logger.warn "#{druid} has no SearchWorks Resource Type from MODS - check <typeOfResource> and other implicated MODS elements"
     end
     vals
-  end
-
-  # call stanford-mods sw_genre to get results
-  # @return [Array<String>] value(s)
-  def genre_ssim
-    smods_rec.sw_genre
   end
 
   protected
