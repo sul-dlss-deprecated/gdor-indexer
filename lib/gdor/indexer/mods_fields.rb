@@ -54,11 +54,11 @@ module GDor::Indexer::ModsFields
     }
 
     # more pub date fields
-    pub_date_sort = doc_hash[:pub_date_sort]
-    if is_positive_int? pub_date_sort
-      doc_hash[:pub_year_tisim] = pub_date_sort # for date slider
+    pub_date_sort_val = doc_hash[:pub_date_sort]
+    if is_positive_int? pub_date_sort_val
+      doc_hash[:pub_year_tisim] = pub_date_sort_val # for date slider
       # put the displayable year in the correct field, :creation_year_isi for example
-      doc_hash[date_type_sym] = smods_rec.pub_date_sort if date_type_sym
+      doc_hash[date_type_sym] = pub_date_sort_val if date_type_sym
     end
 
     doc_hash
