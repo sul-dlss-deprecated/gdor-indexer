@@ -588,7 +588,6 @@ describe GDor::Indexer::ModsFields do
       expect(doc_hash[:pub_date_sort]).to eq('1800')
       expect(doc_hash[:publication_year_isi]).to eq('1800')
       expect(doc_hash[:pub_year_tisim]).to eq('1800') # date slider
-      expect(doc_hash[:pub_date_display]).to eq('13th century AH / 19th CE')
       expect(doc_hash[:imprint_display]).to eq('13th century AH / 19th CE')
     end
 

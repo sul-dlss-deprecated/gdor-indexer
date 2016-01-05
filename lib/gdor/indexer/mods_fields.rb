@@ -48,7 +48,6 @@ module GDor::Indexer::ModsFields
       pub_date_sort: smods_rec.pub_date_sort,
       imprint_display: smods_rec.pub_date_display,
       pub_date: smods_rec.pub_date_facet,
-      pub_date_display: smods_rec.pub_date_display, # pub_date_display may be deprecated
 
       all_search: smods_rec.text.gsub(/\s+/, ' ')
     }
