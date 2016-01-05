@@ -145,54 +145,30 @@ describe GDor::Indexer::ModsFields do
       end
     end
 
-    context 'format fields' do
-      context 'format_main_ssim' do
-        it 'calls #format_main_ssim method' do
-          m = "<mods #{@ns_decl}><note>nope</typeOfResource></mods>"
-          sdb = sdb_for_mods(m)
-          expect(sdb).to receive(:format_main_ssim)
-          sdb.doc_hash_from_mods[:format_main_ssim]
-        end
-        it 'has a value when MODS data provides' do
-          m = "<mods #{@ns_decl}><typeOfResource>software, multimedia</typeOfResource><genre>dataset</genre></mods>"
-          sdb = sdb_for_mods(m)
-          expect(sdb.doc_hash_from_mods[:format_main_ssim]).to match_array ['Dataset']
-        end
-        it 'returns empty Array if there is no value' do
-          m = "<mods #{@ns_decl}><note>nope</typeOfResource></mods>"
-          sdb = sdb_for_mods(m)
-          expect(sdb.doc_hash_from_mods[:format_main_ssim]).to eq([])
-        end
+    context '#format_main_ssim' do
+      it 'doc_hash_from_mods calls #format_main_ssim' do
+        m = "<mods #{@ns_decl}><note>nope</typeOfResource></mods>"
+        sdb = sdb_for_mods(m)
+        expect(sdb).to receive(:format_main_ssim)
+        sdb.doc_hash_from_mods[:format_main_ssim]
+      end
+      it '#format_main_ssim calls stanford-mods.format_main' do
+        m = "<mods #{@ns_decl}><note>nope</typeOfResource></mods>"
+        sdb = sdb_for_mods(m)
+        expect(sdb.smods_rec).to receive(:format_main).and_return([])
+        sdb.format_main_ssim
+      end
+      it 'has a value when MODS data provides' do
+        m = "<mods #{@ns_decl}><typeOfResource>still image</typeOfResouce></mods>"
+        sdb = sdb_for_mods(m)
+        expect(sdb.format_main_ssim).to match_array ['Image']
+      end
+      it 'returns empty Array and logs warning if there is no value' do
+        sdb = sdb_for_mods(@mods_xml)
+        expect(sdb.logger).to receive(:warn).with("#{@fake_druid} has no SearchWorks Resource Type from MODS - check <typeOfResource> and other implicated MODS elements")
+        expect(sdb.format_main_ssim).to eq([])
       end
     end
-
-
-=begin  new consolidated tests for format_main
-      context '#format_main_ssim' do
-        it 'doc_hash_from_mods calls #format_main_ssim' do
-          m = "<mods #{@ns_decl}><note>nope</typeOfResource></mods>"
-          sdb = sdb_for_mods(m)
-          expect(sdb).to receive(:format_main_ssim)
-          sdb.doc_hash_from_mods[:format_main_ssim]
-        end
-        it '#format_main_ssim calls stanford-mods.format_main' do
-          m = "<mods #{@ns_decl}><note>nope</typeOfResource></mods>"
-          sdb = sdb_for_mods(m)
-          expect(sdb.smods_rec).to receive(:format_main).and_return([])
-          sdb.format_main_ssim
-        end
-        it 'has a value when MODS data provides' do
-          m = "<mods #{@ns_decl}><typeOfResource>still image</typeOfResouce></mods>"
-          sdb = sdb_for_mods(m)
-          expect(sdb.format_main_ssim).to match_array ['Image']
-        end
-        it 'returns empty Array and logs warning if there is no value' do
-          sdb = sdb_for_mods(@mods_xml)
-          expect(sdb.logger).to receive(:warn).with("#{@fake_druid} has no SearchWorks Resource Type from MODS - check <typeOfResource> and other implicated MODS elements")
-          expect(sdb.format_main_ssim).to eq([])
-        end
-      end
-=end
 
     context 'title fields' do
       before(:all) do
@@ -779,18 +755,4 @@ describe GDor::Indexer::ModsFields do
       end # difficult pub dates
     end # publication date fields
   end # doc_hash_from_mods
-
-  context '#format_main_ssim' do
-    it 'gets format_main_ssim from call to stanford-mods searchworks format_main method' do
-      m = "<mods #{@ns_decl}><typeOfResource>still image</typeOfResouce></mods>"
-      sdb = sdb_for_mods(m)
-      expect(sdb.smods_rec).to receive(:format_main).and_call_original
-      expect(sdb.format_main_ssim).to match_array ['Image']
-    end
-    it 'returns empty Array and log warning if there is no value' do
-      sdb = sdb_for_mods(@mods_xml)
-      expect(sdb.logger).to receive(:warn).with("#{@fake_druid} has no SearchWorks Resource Type from MODS - check <typeOfResource> and other implicated MODS elements")
-      expect(sdb.format_main_ssim).to eq([])
-    end
-  end # context format_main_ssim
 end
