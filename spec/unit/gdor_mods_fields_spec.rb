@@ -575,6 +575,9 @@ describe GDor::Indexer::ModsFields do
   end # subject fields
 
   context 'publication date fields' do
+    let :sdb do
+      sdb = sdb_for_mods(@mods_xml)
+    end
     it 'populates all date fields' do
       m = "<mods #{@ns_decl}><originInfo>
             <dateIssued>13th century AH / 19th CE</dateIssued>
@@ -588,6 +591,7 @@ describe GDor::Indexer::ModsFields do
       expect(doc_hash[:pub_date_display]).to eq('13th century AH / 19th CE')
       expect(doc_hash[:imprint_display]).to eq('13th century AH / 19th CE')
     end
+
     it 'does not populate the date slider for BC dates' do
       m = "<mods #{@ns_decl}><originInfo><dateIssued>199 B.C.</dateIssued></originInfo></mods>"
       sdb = sdb_for_mods(m)
@@ -596,9 +600,6 @@ describe GDor::Indexer::ModsFields do
     end
 
     context 'pub_date_sort integration tests' do
-      let :sdb do
-        sdb = sdb_for_mods("<mods #{@ns_decl}> </mods>")
-      end
       it 'works on normal dates' do
         allow(sdb.smods_rec).to receive(:pub_date).and_return('1945')
         expect(sdb.doc_hash_from_mods[:pub_date_sort]).to eq('1945')
@@ -626,7 +627,7 @@ describe GDor::Indexer::ModsFields do
         doc_hash = sdb.doc_hash_from_mods
         expect(doc_hash[:pub_year_tisim]).to eq('1904')
       end
-      it 'correctlies parse a ranged date' do
+      it 'correctly parses a ranged date' do
         m = "<mods #{@ns_decl}><originInfo>
               <dateCreated>Text dated June 4, 1594; miniatures added by 1596</dateCreated>
             </originInfo></mods>"
