@@ -797,17 +797,4 @@ describe GDor::Indexer::ModsFields do
       expect(sdb.format_main_ssim).to eq([])
     end
   end # context format_main_ssim
-
-  context 'genre_ssim' do
-    it 'gets genre_ssim from call to stanford-mods searchworks sw_genre method' do
-      m = "<mods #{@ns_decl}><genre>technical report</genre></mods>"
-      sdb = sdb_for_mods(m)
-      expect(sdb.smods_rec).to receive(:sw_genre).and_call_original
-      expect(sdb.genre_ssim).to match_array ['Technical report']
-    end
-    it 'returns empty Array if there is no value' do
-      sdb = sdb_for_mods(@mods_xml)
-      expect(sdb.genre_ssim).to eq([])
-    end
-  end # context genre_ssim
 end

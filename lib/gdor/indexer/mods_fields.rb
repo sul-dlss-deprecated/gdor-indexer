@@ -87,12 +87,6 @@ module GDor::Indexer::ModsFields
     vals
   end
 
-  # call stanford-mods sw_genre to get results
-  # @return [Array<String>] value(s)
-  def genre_ssim
-    smods_rec.sw_genre
-  end
-
   protected
 
   # @return true if the string parses into an int, and if so, the int is >= 0
