@@ -61,56 +61,22 @@ describe GDor::Indexer::ModsFields do
         sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:pub_date_sort]).to eq('1945')
       end
-      it 'yyyy for yyyy dates' do
+      it 'takes single dateCreated' do
         m = mods_origin_info_start_str +
-              "<dateIssued>1945</dateIssued>" +
+              "<dateCreated>1904</dateCreated>" +
             mods_origin_info_end_str
         sdb = sdb_for_mods(m)
-        expect(sdb.doc_hash_from_mods[:pub_date_sort]).to eq('1945')
+        expect(sdb.doc_hash_from_mods[:pub_date_sort]).to eq('1904')
       end
-      it '0yyy for yyy dates' do
-        m = mods_origin_info_start_str +
-              "<dateIssued>945</dateIssued>" +
-            mods_origin_info_end_str
-        sdb = sdb_for_mods(m)
-        expect(sdb.doc_hash_from_mods[:pub_date_sort]).to eq('0945')
-      end
-      it 'yy00 for yy-- dates' do
-        m = mods_origin_info_start_str +
-              "<dateIssued>16--</dateIssued>"
-            mods_origin_info_end_str
-        sdb = sdb_for_mods(m)
-        expect(sdb.doc_hash_from_mods[:pub_date_sort]).to eq('1600')
-      end
-      it '0y00 for y-- dates' do
-        m = mods_origin_info_start_str +
-              "<dateIssued>9--</dateIssued>" +
-            mods_origin_info_end_str
-        sdb = sdb_for_mods(m)
-        expect(sdb.doc_hash_from_mods[:pub_date_sort]).to eq('0900')
-      end
-      it 'yy00 for yyth century dates' do
-        m = mods_origin_info_start_str +
-              "<dateIssued>19th century</dateIssued>" +
-            mods_origin_info_end_str
-        sdb = sdb_for_mods(m)
-        expect(sdb.doc_hash_from_mods[:pub_date_sort]).to eq('1800')
-      end
-      it '0y00 for yth century dates' do
-        m = mods_origin_info_start_str +
-              "<dateIssued>9th century</dateIssued>" +
-            mods_origin_info_end_str
-        sdb = sdb_for_mods(m)
-        expect(sdb.doc_hash_from_mods[:pub_date_sort]).to eq('0800')
-      end
-      it '-(1000 - |yyy|) for BC dates' do
-        m = mods_origin_info_start_str +
-              "<dateCreated>300 B.C.</dateCreated>" +
-            mods_origin_info_end_str
-        sdb = sdb_for_mods(m)
-        expect(sdb.doc_hash_from_mods[:pub_date_sort]).to eq('-700')
-      end
-    end # pub_date_sort
+      it_behaves_like "expected", :pub_date_sort, '1945', '1945'
+      it_behaves_like "expected", :pub_date_sort, '945', '0945'
+      it_behaves_like "expected", :pub_date_sort, '16--', '1600'
+      it_behaves_like "expected", :pub_date_sort, '9--', '0900'
+      it_behaves_like "expected", :pub_date_sort, '19th century', '1800'
+      it_behaves_like "expected", :pub_date_sort, '9th century', '0800'
+      # -(1000 - |yyy|) for BC dates
+      it_behaves_like "expected", :pub_date_sort, '300 B.C.', '-700'
+    end
 
     context 'single valued pub year facets' do
       let(:mods) do
@@ -132,55 +98,13 @@ describe GDor::Indexer::ModsFields do
         expect(sdb.doc_hash_from_mods[:pub_year_w_approx_isi]).to eq '1500'
       end
       RSpec.shared_examples "single pub year facet" do |field_sym|
-        it 'yyyy for yyyy dates' do
-          m = mods_origin_info_start_str +
-                "<dateIssued>1945</dateIssued>" +
-              mods_origin_info_end_str
-          sdb = sdb_for_mods(m)
-          expect(sdb.doc_hash_from_mods[field_sym]).to eq('1945')
-        end
-        it 'yyy for yyy dates' do
-          m = mods_origin_info_start_str +
-                "<dateIssued>945</dateIssued>" +
-              mods_origin_info_end_str
-          sdb = sdb_for_mods(m)
-          expect(sdb.doc_hash_from_mods[field_sym]).to eq('945')
-        end
-        it '(yy+1)th century for yy-- dates' do
-          m = mods_origin_info_start_str +
-                "<dateIssued>16--</dateIssued>" +
-              mods_origin_info_end_str
-          sdb = sdb_for_mods(m)
-          expect(sdb.doc_hash_from_mods[field_sym]).to eq('17th century')
-        end
-        it '(y+1)th century for y-- dates' do
-          m = mods_origin_info_start_str +
-                "<dateIssued>8--</dateIssued>" +
-              mods_origin_info_end_str
-          sdb = sdb_for_mods(m)
-          expect(sdb.doc_hash_from_mods[field_sym]).to eq('9th century')
-        end
-        it 'yyth century as is' do
-          m = mods_origin_info_start_str +
-                "<dateIssued>19th century</dateIssued>" +
-              mods_origin_info_end_str
-          sdb = sdb_for_mods(m)
-          expect(sdb.doc_hash_from_mods[field_sym]).to eq('19th century')
-        end
-        it 'yth century as is' do
-          m = mods_origin_info_start_str +
-                "<dateIssued>9th century</dateIssued>" +
-              mods_origin_info_end_str
-          sdb = sdb_for_mods(m)
-          expect(sdb.doc_hash_from_mods[field_sym]).to eq('9th century')
-        end
-        it 'BC dates as is' do
-          m = mods_origin_info_start_str +
-                "<dateCreated>300 B.C.</dateCreated>" +
-              mods_origin_info_end_str
-          sdb = sdb_for_mods(m)
-          expect(sdb.doc_hash_from_mods[field_sym]).to eq('300 B.C.')
-        end
+        it_behaves_like "expected", field_sym, '1945', '1945'
+        it_behaves_like "expected", field_sym, '945', '945'
+        it_behaves_like "expected", field_sym, '16--', '17th century'
+        it_behaves_like "expected", field_sym, '8--', '9th century'
+        it_behaves_like "expected", field_sym, '19th century', '19th century'
+        it_behaves_like "expected", field_sym, '9th century', '9th century'
+        it_behaves_like "expected", field_sym, '300 B.C.', '300 B.C.'
       end
       it_behaves_like "single pub year facet", :pub_year_no_approx_isi
       it_behaves_like "single pub year facet", :pub_year_w_approx_isi
@@ -192,48 +116,6 @@ describe GDor::Indexer::ModsFields do
         expect(sdb.smods_rec).to receive(:pub_date_sortable_string).with(false)
         sdb.doc_hash_from_mods[:pub_year_tisim]
       end
-      it 'takes single dateCreated' do
-        m = mods_origin_info_start_str +
-              "<dateCreated>1904</dateCreated>" +
-            mods_origin_info_end_str
-        sdb = sdb_for_mods(m)
-        expect(sdb.doc_hash_from_mods[:pub_year_tisim]).to eq('1904')
-      end
-      it 'takes first yyyy in string' do
-        m = mods_origin_info_start_str +
-              "<dateCreated>Text dated June 4, 1594; miniatures added by 1596</dateCreated>" +
-            mods_origin_info_end_str
-        sdb = sdb_for_mods(m)
-        expect(sdb.doc_hash_from_mods[:pub_year_tisim]).to eq('1594')
-      end
-      it 'finds year in an expanded English form' do
-        m = mods_origin_info_start_str +
-              "<dateCreated>Aug. 3rd, 1886</dateCreated>" +
-            mods_origin_info_end_str
-       sdb = sdb_for_mods(m)
-        expect(sdb.doc_hash_from_mods[:pub_year_tisim]).to eq('1886')
-      end
-      it 'removes question marks and brackets' do
-        m = mods_origin_info_start_str +
-             " <dateCreated>Aug. 3rd, [18]86?</dateCreated>" +
-          mods_origin_info_end_str
-        sdb = sdb_for_mods(m)
-        expect(sdb.doc_hash_from_mods[:pub_year_tisim]).to eq('1886')
-      end
-      it 'ignores an s after the decade' do
-        m = mods_origin_info_start_str +
-              "<dateCreated>early 1890s</dateCreated>" +
-          mods_origin_info_end_str
-        sdb = sdb_for_mods(m)
-        expect(sdb.doc_hash_from_mods[:pub_year_tisim]).to eq('1890')
-      end
-      it 'takes first year from hyphenated range (for now)' do
-        m = mods_origin_info_start_str +
-              "<dateIssued>1865-6</dateIssued>" +
-          mods_origin_info_end_str
-        sdb = sdb_for_mods(m)
-        expect(sdb.doc_hash_from_mods[:pub_year_tisim]).to eq('1865')
-      end
       it 'includes approx dates' do
         m = mods_origin_info_start_str +
               "<dateIssued qualifier='approximate'>1945</dateIssued>" +
@@ -241,47 +123,12 @@ describe GDor::Indexer::ModsFields do
         sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:pub_year_tisim]).to eq('1945')
       end
-      it 'yyyy for yyyy dates' do
+      it 'takes single dateCreated' do
         m = mods_origin_info_start_str +
-              "<dateIssued>1945</dateIssued>" +
-          mods_origin_info_end_str
-        sdb = sdb_for_mods(m)
-        expect(sdb.doc_hash_from_mods[:pub_year_tisim]).to eq('1945')
-      end
-      it '0yyy for yyy dates' do
-        m = mods_origin_info_start_str +
-              "<dateIssued>945</dateIssued>" +
+              "<dateCreated>1904</dateCreated>" +
             mods_origin_info_end_str
         sdb = sdb_for_mods(m)
-        expect(sdb.doc_hash_from_mods[:pub_year_tisim]).to eq('0945')
-      end
-      it 'yy00 for yy-- dates' do
-        m = mods_origin_info_start_str +
-              "<dateIssued>16--</dateIssued>" +
-          mods_origin_info_end_str
-        sdb = sdb_for_mods(m)
-        expect(sdb.doc_hash_from_mods[:pub_year_tisim]).to eq('1600')
-      end
-      it '0y00 for y-- dates' do
-        m = mods_origin_info_start_str +
-              "<dateIssued>9--</dateIssued>"
-            mods_origin_info_end_str
-        sdb = sdb_for_mods(m)
-        expect(sdb.doc_hash_from_mods[:pub_year_tisim]).to eq('0900')
-      end
-      it 'yy00 for yyth century dates' do
-        m = mods_origin_info_start_str +
-              "<dateIssued>19th century</dateIssued>" +
-          mods_origin_info_end_str
-        sdb = sdb_for_mods(m)
-        expect(sdb.doc_hash_from_mods[:pub_year_tisim]).to eq('1800')
-      end
-      it '0y00 for yth century dates' do
-        m = mods_origin_info_start_str +
-              "<dateIssued>9th century</dateIssued>" +
-          mods_origin_info_end_str
-        sdb = sdb_for_mods(m)
-        expect(sdb.doc_hash_from_mods[:pub_year_tisim]).to eq('0800')
+        expect(sdb.doc_hash_from_mods[:pub_year_tisim]).to eq('1904')
       end
       it 'ignores B.C. dates' do
         m = mods_origin_info_start_str +
@@ -291,7 +138,18 @@ describe GDor::Indexer::ModsFields do
         expect(sdb.doc_hash_from_mods).not_to have_key(:pub_year_tisim)
         expect(sdb.doc_hash_from_mods[:pub_year_tisim]).to be_nil
       end
-    end # pub_year_tisim
+      it_behaves_like "expected", :pub_year_tisim, '1945', '1945'
+      it_behaves_like "expected", :pub_year_tisim, '945', '0945'
+      it_behaves_like "expected", :pub_year_tisim, '16--', '1600'
+      it_behaves_like "expected", :pub_year_tisim, '9--', '0900'
+      it_behaves_like "expected", :pub_year_tisim, '19th century', '1800'
+      it_behaves_like "expected", :pub_year_tisim, '9th century', '0800'
+      it_behaves_like "expected", :pub_year_tisim, 'Text dated June 4, 1594; miniatures added by 1596', '1594'
+      it_behaves_like "expected", :pub_year_tisim, 'Aug. 3rd, 1886', '1886'
+      it_behaves_like "expected", :pub_year_tisim, 'Aug. 3rd, [18]86?', '1886'
+      it_behaves_like "expected", :pub_year_tisim, 'early 1890s', '1890'
+      it_behaves_like "expected", :pub_year_tisim, '1865-6', '1865' # FIXME:  should be both years
+    end
 
     # TODO:  these tests are in the process of being incorporated into individual field tests above
     context 'difficult pub dates' do
