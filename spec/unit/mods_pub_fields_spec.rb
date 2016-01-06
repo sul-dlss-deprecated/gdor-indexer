@@ -52,14 +52,21 @@ describe GDor::Indexer::ModsFields do
         sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:pub_date_sort]).to eq('1904')
       end
-      it_behaves_like "expected", :pub_date_sort, '1945', '1945'
-      it_behaves_like "expected", :pub_date_sort, '945', '0945'
-      it_behaves_like "expected", :pub_date_sort, '16--', '1600'
-      it_behaves_like "expected", :pub_date_sort, '9--', '0900'
-      it_behaves_like "expected", :pub_date_sort, '19th century', '1800'
-      it_behaves_like "expected", :pub_date_sort, '9th century', '0800'
+      it_behaves_like 'expected', :pub_date_sort, '1945', '1945'
+      it_behaves_like 'expected', :pub_date_sort, '945', '0945'
+      it_behaves_like 'expected', :pub_date_sort, '66', '0066'
+      it_behaves_like 'expected', :pub_date_sort, '5', '0005'
+      it_behaves_like 'expected', :pub_date_sort, '0', '0000'
+      # these negative values are for String lexical sorting as this is a string
+      it_behaves_like 'expected', :pub_date_sort, '-4', '-996'
+      it_behaves_like 'expected', :pub_date_sort, '-15', '-985'
+      it_behaves_like 'expected', :pub_date_sort, '-666', '-334'
+      it_behaves_like 'expected', :pub_date_sort, '16--', '1600'
+      it_behaves_like 'expected', :pub_date_sort, '9--', '0900'
+      it_behaves_like 'expected', :pub_date_sort, '19th century', '1800'
+      it_behaves_like 'expected', :pub_date_sort, '9th century', '0800'
       # -(1000 - |yyy|) for BC dates
-      it_behaves_like "expected", :pub_date_sort, '300 B.C.', '-700'
+      it_behaves_like 'expected', :pub_date_sort, '300 B.C.', '-700'
     end
 
     context 'single valued pub year facets' do
@@ -82,13 +89,19 @@ describe GDor::Indexer::ModsFields do
         expect(sdb.doc_hash_from_mods[:pub_year_w_approx_isi]).to eq '1500'
       end
       RSpec.shared_examples "single pub year facet" do |field_sym|
-        it_behaves_like "expected", field_sym, '1945', '1945'
-        it_behaves_like "expected", field_sym, '945', '945'
-        it_behaves_like "expected", field_sym, '16--', '17th century'
-        it_behaves_like "expected", field_sym, '8--', '9th century'
-        it_behaves_like "expected", field_sym, '19th century', '19th century'
-        it_behaves_like "expected", field_sym, '9th century', '9th century'
-        it_behaves_like "expected", field_sym, '300 B.C.', '300 B.C.'
+        it_behaves_like 'expected', field_sym, '1945', '1945'
+        it_behaves_like 'expected', field_sym, '945', '945'
+        it_behaves_like 'expected', field_sym, '66', '66'
+        it_behaves_like 'expected', field_sym, '5', '5'
+        it_behaves_like 'expected', field_sym, '0', '0'
+        it_behaves_like 'expected', field_sym, '-4', '4 B.C.'
+        it_behaves_like 'expected', field_sym, '-15', '15 B.C.'
+        it_behaves_like 'expected', field_sym, '-666', '666 B.C.'
+        it_behaves_like 'expected', field_sym, '16--', '17th century'
+        it_behaves_like 'expected', field_sym, '8--', '9th century'
+        it_behaves_like 'expected', field_sym, '19th century', '19th century'
+        it_behaves_like 'expected', field_sym, '9th century', '9th century'
+        it_behaves_like 'expected', field_sym, '300 B.C.', '300 B.C.'
       end
       it_behaves_like "single pub year facet", :pub_year_no_approx_isi
       it_behaves_like "single pub year facet", :pub_year_w_approx_isi
@@ -124,17 +137,23 @@ describe GDor::Indexer::ModsFields do
         expect(sdb.doc_hash_from_mods).not_to have_key(:pub_year_tisim)
         expect(sdb.doc_hash_from_mods[:pub_year_tisim]).to be_nil
       end
-      it_behaves_like "expected", :pub_year_tisim, '1945', '1945'
-      it_behaves_like "expected", :pub_year_tisim, '945', '0945'
-      it_behaves_like "expected", :pub_year_tisim, '16--', '1600'
-      it_behaves_like "expected", :pub_year_tisim, '9--', '0900'
-      it_behaves_like "expected", :pub_year_tisim, '19th century', '1800'
-      it_behaves_like "expected", :pub_year_tisim, '9th century', '0800'
-      it_behaves_like "expected", :pub_year_tisim, 'Text dated June 4, 1594; miniatures added by 1596', '1594'
-      it_behaves_like "expected", :pub_year_tisim, 'Aug. 3rd, 1886', '1886'
-      it_behaves_like "expected", :pub_year_tisim, 'Aug. 3rd, [18]86?', '1886'
-      it_behaves_like "expected", :pub_year_tisim, 'early 1890s', '1890'
-      it_behaves_like "expected", :pub_year_tisim, '1865-6', '1865' # FIXME:  should be both years
+      it_behaves_like 'expected', :pub_year_tisim, '1945', '1945'
+      it_behaves_like 'expected', :pub_year_tisim, '945', '0945'
+      it_behaves_like 'expected', :pub_year_tisim, '66', '0066'
+      it_behaves_like 'expected', :pub_year_tisim, '5', '0005'
+      it_behaves_like 'expected', :pub_year_tisim, '0', '0000'
+      it_behaves_like 'expected', :pub_year_tisim, '-4', nil
+      it_behaves_like 'expected', :pub_year_tisim, '-15', nil
+      it_behaves_like 'expected', :pub_year_tisim, '-666', nil
+      it_behaves_like 'expected', :pub_year_tisim, '16--', '1600'
+      it_behaves_like 'expected', :pub_year_tisim, '9--', '0900'
+      it_behaves_like 'expected', :pub_year_tisim, '19th century', '1800'
+      it_behaves_like 'expected', :pub_year_tisim, '9th century', '0800'
+      it_behaves_like 'expected', :pub_year_tisim, 'Text dated June 4, 1594; miniatures added by 1596', '1594'
+      it_behaves_like 'expected', :pub_year_tisim, 'Aug. 3rd, 1886', '1886'
+      it_behaves_like 'expected', :pub_year_tisim, 'Aug. 3rd, [18]86?', '1886'
+      it_behaves_like 'expected', :pub_year_tisim, 'early 1890s', '1890'
+      it_behaves_like 'expected', :pub_year_tisim, '1865-6', '1865' # FIXME:  should be both years
     end
 
     context 'creation_year_isi' do
@@ -217,16 +236,22 @@ describe GDor::Indexer::ModsFields do
       expect(sdb.smods_rec).to receive(:pub_date_display)
       sdb.doc_hash_from_mods[:imprint_display]
     end
-    it_behaves_like "expected", :imprint_display, '1945', '1945'
-    it_behaves_like "expected", :imprint_display, '945', '945'
-    it_behaves_like "expected", :imprint_display, '16--', '16--'
-    it_behaves_like "expected", :imprint_display, '9--', '9--'
-    it_behaves_like "expected", :imprint_display, '19th century', '19th century'
-    it_behaves_like "expected", :imprint_display, '9th century', '9th century'
-    it_behaves_like "expected", :imprint_display, 'blah June 4, 1594; blah 1596', 'blah June 4, 1594; blah 1596'
-    it_behaves_like "expected", :imprint_display, 'Aug. 3rd, 1886', 'Aug. 3rd, 1886'
-    it_behaves_like "expected", :imprint_display, 'Aug. 3rd, [18]86?', 'Aug. 3rd, [18]86?'
-    it_behaves_like "expected", :imprint_display, 'early 1890s', 'early 1890s'
-    it_behaves_like "expected", :imprint_display, '1865-6', '1865-6'
+    it_behaves_like 'expected', :imprint_display, '1945', '1945'
+    it_behaves_like 'expected', :imprint_display, '945', '945'
+    it_behaves_like 'expected', :imprint_display, '66', '66'
+    it_behaves_like 'expected', :imprint_display, '5', '5'
+    it_behaves_like 'expected', :imprint_display, '0', '0'
+    it_behaves_like 'expected', :imprint_display, '-4', '-4'
+    it_behaves_like 'expected', :imprint_display, '-15', '-15'
+    it_behaves_like 'expected', :imprint_display, '-666', '-666'
+    it_behaves_like 'expected', :imprint_display, '16--', '16--'
+    it_behaves_like 'expected', :imprint_display, '9--', '9--'
+    it_behaves_like 'expected', :imprint_display, '19th century', '19th century'
+    it_behaves_like 'expected', :imprint_display, '9th century', '9th century'
+    it_behaves_like 'expected', :imprint_display, 'blah June 4, 1594; blah 1596', 'blah June 4, 1594; blah 1596'
+    it_behaves_like 'expected', :imprint_display, 'Aug. 3rd, 1886', 'Aug. 3rd, 1886'
+    it_behaves_like 'expected', :imprint_display, 'Aug. 3rd, [18]86?', 'Aug. 3rd, [18]86?'
+    it_behaves_like 'expected', :imprint_display, 'early 1890s', 'early 1890s'
+    it_behaves_like 'expected', :imprint_display, '1865-6', '1865-6'
   end
 end
