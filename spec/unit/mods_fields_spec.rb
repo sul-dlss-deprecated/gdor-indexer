@@ -153,17 +153,17 @@ describe GDor::Indexer::ModsFields do
       m = "<mods #{ns_decl}><note>nope</typeOfResource></mods>"
       sdb = sdb_for_mods(m)
       expect(sdb.smods_rec).to receive(:format_main).and_return([])
-      sdb.format_main_ssim
+      sdb.send(:format_main_ssim)
     end
     it 'has a value when MODS data provides' do
       m = "<mods #{ns_decl}><typeOfResource>still image</typeOfResouce></mods>"
       sdb = sdb_for_mods(m)
-      expect(sdb.format_main_ssim).to match_array ['Image']
+      expect(sdb.send(:format_main_ssim)).to match_array ['Image']
     end
     it 'returns empty Array and logs warning if there is no value' do
       sdb = sdb_for_mods(mods_xml)
       expect(sdb.logger).to receive(:warn).with("#{fake_druid} has no SearchWorks Resource Type from MODS - check <typeOfResource> and other implicated MODS elements")
-      expect(sdb.format_main_ssim).to eq([])
+      expect(sdb.send(:format_main_ssim)).to eq([])
     end
   end
 

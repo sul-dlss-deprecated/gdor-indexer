@@ -76,6 +76,8 @@ module GDor::Indexer::ModsFields
     doc_hash
   end
 
+  private
+
   # call stanford-mods format_main to get results
   # @return [Array<String>] value(s) in the SearchWorks controlled vocabulary, or []
   def format_main_ssim
@@ -85,8 +87,6 @@ module GDor::Indexer::ModsFields
     end
     vals
   end
-
-  protected
 
   # @return true if the string parses into an int, and if so, the int is >= 0
   def is_positive_int?(str)
