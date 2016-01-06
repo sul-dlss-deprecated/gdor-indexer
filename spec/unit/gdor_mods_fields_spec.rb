@@ -599,22 +599,54 @@ describe GDor::Indexer::ModsFields do
       expect(doc_hash).to_not have_key(:pub_year_tisim)
     end
 
-    context 'pub_date_sort integration tests' do
-      it 'works on normal dates' do
-        allow(sdb.smods_rec).to receive(:pub_date).and_return('1945')
+    context 'pub_date_sort' do
+      it 'calls Stanford::Mods::Record instance pub_date_sortable_string(false)' do
+        expect(sdb.smods_rec).to receive(:pub_date_sortable_string).with(false)
+        sdb.doc_hash_from_mods[:pub_date_sort]
+      end
+      it 'yyyy for yyyy dates' do
+        m = "<mods #{@ns_decl}><originInfo><dateIssued>1945</dateIssued></originInfo></mods>"
+        sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:pub_date_sort]).to eq('1945')
       end
-      it 'works on 3 digit dates' do
-        allow(sdb.smods_rec).to receive(:pub_date).and_return('945')
+      it '0yyy for yyy dates' do
+        m = "<mods #{@ns_decl}><originInfo><dateIssued>945</dateIssued></originInfo></mods>"
+        sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:pub_date_sort]).to eq('0945')
       end
-      it 'works on century dates' do
-        allow(sdb.smods_rec).to receive(:pub_date).and_return('16--')
+      it 'yy00 for yy-- dates' do
+        m = "<mods #{@ns_decl}><originInfo><dateIssued>16--</dateIssued></originInfo></mods>"
+        sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:pub_date_sort]).to eq('1600')
       end
-      it 'works on 3 digit century dates' do
-        allow(sdb.smods_rec).to receive(:pub_date).and_return('9--')
+      it '0y00 for y-- dates' do
+        m = "<mods #{@ns_decl}><originInfo><dateIssued>9--</dateIssued></originInfo></mods>"
+        sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:pub_date_sort]).to eq('0900')
+      end
+      it 'yy00 for yyth century dates' do
+        m = "<mods #{@ns_decl}><originInfo>
+              <dateIssued>19th century</dateIssued>
+            </originInfo></mods>"
+        sdb = sdb_for_mods(m)
+        doc_hash = sdb.doc_hash_from_mods
+        expect(doc_hash[:pub_date_sort]).to eq('1800')
+      end
+      it '0y00 for yth century dates' do
+        m = "<mods #{@ns_decl}><originInfo>
+              <dateIssued>9th century</dateIssued>
+            </originInfo></mods>"
+        sdb = sdb_for_mods(m)
+        doc_hash = sdb.doc_hash_from_mods
+        expect(doc_hash[:pub_date_sort]).to eq('0800')
+      end
+      it 'works on 3 digit BC dates' do
+        m = "<mods #{@ns_decl}><originInfo>
+              <dateCreated>300 B.C.</dateCreated>
+            </originInfo></mods>"
+        sdb = sdb_for_mods(m)
+        doc_hash = sdb.doc_hash_from_mods
+        expect(doc_hash[:pub_date_sort]).to eq('-700')
       end
     end # pub_date_sort
 

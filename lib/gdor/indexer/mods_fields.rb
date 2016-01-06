@@ -45,7 +45,7 @@ module GDor::Indexer::ModsFields
 
       # publication fields
       pub_search: smods_rec.place,
-      pub_date_sort: smods_rec.pub_date_sort,
+      pub_date_sort: smods_rec.pub_date_sortable_string(false), # include approx dates
       imprint_display: smods_rec.pub_date_display,
       pub_date: smods_rec.pub_date_facet,
 
