@@ -45,20 +45,19 @@ module GDor::Indexer::ModsFields
 
       # publication fields
       pub_search: smods_rec.place,
-      pub_date_sort: smods_rec.pub_date_sort,
+      pub_date_sort: smods_rec.pub_date_sortable_string(false), # include approx dates
       imprint_display: smods_rec.pub_date_display,
       pub_date: smods_rec.pub_date_facet,
-      pub_date_display: smods_rec.pub_date_display, # pub_date_display may be deprecated
 
       all_search: smods_rec.text.gsub(/\s+/, ' ')
     }
 
     # more pub date fields
-    pub_date_sort = doc_hash[:pub_date_sort]
-    if is_positive_int? pub_date_sort
-      doc_hash[:pub_year_tisim] = pub_date_sort # for date slider
+    pub_date_sort_val = doc_hash[:pub_date_sort]
+    if is_positive_int? pub_date_sort_val
+      doc_hash[:pub_year_tisim] = pub_date_sort_val # for date slider
       # put the displayable year in the correct field, :creation_year_isi for example
-      doc_hash[date_type_sym] = smods_rec.pub_date_sort if date_type_sym
+      doc_hash[date_type_sym] = pub_date_sort_val if date_type_sym
     end
 
     doc_hash
