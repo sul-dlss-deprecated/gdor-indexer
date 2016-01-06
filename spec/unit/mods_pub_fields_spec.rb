@@ -38,8 +38,7 @@ describe GDor::Indexer::ModsFields do
     it 'does not populate the date slider for BC dates' do
       m = "<mods #{ns_decl}><originInfo><dateIssued>199 B.C.</dateIssued></originInfo></mods>"
       sdb = sdb_for_mods(m)
-      doc_hash = sdb.doc_hash_from_mods
-      expect(doc_hash).to_not have_key(:pub_year_tisim)
+      expect(sdb.doc_hash_from_mods).to_not have_key(:pub_year_tisim)
     end
 
     context 'pub_date_sort' do
@@ -77,24 +76,21 @@ describe GDor::Indexer::ModsFields do
               <dateIssued>19th century</dateIssued>
             </originInfo></mods>"
         sdb = sdb_for_mods(m)
-        doc_hash = sdb.doc_hash_from_mods
-        expect(doc_hash[:pub_date_sort]).to eq('1800')
+        expect(sdb.doc_hash_from_mods[:pub_date_sort]).to eq('1800')
       end
       it '0y00 for yth century dates' do
         m = "<mods #{ns_decl}><originInfo>
               <dateIssued>9th century</dateIssued>
             </originInfo></mods>"
         sdb = sdb_for_mods(m)
-        doc_hash = sdb.doc_hash_from_mods
-        expect(doc_hash[:pub_date_sort]).to eq('0800')
+        expect(sdb.doc_hash_from_mods[:pub_date_sort]).to eq('0800')
       end
       it 'works on 3 digit BC dates' do
         m = "<mods #{ns_decl}><originInfo>
               <dateCreated>300 B.C.</dateCreated>
             </originInfo></mods>"
         sdb = sdb_for_mods(m)
-        doc_hash = sdb.doc_hash_from_mods
-        expect(doc_hash[:pub_date_sort]).to eq('-700')
+        expect(sdb.doc_hash_from_mods[:pub_date_sort]).to eq('-700')
       end
     end # pub_date_sort
 
