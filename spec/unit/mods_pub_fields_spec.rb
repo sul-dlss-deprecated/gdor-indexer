@@ -26,8 +26,10 @@ describe GDor::Indexer::ModsFields do
           </originInfo></mods>"
       sdb = sdb_for_mods(m)
       doc_hash = sdb.doc_hash_from_mods
-      expect(doc_hash[:pub_date]).to eq('19th century')
-      expect(doc_hash[:pub_date_sort]).to eq('1800')
+      expect(doc_hash[:pub_date]).to eq('19th century') # deprecated due to new pub_year_ fields
+      expect(doc_hash[:pub_date_sort]).to eq('1800') # covered below
+      expect(doc_hash[:pub_year_no_approx_isi]).to eq('19th century') # covered below
+      expect(doc_hash[:pub_year_w_approx_isi]).to eq('19th century') # covered below
       expect(doc_hash[:publication_year_isi]).to eq('1800')
       expect(doc_hash[:pub_year_tisim]).to eq('1800') # date slider
       expect(doc_hash[:imprint_display]).to eq('blah blah 19th century blah blah')
@@ -44,6 +46,11 @@ describe GDor::Indexer::ModsFields do
       it 'calls Stanford::Mods::Record instance pub_date_sortable_string(false)' do
         expect(sdb.smods_rec).to receive(:pub_date_sortable_string).with(false)
         sdb.doc_hash_from_mods[:pub_date_sort]
+      end
+      it 'includes approx dates' do
+        m = "<mods #{ns_decl}><originInfo><dateIssued qualifier='approximate'>1945</dateIssued></originInfo></mods>"
+        sdb = sdb_for_mods(m)
+        expect(sdb.doc_hash_from_mods[:pub_date_sort]).to eq('1945')
       end
       it 'yyyy for yyyy dates' do
         m = "<mods #{ns_decl}><originInfo><dateIssued>1945</dateIssued></originInfo></mods>"
@@ -90,6 +97,27 @@ describe GDor::Indexer::ModsFields do
         expect(doc_hash[:pub_date_sort]).to eq('-700')
       end
     end # pub_date_sort
+
+    context 'single valued pub year facets' do
+      let(:mods) do
+        "<mods #{ns_decl}><originInfo>
+          <dateIssued qualifier=\"approximate\">1500</dateIssued>
+          <dateIssued>2000</dateIssued>
+        </originInfo></mods>"
+      end
+      it 'pub_year_no_approx_isi calls Stanford::Mods::Record instance pub_date_facet_single_value(true)' do
+        sdb = sdb_for_mods(mods)
+        expect(sdb.smods_rec).to receive(:pub_date_facet_single_value).with(true).and_call_original
+        allow(sdb.smods_rec).to receive(:pub_date_facet_single_value).with(false) # for other flavor
+        expect(sdb.doc_hash_from_mods[:pub_year_no_approx_isi]).to eq '2000'
+      end
+      it 'pub_year_w_approx_isi calls Stanford::Mods::Record instance pub_date_facet_single_value(false)' do
+        sdb = sdb_for_mods(mods)
+        expect(sdb.smods_rec).to receive(:pub_date_facet_single_value).with(false).and_call_original
+        allow(sdb.smods_rec).to receive(:pub_date_facet_single_value).with(true) # for other flavor
+        expect(sdb.doc_hash_from_mods[:pub_year_w_approx_isi]).to eq '1500'
+      end
+    end
 
     context 'pub_year_tisim for date slider' do
       it 'takes single dateCreated' do

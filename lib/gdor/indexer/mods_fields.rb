@@ -46,8 +46,16 @@ module GDor::Indexer::ModsFields
       # publication fields
       pub_search: smods_rec.place,
       pub_date_sort: smods_rec.pub_date_sortable_string(false), # include approx dates
-      imprint_display: smods_rec.pub_date_display,
+      # these are for single value facet display (in leiu of date slider (pub_year_tisim) and deprecated pub_date)
+      pub_year_no_approx_isi: smods_rec.pub_date_facet_single_value(true),
+      pub_year_w_approx_isi: smods_rec.pub_date_facet_single_value(false),
+      # TODO:  remove pub_date after reindexing existing colls;  deprecated in favor of pub_year_ ...
       pub_date: smods_rec.pub_date_facet,
+      # display fields
+      imprint_display: smods_rec.pub_date_display,
+      # not yet ready for prime time
+      # creation_year_isi: smods_rec.pub_date_best_single_facet_value(smods_rec.date_created_elements(false)),
+      # publication_year_isi: smods_rec.pub_date_best_single_facet_value(smods_rec.date_issued_elements(false)),
 
       all_search: smods_rec.text.gsub(/\s+/, ' ')
     }
