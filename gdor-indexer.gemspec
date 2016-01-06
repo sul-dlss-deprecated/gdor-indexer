@@ -18,7 +18,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_dependency 'harvestdor-indexer'
-  spec.add_dependency 'stanford-mods'
+  spec.add_dependency 'stanford-mods', '>= 1.3.4' # for new pub date methods
   spec.add_dependency 'nokogiri'
   spec.add_dependency 'rsolr'
   spec.add_dependency 'activesupport'
