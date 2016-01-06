@@ -46,22 +46,37 @@ module GDor::Indexer::ModsFields
       # publication fields
       pub_search: smods_rec.place,
       pub_date_sort: smods_rec.pub_date_sortable_string(false), # include approx dates
-      imprint_display: smods_rec.pub_date_display,
+      # these are for single value facet display (in leiu of date slider (pub_year_tisim) and deprecated pub_date)
+      pub_year_no_approx_isi: smods_rec.pub_date_facet_single_value(true),
+      pub_year_w_approx_isi: smods_rec.pub_date_facet_single_value(false),
+      # TODO:  remove pub_date after reindexing existing colls;  deprecated in favor of pub_year_xxx_approx_isi ...
       pub_date: smods_rec.pub_date_facet,
+      # display fields
+      imprint_display: smods_rec.pub_date_display,
+      # pub_date_best_sort_str_value is protected ...
+      creation_year_isi: smods_rec.send(:pub_date_best_sort_str_value, smods_rec.date_created_elements(false)),
+      publication_year_isi: smods_rec.send(:pub_date_best_sort_str_value, smods_rec.date_issued_elements(false)),
 
       all_search: smods_rec.text.gsub(/\s+/, ' ')
     }
 
-    # more pub date fields
+    # more pub date field processing
     pub_date_sort_val = doc_hash[:pub_date_sort]
     if is_positive_int? pub_date_sort_val
       doc_hash[:pub_year_tisim] = pub_date_sort_val # for date slider
-      # put the displayable year in the correct field, :creation_year_isi for example
-      doc_hash[date_type_sym] = pub_date_sort_val if date_type_sym
+      # remove leading zeros
+      doc_hash[:creation_year_isi] = remove_leading_zeros(doc_hash[:creation_year_isi]) if doc_hash[:creation_year_isi]
+      doc_hash[:publication_year_isi] = remove_leading_zeros(doc_hash[:publication_year_isi]) if doc_hash[:publication_year_isi]
+    else
+      # turn B.C. into -yyy for display fields
+      doc_hash[:creation_year_isi] = '-' + (1000 + doc_hash[:creation_year_isi].to_i).to_s if doc_hash[:creation_year_isi]
+      doc_hash[:publication_year_isi] = '-' + (1000 + doc_hash[:publication_year_isi].to_i).to_s if doc_hash[:publication_year_isi]
     end
 
     doc_hash
   end
+
+  private
 
   # call stanford-mods format_main to get results
   # @return [Array<String>] value(s) in the SearchWorks controlled vocabulary, or []
@@ -73,8 +88,6 @@ module GDor::Indexer::ModsFields
     vals
   end
 
-  protected
-
   # @return true if the string parses into an int, and if so, the int is >= 0
   def is_positive_int?(str)
     str.to_i >= 0
@@ -82,13 +95,9 @@ module GDor::Indexer::ModsFields
     false
   end
 
-  # determines particular flavor of displayable publication year field
-  # @return Solr field name as a symbol
-  def date_type_sym
-    vals = smods_rec.term_values([:origin_info, :dateIssued])
-    return :publication_year_isi if vals && vals.length > 0
-    vals = smods_rec.term_values([:origin_info, :dateCreated])
-    return :creation_year_isi if vals && vals.length > 0
-    nil
+  def remove_leading_zeros(year_sort_str)
+    return '0' if year_sort_str == '0000'
+    return year_sort_str.sub(/^[0:]*/, '') if year_sort_str.start_with?('0')
+    year_sort_str
   end
 end

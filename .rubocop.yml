@@ -3,6 +3,4 @@ require: rubocop-rspec
 inherit_from: .rubocop_todo.yml
 
 Style/StringLiterals:
-  Enabled: true
-  EnforcedStyle: single_quotes
-  
+  Enabled: false
