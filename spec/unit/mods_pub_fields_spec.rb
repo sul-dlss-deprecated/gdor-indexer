@@ -23,7 +23,7 @@ describe GDor::Indexer::ModsFields do
 
   context 'publication date fields' do
 
-    RSpec.shared_examples "expected" do |solr_field_sym, mods_field_val, exp_val|
+    RSpec.shared_examples 'expected' do |solr_field_sym, mods_field_val, exp_val|
       it "#{exp_val} for #{mods_field_val}" do
         m = mods_origin_info_start_str +
               "<dateIssued>#{mods_field_val}</dateIssued>" +
@@ -31,22 +31,6 @@ describe GDor::Indexer::ModsFields do
         sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[solr_field_sym]).to eq exp_val
       end
-    end
-
-    # TODO:  this test is in the process of being incorporated into individual field tests below
-    it 'populates all date fields' do
-      m = mods_origin_info_start_str +
-            "<dateIssued>blah blah 19th century blah blah</dateIssued>" +
-          mods_origin_info_end_str
-      sdb = sdb_for_mods(m)
-      doc_hash = sdb.doc_hash_from_mods
-      expect(doc_hash[:pub_date]).to eq('19th century') # deprecated due to new pub_year_ fields
-      expect(doc_hash[:pub_date_sort]).to eq('1800') # covered in pub_date_sort tests
-      expect(doc_hash[:pub_year_no_approx_isi]).to eq('19th century') # covered in tests below
-      expect(doc_hash[:pub_year_w_approx_isi]).to eq('19th century') # covered in tests below
-      expect(doc_hash[:publication_year_isi]).to eq('1800')
-      expect(doc_hash[:pub_year_tisim]).to eq('1800') # covered in pub_year_tisim tests
-      expect(doc_hash[:imprint_display]).to eq('blah blah 19th century blah blah') # covered in imprint_display tests
     end
 
     context 'pub_date_sort' do
@@ -111,6 +95,8 @@ describe GDor::Indexer::ModsFields do
     end
 
     context 'pub_year_tisim for date slider' do
+      it 'should handle multiple pub dates (to be implemented - esp for date slider)'
+
       # FIXME:  it should be using a method approp for date slider values, not single value
       it 'pub_year_tisim calls Stanford::Mods::Record instance pub_date_sortable_string(false)' do
         expect(sdb.smods_rec).to receive(:pub_date_sortable_string).with(false)
@@ -151,60 +137,78 @@ describe GDor::Indexer::ModsFields do
       it_behaves_like "expected", :pub_year_tisim, '1865-6', '1865' # FIXME:  should be both years
     end
 
-    # TODO:  these tests are in the process of being incorporated into individual field tests above
-    context 'difficult pub dates' do
-      it 'should handle multiple pub dates (to be implemented - esp for date slider)'
+    context 'creation_year_isi' do
+      it 'creation_year_isi calls Stanford::Mods::Record pub_date_best_sort_str_value for dateCreated elements' do
+        m = mods_origin_info_start_str +
+              "<dateCreated qualifier='approximate'>1500</dateCreated>
+              <dateIssued qualifier='approximate'>2000</dateIssued>" +
+            mods_origin_info_end_str
+        sdb = sdb_for_mods(m)
+        expect(sdb.smods_rec).to receive(:pub_date_best_sort_str_value).at_least(2).times.and_call_original
+        expect(sdb.doc_hash_from_mods[:creation_year_isi]).to eq '1500'
+      end
+      RSpec.shared_examples 'expected for dateCreated' do |mods_field_val, exp_val|
+        it "#{exp_val} for #{mods_field_val}" do
+          m = mods_origin_info_start_str +
+                "<dateCreated>#{mods_field_val}</dateCreated>" +
+              mods_origin_info_end_str
+          sdb = sdb_for_mods(m)
+          expect(sdb.doc_hash_from_mods[:creation_year_isi]).to eq exp_val
+        end
+      end
+      it_behaves_like 'expected for dateCreated', '1945', '1945'
+      # note that it removes leading zeros
+      it_behaves_like 'expected for dateCreated', '945', '945'
+      it_behaves_like 'expected for dateCreated', '66', '66'
+      it_behaves_like 'expected for dateCreated', '5', '5'
+      it_behaves_like 'expected for dateCreated', '0', '0'
+      it_behaves_like 'expected for dateCreated', '-4', '-4'
+      it_behaves_like 'expected for dateCreated', '-15', '-15'
+      it_behaves_like 'expected for dateCreated', '-666', '-666'
+      it_behaves_like 'expected for dateCreated', '16--', '1600'
+      it_behaves_like 'expected for dateCreated', '9--', '900'
+      it_behaves_like 'expected for dateCreated', '19th century', '1800'
+      it_behaves_like 'expected for dateCreated', '9th century', '800'
+      it_behaves_like 'expected for dateCreated', 'blah June 4, 1594; blah 1596', '1594'
+      it_behaves_like 'expected for dateCreated', 'Aug. 3rd, 1886', '1886'
+      it_behaves_like 'expected for dateCreated', 'Aug. 3rd, [18]86?', '1886'
+      it_behaves_like 'expected for dateCreated', 'early 1890s', '1890'
+      it_behaves_like 'expected for dateCreated', '1865-6', '1865'
+      # note: B.C. becomes a regular negative number
+      it_behaves_like 'expected for dateCreated', '300 B.C.', '-300'
+    end
 
-      it 'handles yyth century dates' do
-        m = "<mods #{ns_decl}><originInfo>
-              <dateIssued>19th century</dateIssued>
-            </originInfo></mods>"
+    context 'publication_year_isi' do
+      it 'publication_year_isi calls Stanford::Mods::Record pub_date_best_sort_str_value for dateIssued elements' do
+        m = mods_origin_info_start_str +
+              "<dateCreated qualifier='approximate'>1500</dateCreated>
+              <dateIssued qualifier='approximate'>2000</dateIssued>" +
+            mods_origin_info_end_str
         sdb = sdb_for_mods(m)
-        doc_hash = sdb.doc_hash_from_mods
-        expect(doc_hash[:pub_date]).to eq('19th century')  # deprecated due to new pub_year_ fields
-        expect(doc_hash[:pub_date_sort]).to eq('1800') # covered in pub_date_sort tests
-        expect(doc_hash[:pub_year_tisim]).to eq('1800') # covered in pub_year_tisim tests
-        expect(doc_hash[:publication_year_isi]).to eq('1800')
-        expect(doc_hash[:imprint_display]).to eq('19th century') # covered in imprint_display tests
+        expect(sdb.smods_rec).to receive(:pub_date_best_sort_str_value).at_least(2).times.and_call_original
+        expect(sdb.doc_hash_from_mods[:publication_year_isi]).to eq '2000'
       end
-
-      it 'works on explicit 3 digit dates' do
-        m = "<mods #{ns_decl}><originInfo>
-              <dateIssued>966</dateIssued>
-            </originInfo></mods>"
-        sdb = sdb_for_mods(m)
-        doc_hash = sdb.doc_hash_from_mods
-        expect(doc_hash[:pub_date_sort]).to eq('0966') # covered in pub_date_sort tests
-        expect(doc_hash[:pub_date]).to eq('966')  # deprecated due to new pub_year_ fields
-        expect(doc_hash[:pub_year_tisim]).to eq('0966') # covered in pub_year_tisim tests
-        expect(doc_hash[:publication_year_isi]).to eq('0966')
-        expect(doc_hash[:imprint_display]).to eq('966') # covered in imprint_display tests
-      end
-      it 'works on 3 digit century dates' do
-        m = "<mods #{ns_decl}><originInfo>
-              <dateIssued>9th century</dateIssued>
-            </originInfo></mods>"
-        sdb = sdb_for_mods(m)
-        doc_hash = sdb.doc_hash_from_mods
-        expect(doc_hash[:pub_date_sort]).to eq('0800') # covered in pub_date_sort tests
-        expect(doc_hash[:pub_year_tisim]).to eq('0800') # covered in pub_year_tisim tests
-        expect(doc_hash[:pub_date]).to eq('9th century') # deprecated due to new pub_year_ fields
-        expect(doc_hash[:publication_year_isi]).to eq('0800')
-        expect(doc_hash[:imprint_display]).to eq('9th century') # covered in imprint_display tests
-      end
-      it 'works on 3 digit BC dates' do
-        m = "<mods #{ns_decl}><originInfo>
-              <dateCreated>300 B.C.</dateCreated>
-            </originInfo></mods>"
-        sdb = sdb_for_mods(m)
-        doc_hash = sdb.doc_hash_from_mods
-        expect(doc_hash[:pub_date_sort]).to eq('-700') # covered in pub_date_sort tests
-        expect(doc_hash[:pub_year_tisim]).to be_nil # covered in pub_year_tisim tests
-        expect(doc_hash[:pub_date]).to eq('300 B.C.') # deprecated due to new pub_year_ fields
-        expect(doc_hash[:imprint_display]).to eq('300 B.C.') # covered in imprint_display tests
-        # doc_hash[:creation_year_isi].should =='-300'
-      end
-    end # difficult pub dates
+      it_behaves_like 'expected', :publication_year_isi, '1945', '1945'
+      # note that it removes leading zeros
+      it_behaves_like 'expected', :publication_year_isi, '945', '945'
+      it_behaves_like 'expected', :publication_year_isi, '66', '66'
+      it_behaves_like 'expected', :publication_year_isi, '5', '5'
+      it_behaves_like 'expected', :publication_year_isi, '0', '0'
+      it_behaves_like 'expected', :publication_year_isi, '-4', '-4'
+      it_behaves_like 'expected', :publication_year_isi, '-15', '-15'
+      it_behaves_like 'expected', :publication_year_isi, '-666', '-666'
+      it_behaves_like 'expected', :publication_year_isi, '16--', '1600'
+      it_behaves_like 'expected', :publication_year_isi, '9--', '900'
+      it_behaves_like 'expected', :publication_year_isi, '19th century', '1800'
+      it_behaves_like 'expected', :publication_year_isi, '9th century', '800'
+      it_behaves_like 'expected', :publication_year_isi, 'blah June 4, 1594; blah 1596', '1594'
+      it_behaves_like 'expected', :publication_year_isi, 'Aug. 3rd, 1886', '1886'
+      it_behaves_like 'expected', :publication_year_isi, 'Aug. 3rd, [18]86?', '1886'
+      it_behaves_like 'expected', :publication_year_isi, 'early 1890s', '1890'
+      it_behaves_like 'expected', :publication_year_isi, '1865-6', '1865'
+      # note: B.C. becomes a regular negative number
+      it_behaves_like 'expected', :publication_year_isi, '300 B.C.', '-300'
+    end
   end # publication date fields
 
   context 'imprint_display' do
