@@ -27,9 +27,9 @@ describe GDor::Indexer::ModsFields do
       sdb = sdb_for_mods(m)
       doc_hash = sdb.doc_hash_from_mods
       expect(doc_hash[:pub_date]).to eq('19th century') # deprecated due to new pub_year_ fields
-      expect(doc_hash[:pub_date_sort]).to eq('1800') # covered below
-      expect(doc_hash[:pub_year_no_approx_isi]).to eq('19th century') # covered below
-      expect(doc_hash[:pub_year_w_approx_isi]).to eq('19th century') # covered below
+      expect(doc_hash[:pub_date_sort]).to eq('1800') # covered in pub_date_sort tests
+      expect(doc_hash[:pub_year_no_approx_isi]).to eq('19th century') # covered in tests below
+      expect(doc_hash[:pub_year_w_approx_isi]).to eq('19th century') # covered in tests below
       expect(doc_hash[:publication_year_isi]).to eq('1800')
       expect(doc_hash[:pub_year_tisim]).to eq('1800') # date slider
       expect(doc_hash[:imprint_display]).to eq('blah blah 19th century blah blah')
@@ -85,7 +85,7 @@ describe GDor::Indexer::ModsFields do
         sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:pub_date_sort]).to eq('0800')
       end
-      it 'works on 3 digit BC dates' do
+      it '-(1000 - |yyy|) for BC dates' do
         m = "<mods #{ns_decl}><originInfo>
               <dateCreated>300 B.C.</dateCreated>
             </originInfo></mods>"
@@ -113,6 +113,51 @@ describe GDor::Indexer::ModsFields do
         allow(sdb.smods_rec).to receive(:pub_date_facet_single_value).with(true) # for other flavor
         expect(sdb.doc_hash_from_mods[:pub_year_w_approx_isi]).to eq '1500'
       end
+      RSpec.shared_examples "single pub year facet" do |field_sym|
+        it 'yyyy for yyyy dates' do
+          m = "<mods #{ns_decl}><originInfo><dateIssued>1945</dateIssued></originInfo></mods>"
+          sdb = sdb_for_mods(m)
+          expect(sdb.doc_hash_from_mods[field_sym]).to eq('1945')
+        end
+        it 'yyy for yyy dates' do
+          m = "<mods #{ns_decl}><originInfo><dateIssued>945</dateIssued></originInfo></mods>"
+          sdb = sdb_for_mods(m)
+          expect(sdb.doc_hash_from_mods[field_sym]).to eq('945')
+        end
+        it '(yy+1)th century for yy-- dates' do
+          m = "<mods #{ns_decl}><originInfo><dateIssued>16--</dateIssued></originInfo></mods>"
+          sdb = sdb_for_mods(m)
+          expect(sdb.doc_hash_from_mods[field_sym]).to eq('17th century')
+        end
+        it '(y+1)th century for y-- dates' do
+          m = "<mods #{ns_decl}><originInfo><dateIssued>8--</dateIssued></originInfo></mods>"
+          sdb = sdb_for_mods(m)
+          expect(sdb.doc_hash_from_mods[field_sym]).to eq('9th century')
+        end
+        it 'yyth century as is' do
+          m = "<mods #{ns_decl}><originInfo>
+                <dateIssued>19th century</dateIssued>
+              </originInfo></mods>"
+          sdb = sdb_for_mods(m)
+          expect(sdb.doc_hash_from_mods[field_sym]).to eq('19th century')
+        end
+        it 'yth century as is' do
+          m = "<mods #{ns_decl}><originInfo>
+                <dateIssued>9th century</dateIssued>
+              </originInfo></mods>"
+          sdb = sdb_for_mods(m)
+          expect(sdb.doc_hash_from_mods[field_sym]).to eq('9th century')
+        end
+        it 'BC dates as is' do
+          m = "<mods #{ns_decl}><originInfo>
+                <dateCreated>300 B.C.</dateCreated>
+              </originInfo></mods>"
+          sdb = sdb_for_mods(m)
+          expect(sdb.doc_hash_from_mods[field_sym]).to eq('300 B.C.')
+        end
+      end
+      it_behaves_like "single pub year facet", :pub_year_no_approx_isi
+      it_behaves_like "single pub year facet", :pub_year_w_approx_isi
     end
 
     context 'pub_year_tisim for date slider' do
@@ -166,6 +211,7 @@ describe GDor::Indexer::ModsFields do
       end
     end # pub_year_tisim
 
+    # TODO:  these tests are in the process of being incorporated into individual field tests above
     context 'difficult pub dates' do
       it 'should handle multiple pub dates (to be implemented - esp for date slider)'
 
@@ -175,8 +221,8 @@ describe GDor::Indexer::ModsFields do
             </originInfo></mods>"
         sdb = sdb_for_mods(m)
         doc_hash = sdb.doc_hash_from_mods
-        expect(doc_hash[:pub_date]).to eq('19th century')
-        expect(doc_hash[:pub_date_sort]).to eq('1800')
+        expect(doc_hash[:pub_date]).to eq('19th century')  # deprecated due to new pub_year_ fields
+        expect(doc_hash[:pub_date_sort]).to eq('1800') # covered in pub_date_sort tests
         expect(doc_hash[:pub_year_tisim]).to eq('1800')
         expect(doc_hash[:publication_year_isi]).to eq('1800')
         expect(doc_hash[:imprint_display]).to eq('19th century')
@@ -188,8 +234,8 @@ describe GDor::Indexer::ModsFields do
             </originInfo></mods>"
         sdb = sdb_for_mods(m)
         doc_hash = sdb.doc_hash_from_mods
-        expect(doc_hash[:pub_date_sort]).to eq('0966')
-        expect(doc_hash[:pub_date]).to eq('966')
+        expect(doc_hash[:pub_date_sort]).to eq('0966') # covered in pub_date_sort tests
+        expect(doc_hash[:pub_date]).to eq('966')  # deprecated due to new pub_year_ fields
         expect(doc_hash[:pub_year_tisim]).to eq('0966')
         expect(doc_hash[:publication_year_isi]).to eq('0966')
         expect(doc_hash[:imprint_display]).to eq('966')
@@ -200,9 +246,9 @@ describe GDor::Indexer::ModsFields do
             </originInfo></mods>"
         sdb = sdb_for_mods(m)
         doc_hash = sdb.doc_hash_from_mods
-        expect(doc_hash[:pub_date_sort]).to eq('0800')
+        expect(doc_hash[:pub_date_sort]).to eq('0800') # covered in pub_date_sort tests
         expect(doc_hash[:pub_year_tisim]).to eq('0800')
-        expect(doc_hash[:pub_date]).to eq('9th century')
+        expect(doc_hash[:pub_date]).to eq('9th century') # deprecated due to new pub_year_ fields
         expect(doc_hash[:publication_year_isi]).to eq('0800')
         expect(doc_hash[:imprint_display]).to eq('9th century')
       end
@@ -212,9 +258,9 @@ describe GDor::Indexer::ModsFields do
             </originInfo></mods>"
         sdb = sdb_for_mods(m)
         doc_hash = sdb.doc_hash_from_mods
-        expect(doc_hash[:pub_date_sort]).to eq('-700')
+        expect(doc_hash[:pub_date_sort]).to eq('-700') # covered in pub_date_sort tests
         expect(doc_hash[:pub_year_tisim]).to be_nil
-        expect(doc_hash[:pub_date]).to eq('300 B.C.')
+        expect(doc_hash[:pub_date]).to eq('300 B.C.') # deprecated due to new pub_year_ fields
         expect(doc_hash[:imprint_display]).to eq('300 B.C.')
         # doc_hash[:creation_year_isi].should =='-300'
       end
