@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.version       = GDor::Indexer::VERSION
   spec.authors       = ['Naomi Dushay', 'Laney McGlohon', 'Chris Beer']
   spec.email         = ['cabeer@stanford.edu']
-  spec.summary       = 'Gryphondor Solr indexing logic'
+  spec.summary       = 'PURL doc =>  Solr hash logic'
   spec.homepage      = 'https://github.com/sul-dlss/gdor-indexer'
   spec.license       = 'Apache 2'
 
@@ -35,10 +35,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rubocop-rspec'
   spec.add_development_dependency 'simplecov'
   spec.add_development_dependency 'equivalent-xml', '~> 0.5'
-  spec.add_development_dependency 'capybara'
-  spec.add_development_dependency 'poltergeist', '>= 1.5.0'
   spec.add_development_dependency 'vcr'
-  spec.add_development_dependency 'jettywrapper'
   spec.add_development_dependency 'webmock'
   spec.add_development_dependency 'pry-byebug'
 end
