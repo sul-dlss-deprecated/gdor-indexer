@@ -33,9 +33,51 @@ describe GDor::Indexer::ModsFields do
       end
     end
 
+    context 'pub_date (to know current behavior)' do
+      it 'calls Stanford::Mods::Record instance pub_date_sortable_string(false)' do
+        expect(sdb.smods_rec).to receive(:pub_date_facet)
+        sdb.doc_hash_from_mods[:pub_date]
+      end
+      it 'includes approx dates' do
+        m = mods_origin_info_start_str +
+              "<dateIssued qualifier='approximate'>1945</dateIssued>" +
+            mods_origin_info_end_str
+        sdb = sdb_for_mods(m)
+        expect(sdb.doc_hash_from_mods[:pub_date]).to eq('1945')
+      end
+      it 'takes single dateCreated' do
+        m = mods_origin_info_start_str +
+              "<dateCreated>1904</dateCreated>" +
+            mods_origin_info_end_str
+        sdb = sdb_for_mods(m)
+        expect(sdb.doc_hash_from_mods[:pub_date]).to eq('1904')
+      end
+      it_behaves_like 'expected', :pub_date, 'blah blah 1945 blah', '1945'
+      it_behaves_like 'expected', :pub_date, '1945', '1945'
+      it_behaves_like 'expected', :pub_date, '945', '945'
+      it_behaves_like 'expected', :pub_date, '66', nil
+      it_behaves_like 'expected', :pub_date, '5', nil
+      it_behaves_like 'expected', :pub_date, '0', nil
+      it_behaves_like 'expected', :pub_date, '-4', nil
+      it_behaves_like 'expected', :pub_date, '-15', nil
+      it_behaves_like 'expected', :pub_date, '-666', '666' # WRONG
+      it_behaves_like 'expected', :pub_date, '16--', nil
+      it_behaves_like 'expected', :pub_date, '8--', nil
+      it_behaves_like 'expected', :pub_date, '19th century', '19th century'
+      it_behaves_like 'expected', :pub_date, '9th century', '9th century'
+      it_behaves_like 'expected', :pub_date, '300 B.C.', '300 B.C.'
+      it_behaves_like 'expected', :pub_date, 'Text dated June 4, 1594; miniatures added by 1596', '1594'
+      it_behaves_like 'expected', :pub_date, 'Aug. 3rd, 1886', '1886'
+      it_behaves_like 'expected', :pub_date, 'Aug. 3rd, [18]86?', '1886'
+      it_behaves_like 'expected', :pub_date, 'early 1890s', '1890'
+      it_behaves_like 'expected', :pub_date, '1865-6', '1865'
+
+    end
+
     context 'pub_date_sort' do
       it 'calls Stanford::Mods::Record instance pub_date_sortable_string(false)' do
         expect(sdb.smods_rec).to receive(:pub_date_sortable_string).with(false)
+        allow(sdb.smods_rec).to receive(:pub_date_sortable_string).with(true) # for pub_year_no_approx_isi
         sdb.doc_hash_from_mods[:pub_date_sort]
       end
       it 'includes approx dates' do
@@ -78,30 +120,36 @@ describe GDor::Indexer::ModsFields do
       end
       it 'pub_year_no_approx_isi calls Stanford::Mods::Record instance pub_date_facet_single_value(true)' do
         sdb = sdb_for_mods(mods)
-        expect(sdb.smods_rec).to receive(:pub_date_facet_single_value).with(true).and_call_original
-        allow(sdb.smods_rec).to receive(:pub_date_facet_single_value).with(false) # for other flavor
+        expect(sdb.smods_rec).to receive(:pub_date_sortable_string).with(true).and_call_original
+        allow(sdb.smods_rec).to receive(:pub_date_sortable_string).with(false) # for other flavor
         expect(sdb.doc_hash_from_mods[:pub_year_no_approx_isi]).to eq '2000'
       end
       it 'pub_year_w_approx_isi calls Stanford::Mods::Record instance pub_date_facet_single_value(false)' do
         sdb = sdb_for_mods(mods)
-        expect(sdb.smods_rec).to receive(:pub_date_facet_single_value).with(false).and_call_original
-        allow(sdb.smods_rec).to receive(:pub_date_facet_single_value).with(true) # for other flavor
+        expect(sdb.smods_rec).to receive(:pub_date_sortable_string).with(false).and_call_original
+        allow(sdb.smods_rec).to receive(:pub_date_sortable_string).with(true) # for other flavor
         expect(sdb.doc_hash_from_mods[:pub_year_w_approx_isi]).to eq '1500'
       end
       RSpec.shared_examples "single pub year facet" do |field_sym|
+        it_behaves_like 'expected', field_sym, 'blah blah 1945 blah', '1945'
         it_behaves_like 'expected', field_sym, '1945', '1945'
         it_behaves_like 'expected', field_sym, '945', '945'
         it_behaves_like 'expected', field_sym, '66', '66'
         it_behaves_like 'expected', field_sym, '5', '5'
         it_behaves_like 'expected', field_sym, '0', '0'
-        it_behaves_like 'expected', field_sym, '-4', '4 B.C.'
-        it_behaves_like 'expected', field_sym, '-15', '15 B.C.'
-        it_behaves_like 'expected', field_sym, '-666', '666 B.C.'
-        it_behaves_like 'expected', field_sym, '16--', '17th century'
-        it_behaves_like 'expected', field_sym, '8--', '9th century'
-        it_behaves_like 'expected', field_sym, '19th century', '19th century'
-        it_behaves_like 'expected', field_sym, '9th century', '9th century'
-        it_behaves_like 'expected', field_sym, '300 B.C.', '300 B.C.'
+        it_behaves_like 'expected', field_sym, '-4', '-4'
+        it_behaves_like 'expected', field_sym, '-15', '-15'
+        it_behaves_like 'expected', field_sym, '-666', '-666'
+        it_behaves_like 'expected', field_sym, '16--', '1600'
+        it_behaves_like 'expected', field_sym, '8--', '800'
+        it_behaves_like 'expected', field_sym, '19th century', '1800'
+        it_behaves_like 'expected', field_sym, '9th century', '800'
+        it_behaves_like 'expected', field_sym, '300 B.C.', '-300'
+        it_behaves_like 'expected', field_sym, 'Text dated June 4, 1594; miniatures added by 1596', '1594'
+        it_behaves_like 'expected', field_sym, 'Aug. 3rd, 1886', '1886'
+        it_behaves_like 'expected', field_sym, 'Aug. 3rd, [18]86?', '1886'
+        it_behaves_like 'expected', field_sym, 'early 1890s', '1890'
+        it_behaves_like 'expected', field_sym, '1865-6', '1865'
       end
       it_behaves_like "single pub year facet", :pub_year_no_approx_isi
       it_behaves_like "single pub year facet", :pub_year_w_approx_isi
@@ -113,6 +161,7 @@ describe GDor::Indexer::ModsFields do
       # FIXME:  it should be using a method approp for date slider values, not single value
       it 'pub_year_tisim calls Stanford::Mods::Record instance pub_date_sortable_string(false)' do
         expect(sdb.smods_rec).to receive(:pub_date_sortable_string).with(false)
+        allow(sdb.smods_rec).to receive(:pub_date_sortable_string).with(true) # for pub_year_no_approx_isi
         sdb.doc_hash_from_mods[:pub_year_tisim]
       end
       it 'includes approx dates' do

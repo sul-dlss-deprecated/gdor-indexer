@@ -18,10 +18,10 @@ end
 #  sh 'irb -rubygems -I lib  -r ./frda_indexer.rb'
 # end
 
-task default: [:ci, :rubocop]
+task default: :ci
 
-desc 'run continuous integration suite (tests, coverage, docs)'
-task ci: [:rspec, :doc, :rubocop]
+desc 'run continuous integration suite'
+task ci: [:rspec, :rubocop]
 
 task spec: :rspec
 

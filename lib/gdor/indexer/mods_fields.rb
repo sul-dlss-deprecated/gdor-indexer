@@ -4,6 +4,7 @@ module GDor::Indexer::ModsFields
   # Create a Hash representing a Solr doc, with all MODS related fields populated.
   # @return [Hash] Hash representing the Solr document
   def doc_hash_from_mods
+    sort_str_w_approx_dates = smods_rec.pub_date_sortable_string(false)
     doc_hash = {
       # title fields
       title_245a_search: smods_rec.sw_short_title,
@@ -45,10 +46,10 @@ module GDor::Indexer::ModsFields
 
       # publication fields
       pub_search: smods_rec.place,
-      pub_date_sort: smods_rec.pub_date_sortable_string(false), # include approx dates
+      pub_date_sort: sort_str_w_approx_dates,
       # these are for single value facet display (in leiu of date slider (pub_year_tisim) and deprecated pub_date)
-      pub_year_no_approx_isi: smods_rec.pub_date_facet_single_value(true),
-      pub_year_w_approx_isi: smods_rec.pub_date_facet_single_value(false),
+      pub_year_no_approx_isi: smods_rec.pub_date_sortable_string(true),
+      pub_year_w_approx_isi: sort_str_w_approx_dates,
       # TODO:  remove pub_date after reindexing existing colls;  deprecated in favor of pub_year_xxx_approx_isi ...
       pub_date: smods_rec.pub_date_facet,
       # display fields
@@ -60,20 +61,7 @@ module GDor::Indexer::ModsFields
       all_search: smods_rec.text.gsub(/\s+/, ' ')
     }
 
-    # more pub date field processing
-    pub_date_sort_val = doc_hash[:pub_date_sort]
-    if is_positive_int? pub_date_sort_val
-      doc_hash[:pub_year_tisim] = pub_date_sort_val # for date slider
-      # remove leading zeros
-      doc_hash[:creation_year_isi] = remove_leading_zeros(doc_hash[:creation_year_isi]) if doc_hash[:creation_year_isi]
-      doc_hash[:publication_year_isi] = remove_leading_zeros(doc_hash[:publication_year_isi]) if doc_hash[:publication_year_isi]
-    else
-      # turn B.C. into -yyy for display fields
-      doc_hash[:creation_year_isi] = '-' + (1000 + doc_hash[:creation_year_isi].to_i).to_s if doc_hash[:creation_year_isi]
-      doc_hash[:publication_year_isi] = '-' + (1000 + doc_hash[:publication_year_isi].to_i).to_s if doc_hash[:publication_year_isi]
-    end
-
-    doc_hash
+    more_pub_date_goodness(doc_hash)
   end
 
   private
@@ -86,6 +74,34 @@ module GDor::Indexer::ModsFields
       logger.warn "#{druid} has no SearchWorks Resource Type from MODS - check <typeOfResource> and other implicated MODS elements"
     end
     vals
+  end
+
+  # additional pub date field processing for Solr doc hash
+  # @param [Hash] Hash representing the Solr document
+  # @return [Hash] updated Hash representing the Solr document
+  def more_pub_date_goodness(doc_hash)
+    pub_date_sort_val = doc_hash[:pub_date_sort]
+    if is_positive_int? pub_date_sort_val
+      doc_hash[:pub_year_tisim] = pub_date_sort_val # for date slider
+      # remove leading zeros
+      [:pub_year_no_approx_isi,
+        :pub_year_w_approx_isi,
+        :creation_year_isi,
+        :publication_year_isi
+      ].each do |field_sym|
+        doc_hash[field_sym] = remove_leading_zeros(doc_hash[field_sym]) if doc_hash[field_sym]
+      end
+    else
+      # turn B.C. into -yyy for facet/display fields
+      [:pub_year_no_approx_isi,
+        :pub_year_w_approx_isi,
+        :creation_year_isi,
+        :publication_year_isi
+      ].each do |field_sym|
+        doc_hash[field_sym] = '-' + (1000 + doc_hash[field_sym].to_i).to_s if doc_hash[field_sym]
+      end
+    end
+    doc_hash
   end
 
   # @return true if the string parses into an int, and if so, the int is >= 0

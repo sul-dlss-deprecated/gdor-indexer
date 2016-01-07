@@ -120,14 +120,14 @@ describe GDor::Indexer do
       @indexer.index collection
     end
 
-    it 'indexs other resources as items' do
+    it 'indexes other resources as items' do
       expect(@indexer).to receive(:item_solr_document).with(resource)
       @indexer.index resource
     end
   end
 
   describe '#index_with_exception_handling' do
-    it 'capture,s log, and re-raise any exception thrown by the indexing process' do
+    it 'captures log and re-raises any exception thrown by the indexing process' do
       expect(@indexer).to receive(:index).with(resource).and_raise 'xyz'
       expect(@indexer.logger).to receive(:error)
       expect { @indexer.index_with_exception_handling(resource) }.to raise_error RuntimeError
@@ -433,7 +433,7 @@ describe GDor::Indexer do
   end
 
   # context "skip heartbeat" do
-  #   it "allows me to use a fake url for dor-fetcher-client" do
+  #   it "allows use of a fake url for dor-fetcher-client" do
   #     expect {GDor::Indexer.new(@config_yml_path)}.not_to raise_error
   #   end
   # end
