@@ -50,8 +50,6 @@ module GDor::Indexer::ModsFields
       # these are for single value facet display (in leiu of date slider (pub_year_tisim) and deprecated pub_date)
       pub_year_no_approx_isi: smods_rec.pub_date_sortable_string(true),
       pub_year_w_approx_isi: sort_str_w_approx_dates,
-      # TODO:  remove pub_date after reindexing existing colls;  deprecated in favor of pub_year_xxx_approx_isi ...
-      pub_date: smods_rec.pub_date_facet,
       # display fields
       imprint_display: smods_rec.pub_date_display,
       # pub_date_best_sort_str_value is protected ...

@@ -33,47 +33,6 @@ describe GDor::Indexer::ModsFields do
       end
     end
 
-    context 'pub_date (to know current behavior)' do
-      it 'calls Stanford::Mods::Record instance pub_date_sortable_string(false)' do
-        expect(sdb.smods_rec).to receive(:pub_date_facet)
-        sdb.doc_hash_from_mods[:pub_date]
-      end
-      it 'includes approx dates' do
-        m = mods_origin_info_start_str +
-              "<dateIssued qualifier='approximate'>1945</dateIssued>" +
-            mods_origin_info_end_str
-        sdb = sdb_for_mods(m)
-        expect(sdb.doc_hash_from_mods[:pub_date]).to eq('1945')
-      end
-      it 'takes single dateCreated' do
-        m = mods_origin_info_start_str +
-              "<dateCreated>1904</dateCreated>" +
-            mods_origin_info_end_str
-        sdb = sdb_for_mods(m)
-        expect(sdb.doc_hash_from_mods[:pub_date]).to eq('1904')
-      end
-      it_behaves_like 'expected', :pub_date, 'blah blah 1945 blah', '1945'
-      it_behaves_like 'expected', :pub_date, '1945', '1945'
-      it_behaves_like 'expected', :pub_date, '945', '945'
-      it_behaves_like 'expected', :pub_date, '66', nil
-      it_behaves_like 'expected', :pub_date, '5', nil
-      it_behaves_like 'expected', :pub_date, '0', nil
-      it_behaves_like 'expected', :pub_date, '-4', nil
-      it_behaves_like 'expected', :pub_date, '-15', nil
-      it_behaves_like 'expected', :pub_date, '-666', '666' # WRONG
-      it_behaves_like 'expected', :pub_date, '16--', nil
-      it_behaves_like 'expected', :pub_date, '8--', nil
-      it_behaves_like 'expected', :pub_date, '19th century', '19th century'
-      it_behaves_like 'expected', :pub_date, '9th century', '9th century'
-      it_behaves_like 'expected', :pub_date, '300 B.C.', '300 B.C.'
-      it_behaves_like 'expected', :pub_date, 'Text dated June 4, 1594; miniatures added by 1596', '1594'
-      it_behaves_like 'expected', :pub_date, 'Aug. 3rd, 1886', '1886'
-      it_behaves_like 'expected', :pub_date, 'Aug. 3rd, [18]86?', '1886'
-      it_behaves_like 'expected', :pub_date, 'early 1890s', '1890'
-      it_behaves_like 'expected', :pub_date, '1865-6', '1865'
-
-    end
-
     context 'pub_date_sort' do
       it 'calls Stanford::Mods::Record instance pub_date_sortable_string(false)' do
         expect(sdb.smods_rec).to receive(:pub_date_sortable_string).with(false)
