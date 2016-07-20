@@ -1,6 +1,6 @@
-# Monkey patch for Nokogiri to cache xpath contexts and make things faster under jRuby
 module Nokogiri
   module XML
+    # Monkey patch for Nokogiri to cache xpath contexts and make things faster under jRuby
     class Node
       @context = nil
 

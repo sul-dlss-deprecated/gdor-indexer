@@ -130,6 +130,7 @@ describe GDor::Indexer::SolrDocHash do
         expect(subject.combine(foo: {})).to eq({})
       end
     end # orig has no key
+
     context 'orig value is nil' do
       subject do
         described_class.new(foo: nil)
@@ -153,6 +154,7 @@ describe GDor::Indexer::SolrDocHash do
         expect(subject.combine(foo: {})).to eq({})
       end
     end # orig value is nil
+
     context 'orig value is empty String' do
       subject do
         described_class.new(foo: '')
@@ -176,6 +178,7 @@ describe GDor::Indexer::SolrDocHash do
         expect(subject.combine(foo: {})).to eq({})
       end
     end # orig value is empty String
+
     context 'orig value is non-empty String' do
       subject do
         described_class.new(foo: 'a')
@@ -199,6 +202,7 @@ describe GDor::Indexer::SolrDocHash do
         expect(subject.combine(foo: :bar)).to eq(foo: ['a', :bar])
       end
     end # orig value is String
+
     context 'orig value is empty Array' do
       subject do
         described_class.new(foo: [])
@@ -222,6 +226,7 @@ describe GDor::Indexer::SolrDocHash do
         expect(subject.combine(foo: {})).to eq({})
       end
     end # orig value is empty Array
+
     context 'orig value is non-empty Array' do
       subject do
         described_class.new(foo: %w(a b))
@@ -307,7 +312,6 @@ describe GDor::Indexer::SolrDocHash do
     end
     it 'has a value if collection_type is missing' do
       hash = described_class.new(format_main_ssim: 'Archive/Manuscript')
-
       expect(hash.validate_collection(mock_config).first).to match(/collection_type/)
     end
     it "has a value if collection_type is not 'Digital Collection'" do
