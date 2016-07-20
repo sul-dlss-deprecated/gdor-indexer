@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe GDor::Indexer::SolrDocHash do
   context '#field_present?' do
     context 'actual field value is boolean true' do

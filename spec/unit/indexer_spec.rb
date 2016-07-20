@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe GDor::Indexer do
   before(:all) do
     @config_yml_path = File.join(File.dirname(__FILE__), '..', 'config', 'walters_integration_spec.yml')

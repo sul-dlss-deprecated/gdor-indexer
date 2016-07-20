@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe GDor::Indexer::ModsFields do
   let(:fake_druid) { 'oo000oo0000' }
   let(:ns_decl) { "xmlns='#{Mods::MODS_NS}'" }
