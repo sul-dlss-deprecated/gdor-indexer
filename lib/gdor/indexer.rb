@@ -12,8 +12,8 @@ require 'logger'
 require 'net/smtp'
 require 'set'
 
-# Base class to harvest from DOR via harvestdor gem
 module GDor
+  # Base class to harvest from DOR via harvestdor gem
   class Indexer
     include Hooks
 
@@ -89,12 +89,12 @@ module GDor
         index_with_exception_handling resource
       end
 
-      unless nocommit
+      if nocommit
+        logger.info('Skipping commit per nocommit flag')
+      else
         logger.info('Beginning Commit.')
         solr_client.commit!
         logger.info('Finished Commit.')
-      else
-        logger.info('Skipping commit per nocommit flag')
       end
 
       @total_time = elapsed_time(start_time)
@@ -156,6 +156,7 @@ module GDor
     # Create Solr document for the collection druid suitable for SearchWorks
     #  and write the result to the SearchWorks Solr Index
     # @param [Harvestdor::Indexer::Resource] resource a collection record
+    # @return [Hash]
     def collection_solr_document(resource)
       coll_sdb = GDor::Indexer::SolrDocBuilder.new(resource, logger)
 
@@ -181,7 +182,7 @@ module GDor
 
     # add coll level data to this solr doc and/or cache collection level information
     # @param [Hash] doc_hash representing the Solr document (for an item)
-    # @param [Array<Harvestdor::Indexer::Resource>] collections  the collections the item is a member of
+    # @param [Array<Harvestdor::Indexer::Resource>] collections the collections the item is a member of
     def add_coll_info(doc_hash, collections)
       if collections
         doc_hash[:collection] = []
@@ -213,9 +214,8 @@ module GDor
     # cache the display_type of this (item) object with a collection, so when the collection rec
     # is being indexed, it can get all of the display_types of the members
     def cache_display_type_for_collection(resource, display_type)
-      if display_type && display_type.instance_of?(String)
-        coll_display_types_from_items(resource) << display_type
-      end
+      return unless display_type && display_type.instance_of?(String)
+      coll_display_types_from_items(resource) << display_type
     end
 
     # count the number of records in solr for this collection (and the collection record itself)
@@ -238,8 +238,7 @@ module GDor
     # @return [Array<String>] Array of messages suitable for notificaiton email and/or logs
     def record_count_msgs
       @record_count_msgs ||= begin
-        msgs = []
-        msgs << "Successful count (items + coll record indexed w/o error): #{metrics.success_count}"
+        msgs = ["Successful count (items + coll record indexed w/o error): #{metrics.success_count}"]
 
         harvestdor.resources.select(&:collection?).each do |collection|
           solr_count = num_found_in_solr(collection: collection.bare_druid)
@@ -270,12 +269,11 @@ module GDor
       logger.info("Avg complete index time per object (all): #{(@total_time / metrics.total).round(2)} seconds") unless metrics.total == 0
     end
 
+    # @return [String] the composed email body
     def email_report_body
-      body = ''
+      body = "\n" + record_count_msgs.join("\n") + "\n"
 
-      body += "\n" + record_count_msgs.join("\n") + "\n"
-
-      if @druids_failed_to_ix.size > 0
+      unless @druids_failed_to_ix.empty?
         body += "\n"
         body += "records that may have failed to index: \n"
         body += @druids_failed_to_ix.join("\n") + "\n"
@@ -285,7 +283,7 @@ module GDor
       body += "full log is at gdor_indexer/shared/#{config.harvestdor.log_dir}/#{config.harvestdor.log_name} on #{Socket.gethostname}"
       body += "\n"
 
-      body += @validation_messages.join("\n") + "\n"
+      body + @validation_messages.join("\n") + "\n"
     end
 
     # email the results of indexing if we are on one of the harvestdor boxes
@@ -305,12 +303,14 @@ module GDor
       end
     end
 
+    # @param [String] to target email address
+    # @param [Hash] opts options
     def send_email(to, opts = {})
-      opts[:server] ||= 'localhost'
-      opts[:from] ||= 'gryphondor@stanford.edu'
+      opts[:server]     ||= 'localhost'
+      opts[:from]       ||= 'gryphondor@stanford.edu'
       opts[:from_alias] ||= 'gryphondor'
-      opts[:subject] ||= 'default subject'
-      opts[:body] ||= 'default message body'
+      opts[:subject]    ||= 'default subject'
+      opts[:body]       ||= 'default message body'
       mail = Mail.new do
         from opts[:from]
         to to

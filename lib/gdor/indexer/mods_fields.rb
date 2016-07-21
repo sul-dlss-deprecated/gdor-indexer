@@ -81,14 +81,14 @@ module GDor::Indexer::ModsFields
   # @return [Hash] updated Hash representing the Solr document
   def add_pub_year_tisim(doc_hash)
     pub_date_sort_val = doc_hash[:pub_year_isi]
-    if is_positive_int? pub_date_sort_val
+    if positive_int? pub_date_sort_val
       doc_hash[:pub_year_tisim] = pub_date_sort_val # for date slider
     end
     doc_hash
   end
 
   # @return true if the string parses into an int, and if so, the int is >= 0
-  def is_positive_int?(str)
+  def positive_int?(str)
     str.to_i >= 0
   rescue
     false

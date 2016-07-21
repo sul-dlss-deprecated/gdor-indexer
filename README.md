@@ -1,4 +1,4 @@
-[![Dependency Status](https://gemnasium.com/sul-dlss/gdor-indexer.svg)](https://gemnasium.com/sul-dlss/gdor-indexer) [![Gem Version](https://badge.fury.io/rb/gdor-indexer.svg)](http://badge.fury.io/rb/gdor-indexer)
+[![Build Status](https://travis-ci.org/sul-dlss/gdor-indexer.svg)](https://travis-ci.org/sul-dlss/gdor-indexer) [![Coverage Status](https://coveralls.io/repos/sul-dlss/gdor-indexer/badge.svg?branch=master&service=github)](https://coveralls.io/github/sul-dlss/gdor-indexer?branch=master) [![Dependency Status](https://gemnasium.com/sul-dlss/gdor-indexer.svg)](https://gemnasium.com/sul-dlss/gdor-indexer) [![Gem Version](https://badge.fury.io/rb/gdor-indexer.svg)](http://badge.fury.io/rb/gdor-indexer)
 
 # gdor-indexer
 
@@ -6,55 +6,59 @@ Code to harvest DOR druids via DOR Fetcher service, mods from PURL, and use it t
 
 ## Prerequisites
 
-1. ruby
+1. ruby 2.x+
 2. bundler gem must be installed
 
 ## Install steps for running locally
 
 Add this line to your application's Gemfile:
-
-    gem 'harvestdor-indexer'
+```ruby
+gem 'harvestdor-indexer'
+```
 
 Then execute:
-
-    $ bundle
+```bash
+bundle
+```
 
 ## Configuration
 
-#### Create a collections folder in the config directory:
+### Create a collections folder in the config directory:
 
-    $ cd /path/to/gdor-indexer/config
-    $ mkdir collections
+```bash
+cd /path/to/gdor-indexer/config
+mkdir collections
+```
 
-#### Create a yml config file for your collection(s) to be harvested and indexed.
+### Create a yml config file for your collection(s) to be harvested and indexed.
 
-See ```spec/config/walters_integration_spec.yml``` for an example.  Copy that file to ```config/collections``` and change the following settings:
+See `spec/config/walters_integration_spec.yml` for an example.  Copy that file to `config/collections` and change the following settings:
 
 * whitelist
 * dor_fetcher service_url
 * harvestdor log_dir and log_name
 * solr_url
 
-##### whitelist
+#### whitelist
 
-The whitelist is how you specify which objects to index.  The whitelist can be
+The whitelist is how you specify which objects to index.  The whitelist can be:
 
 * an Array of druids inline in the config yml file
 * a filename containing a list of druids (one per line)
 
-If a druid, per the object's identityMetadata at purl page, is for a
+If a druid, per the object's identityMetadata at purl page, is for a:
 
-* collection record:  then we process all the item druids in that collection (as if they were included individually in the whitelist)
+* collection record: then we process all the item druids in that collection (as if they were included individually in the whitelist)
 * non-collection record: then we process the druid as an individual item
 
-#### Run the indexer script
+### Run the indexer script
 
     $ cd /path/to/gdor-indexer
     $ nohup ./bin/indexer -c my_collection &>path/to/nohup.output
 
 ## Running the tests
 
-  ```$ rake```
+`rake`
 
 ## Contributing
 

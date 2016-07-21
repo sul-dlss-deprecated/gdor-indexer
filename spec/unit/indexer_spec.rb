@@ -1,9 +1,8 @@
-require 'spec_helper'
+require 'yaml'
 
 describe GDor::Indexer do
   before(:all) do
     @config_yml_path = File.join(File.dirname(__FILE__), '..', 'config', 'walters_integration_spec.yml')
-    require 'yaml'
     @yaml = YAML.load_file(@config_yml_path)
     @ns_decl = "xmlns='#{Mods::MODS_NS}'"
     @fake_druid = 'oo000oo0000'
@@ -82,7 +81,7 @@ describe GDor::Indexer do
 
       @indexer.harvest_and_index
     end
-    it 'indexs each resource' do
+    it 'indexes each resource' do
       allow(@indexer).to receive(:harvestdor).and_return(Class.new do
         def initialize(*items)
           @items = items
@@ -109,13 +108,13 @@ describe GDor::Indexer do
       @indexer.harvest_and_index
     end
     it 'does not commit if nocommit is set' do
-      expect(@indexer.solr_client).to_not receive(:commit!)
+      expect(@indexer.solr_client).not_to receive(:commit!)
       @indexer.harvest_and_index(true)
     end
   end
 
   describe '#index' do
-    it 'indexs collections as collections' do
+    it 'indexes collections as collections' do
       expect(@indexer).to receive(:collection_solr_document).with(collection)
       @indexer.index collection
     end
@@ -196,17 +195,16 @@ describe GDor::Indexer do
   end # item_solr_document
 
   context '#collection_solr_document' do
+    let(:doc_hash) { GDor::Indexer::SolrDocHash.new }
     it 'calls validate_collection' do
-      doc_hash = GDor::Indexer::SolrDocHash.new
       allow_any_instance_of(GDor::Indexer::SolrDocBuilder).to receive(:doc_hash).and_return(doc_hash) # speed up the test
       expect(doc_hash).to receive(:validate_collection).and_return([])
-      doc_hash = @indexer.collection_solr_document collection
+      @indexer.collection_solr_document collection
     end
     it 'calls GDor::Indexer::SolrDocBuilder.validate_mods' do
-      doc_hash = GDor::Indexer::SolrDocHash.new
       allow_any_instance_of(GDor::Indexer::SolrDocBuilder).to receive(:doc_hash).and_return(doc_hash) # speed up the test
       expect(doc_hash).to receive(:validate_mods).and_return([])
-      doc_hash = @indexer.collection_solr_document collection
+      @indexer.collection_solr_document collection
     end
     it 'populates druid and access_facet fields' do
       doc_hash = @indexer.collection_solr_document collection
@@ -222,26 +220,25 @@ describe GDor::Indexer do
       doc_hash = @indexer.collection_solr_document collection
       expect(doc_hash).to include collection_type: 'Digital Collection'
     end
+
     context 'add format_main_ssim Archive/Manuscript' do
       it 'no other values' do
         allow_any_instance_of(GDor::Indexer::SolrDocBuilder).to receive(:doc_hash).and_return(GDor::Indexer::SolrDocHash.new)
-
         doc_hash = @indexer.collection_solr_document collection
         expect(doc_hash).to include format_main_ssim: 'Archive/Manuscript'
       end
       it 'other values present' do
         allow_any_instance_of(GDor::Indexer::SolrDocBuilder).to receive(:doc_hash).and_return(GDor::Indexer::SolrDocHash.new({ format_main_ssim: %w(Image Video) }))
-
         doc_hash = @indexer.collection_solr_document collection
         expect(doc_hash).to include format_main_ssim: ['Image', 'Video', 'Archive/Manuscript']
       end
       it 'already has values Archive/Manuscript' do
         allow_any_instance_of(GDor::Indexer::SolrDocBuilder).to receive(:doc_hash).and_return(GDor::Indexer::SolrDocHash.new({ format_main_ssim: 'Archive/Manuscript' }))
-
         doc_hash = @indexer.collection_solr_document collection
         expect(doc_hash).to include format_main_ssim: ['Archive/Manuscript']
       end
     end
+
     it 'populates building_facet field with Stanford Digital Repository' do
       doc_hash = @indexer.collection_solr_document collection
       expect(doc_hash).to include building_facet: 'Stanford Digital Repository'
@@ -252,9 +249,9 @@ describe GDor::Indexer do
     before(:each) do
       @coll_druids_array = [collection]
     end
+    let(:doc_hash) { GDor::Indexer::SolrDocHash.new({}) }
 
     it 'adds no collection field values to doc_hash if there are none' do
-      doc_hash = GDor::Indexer::SolrDocHash.new({})
       @indexer.add_coll_info(doc_hash, nil)
       expect(doc_hash[:collection]).to be_nil
       expect(doc_hash[:collection_with_title]).to be_nil
@@ -263,7 +260,6 @@ describe GDor::Indexer do
 
     context 'collection field' do
       it 'is added field to doc hash' do
-        doc_hash = GDor::Indexer::SolrDocHash.new({})
         @indexer.add_coll_info(doc_hash, @coll_druids_array)
         expect(doc_hash[:collection]).to match_array [@coll_druid_from_test_config]
       end
@@ -286,7 +282,6 @@ describe GDor::Indexer do
       it 'adds two values to doc_hash when object belongs to two collections' do
         coll_druid1 = 'oo111oo2222'
         coll_druid2 = 'oo333oo4444'
-        doc_hash = GDor::Indexer::SolrDocHash.new({})
         @indexer.add_coll_info(doc_hash, [double(druid: coll_druid1, bare_druid: coll_druid1, public_xml: @ng_pub_xml, identity_md_obj_label: 'foo'), double(druid: coll_druid2, bare_druid: coll_druid2, public_xml: @ng_pub_xml, identity_md_obj_label: 'bar')])
         expect(doc_hash[:collection_with_title]).to match_array ["#{coll_druid1}-|-foo", "#{coll_druid2}-|-bar"]
       end
@@ -347,25 +342,25 @@ describe GDor::Indexer do
     end
 
     it 'email body includes coll id' do
-      expect(subject).to match /testcoll indexed coll record is: ww121ss5000/
+      expect(subject).to match(/testcoll indexed coll record is: ww121ss5000/)
     end
 
     it 'email body includes coll title' do
-      expect(subject).to match /coll title: testcoll title/
+      expect(subject).to match(/coll title: testcoll title/)
     end
 
     it 'email body includes failed to index druids' do
       @indexer.instance_variable_set(:@druids_failed_to_ix, %w(a b))
-      expect(subject).to match /records that may have failed to index: \na\nb\n\n/
+      expect(subject).to match(/records that may have failed to index: \na\nb\n\n/)
     end
 
     it 'email body include validation messages' do
       @indexer.instance_variable_set(:@validation_messages, ['this is a validation message'])
-      expect(subject).to match /this is a validation message/
+      expect(subject).to match(/this is a validation message/)
     end
 
     it 'email includes reference to full log' do
-      expect(subject).to match /full log is at gdor_indexer\/shared\/spec\/test_logs\/testcoll\.log/
+      expect(subject).to match(/full log is at gdor_indexer\/shared\/spec\/test_logs\/testcoll\.log/)
     end
   end
 
@@ -378,7 +373,7 @@ describe GDor::Indexer do
 
     it 'has an appropriate subject' do
       expect(@indexer).to receive(:send_email) do |_to, opts|
-        expect(opts[:subject]).to match /is finished/
+        expect(opts[:subject]).to match(/is finished/)
       end
 
       @indexer.email_results

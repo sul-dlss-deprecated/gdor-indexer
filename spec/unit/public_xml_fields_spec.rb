@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe GDor::Indexer::PublicXmlFields do
   before(:all) do
     @fake_druid = 'oo000oo0000'
