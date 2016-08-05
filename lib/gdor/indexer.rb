@@ -128,9 +128,10 @@ module GDor
       raise e
     end
 
-    # create Solr doc for the druid and add it to Solr, unless it is on the blacklist.
-    #  NOTE: don't forget to send commit to Solr, either once at end (already in harvest_and_index), or for each add, or ...
+    # Create Solr doc for the druid and add it to Solr, unless it is on the blacklist.
     # @param [Harvestdor::Indexer::Resource] resource an item record (a member of a collection)
+    # @return [Hash]
+    # @note don't forget to send commit to Solr, either once at end (already in harvest_and_index), or for each add, or ...
     def item_solr_document(resource)
       sdb = GDor::Indexer::SolrDocBuilder.new(resource, logger)
 
@@ -154,7 +155,7 @@ module GDor
     end
 
     # Create Solr document for the collection druid suitable for SearchWorks
-    #  and write the result to the SearchWorks Solr Index
+    # and write the result to the SearchWorks Solr Index
     # @param [Harvestdor::Indexer::Resource] resource a collection record
     # @return [Hash]
     def collection_solr_document(resource)
@@ -179,7 +180,7 @@ module GDor
       doc_hash.to_h
     end
 
-    # add coll level data to this solr doc and/or cache collection level information
+    # Add collection level data to this solr doc and/or cache collection level information
     # @param [Hash] doc_hash representing the Solr document (for an item)
     # @param [Array<Harvestdor::Indexer::Resource>] collections the collections the item is a member of
     def add_coll_info(doc_hash, collections)

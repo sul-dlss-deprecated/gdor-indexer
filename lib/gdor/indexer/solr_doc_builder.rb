@@ -43,7 +43,7 @@ class GDor::Indexer::SolrDocBuilder
   # if not found, we look for
   #  identityMetadata/otherId[@name='barcode']
   #   if found, we look for catkey in MODS
-  #     mods/recordInfo/recordIdentifier[@source="SIRSI"
+  #     mods/recordInfo/recordIdentifier[@source="SIRSI"]
   #     and if found, remove the leading a
   # otherwise, nil
   def catkey
