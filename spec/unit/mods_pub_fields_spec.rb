@@ -23,7 +23,7 @@ describe GDor::Indexer::ModsFields do
     RSpec.shared_examples 'expected (dateIssued)' do |solr_field_sym, mods_field_val, exp_val|
       it "#{exp_val} for #{mods_field_val}" do
         m = mods_origin_info_start_str +
-              "<dateIssued>#{mods_field_val}</dateIssued>" +
+            "<dateIssued>#{mods_field_val}</dateIssued>" +
             mods_origin_info_end_str
         sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[solr_field_sym]).to eq exp_val
@@ -62,14 +62,14 @@ describe GDor::Indexer::ModsFields do
       end
       it 'includes approx dates' do
         m = mods_origin_info_start_str +
-              "<dateIssued qualifier='approximate'>1945</dateIssued>" +
+            "<dateIssued qualifier='approximate'>1945</dateIssued>" +
             mods_origin_info_end_str
         sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:pub_year_isi]).to eq 1945
       end
       it 'will use dateCreated' do
         m = mods_origin_info_start_str +
-              "<dateCreated>1904</dateCreated>" +
+            "<dateCreated>1904</dateCreated>" +
             mods_origin_info_end_str
         sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:pub_year_isi]).to eq 1904
@@ -85,14 +85,14 @@ describe GDor::Indexer::ModsFields do
       end
       it 'includes approx dates' do
         m = mods_origin_info_start_str +
-              "<dateIssued qualifier='approximate'>1945</dateIssued>" +
+            "<dateIssued qualifier='approximate'>1945</dateIssued>" +
             mods_origin_info_end_str
         sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:pub_date_sort]).to eq('1945')
       end
       it 'takes single dateCreated' do
         m = mods_origin_info_start_str +
-              "<dateCreated>1904</dateCreated>" +
+            "<dateCreated>1904</dateCreated>" +
             mods_origin_info_end_str
         sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:pub_date_sort]).to eq('1904')
@@ -117,16 +117,16 @@ describe GDor::Indexer::ModsFields do
     context 'pub_year_no_approx_isi' do
       it 'does not include approx dates' do
         m = mods_origin_info_start_str +
-              "<dateIssued qualifier='approximate'>1945</dateIssued>" +
-          mods_origin_info_end_str
+            "<dateIssued qualifier='approximate'>1945</dateIssued>" +
+            mods_origin_info_end_str
         sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:pub_year_no_approx_isi]).to eq nil
       end
       it 'calls Stanford::Mods::Record instance pub_year_int(true)' do
         mods = mods_origin_info_start_str +
-                "<dateIssued qualifier=\"approximate\">1500</dateIssued>
-                <dateIssued>2000</dateIssued>" +
-              mods_origin_info_end_str
+               "<dateIssued qualifier=\"approximate\">1500</dateIssued>
+               <dateIssued>2000</dateIssued>" +
+               mods_origin_info_end_str
         sdb = sdb_for_mods(mods)
         expect(sdb.smods_rec).to receive(:pub_year_int).with(true).and_call_original
         allow(sdb.smods_rec).to receive(:pub_year_int).with(false) # for other flavor
@@ -134,7 +134,7 @@ describe GDor::Indexer::ModsFields do
       end
       it 'will use dateCreated' do
         m = mods_origin_info_start_str +
-              "<dateCreated>1904</dateCreated>" +
+            "<dateCreated>1904</dateCreated>" +
             mods_origin_info_end_str
         sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:pub_year_no_approx_isi]).to eq 1904
@@ -146,16 +146,16 @@ describe GDor::Indexer::ModsFields do
     context 'pub_year_w_approx_isi' do
       it 'includes approx dates' do
         m = mods_origin_info_start_str +
-              "<dateIssued qualifier='approximate'>1945</dateIssued>" +
-          mods_origin_info_end_str
+            "<dateIssued qualifier='approximate'>1945</dateIssued>" +
+            mods_origin_info_end_str
         sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:pub_year_w_approx_isi]).to eq 1945
       end
       it 'calls Stanford::Mods::Record instance pub_year_int(false)' do
         mods = mods_origin_info_start_str +
-                "<dateIssued qualifier=\"approximate\">1500</dateIssued>
-                <dateIssued>2000</dateIssued>" +
-              mods_origin_info_end_str
+               "<dateIssued qualifier=\"approximate\">1500</dateIssued>
+               <dateIssued>2000</dateIssued>" +
+               mods_origin_info_end_str
         sdb = sdb_for_mods(mods)
         expect(sdb.smods_rec).to receive(:pub_year_int).with(false).and_call_original
         allow(sdb.smods_rec).to receive(:pub_year_int).with(true) # for other flavor
@@ -163,7 +163,7 @@ describe GDor::Indexer::ModsFields do
       end
       it 'will use dateCreated' do
         m = mods_origin_info_start_str +
-              "<dateCreated>1904</dateCreated>" +
+            "<dateCreated>1904</dateCreated>" +
             mods_origin_info_end_str
         sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:pub_year_w_approx_isi]).to eq 1904
@@ -183,14 +183,14 @@ describe GDor::Indexer::ModsFields do
       end
       it 'includes approx dates' do
         m = mods_origin_info_start_str +
-              "<dateIssued qualifier='approximate'>1945</dateIssued>" +
-          mods_origin_info_end_str
+            "<dateIssued qualifier='approximate'>1945</dateIssued>" +
+            mods_origin_info_end_str
         sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:pub_year_tisim]).to eq 1945
       end
       it 'will use dateCreated' do
         m = mods_origin_info_start_str +
-              "<dateCreated>1904</dateCreated>" +
+            "<dateCreated>1904</dateCreated>" +
             mods_origin_info_end_str
         sdb = sdb_for_mods(m)
         expect(sdb.doc_hash_from_mods[:pub_year_tisim]).to eq 1904
@@ -208,8 +208,8 @@ describe GDor::Indexer::ModsFields do
     context 'creation_year_isi' do
       it 'creation_year_isi calls Stanford::Mods::Record year_int for dateCreated elements' do
         m = mods_origin_info_start_str +
-              "<dateCreated qualifier='approximate'>1500</dateCreated>
-              <dateIssued qualifier='approximate'>2000</dateIssued>" +
+            "<dateCreated qualifier='approximate'>1500</dateCreated>
+            <dateIssued qualifier='approximate'>2000</dateIssued>" +
             mods_origin_info_end_str
         sdb = sdb_for_mods(m)
         expect(sdb.smods_rec).to receive(:year_int).at_least(2).times.and_call_original
@@ -218,7 +218,7 @@ describe GDor::Indexer::ModsFields do
       RSpec.shared_examples 'expected (dateCreated)' do |mods_field_val, exp_val|
         it "#{exp_val} for #{mods_field_val}" do
           m = mods_origin_info_start_str +
-                "<dateCreated>#{mods_field_val}</dateCreated>" +
+              "<dateCreated>#{mods_field_val}</dateCreated>" +
               mods_origin_info_end_str
           sdb = sdb_for_mods(m)
           expect(sdb.doc_hash_from_mods[:creation_year_isi]).to eq exp_val
@@ -248,8 +248,8 @@ describe GDor::Indexer::ModsFields do
     context 'publication_year_isi' do
       it 'publication_year_isi calls Stanford::Mods::Record year_int for dateIssued elements' do
         m = mods_origin_info_start_str +
-              "<dateCreated qualifier='approximate'>1500</dateCreated>
-              <dateIssued qualifier='approximate'>2000</dateIssued>" +
+            "<dateCreated qualifier='approximate'>1500</dateCreated>
+            <dateIssued qualifier='approximate'>2000</dateIssued>" +
             mods_origin_info_end_str
         sdb = sdb_for_mods(m)
         expect(sdb.smods_rec).to receive(:year_int).at_least(2).times.and_call_original
