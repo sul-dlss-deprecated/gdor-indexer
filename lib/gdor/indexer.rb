@@ -262,12 +262,12 @@ module GDor
       record_count_msgs.each do |msg|
         logger.info msg
       end
-      logger.info("Avg solr commit time per object (successful): #{(@total_time_to_solr / metrics.success_count).round(2)} seconds") unless metrics.success_count == 0
-      logger.info("Avg solr commit time per object (all): #{(@total_time_to_solr / metrics.total).round(2)} seconds") unless metrics.total == 0
-      logger.info("Avg parse time per object (successful): #{(@total_time_to_parse / metrics.success_count).round(2)} seconds") unless metrics.success_count == 0
-      logger.info("Avg parse time per object (all): #{(@total_time_to_parse / metrics.total).round(2)} seconds") unless metrics.total == 0
-      logger.info("Avg complete index time per object (successful): #{(@total_time / metrics.success_count).round(2)} seconds") unless metrics.success_count == 0
-      logger.info("Avg complete index time per object (all): #{(@total_time / metrics.total).round(2)} seconds") unless metrics.total == 0
+      logger.info("Avg solr commit time per object (successful): #{(@total_time_to_solr / metrics.success_count).round(2)} seconds") unless metrics.success_count.zero?
+      logger.info("Avg solr commit time per object (all): #{(@total_time_to_solr / metrics.total).round(2)} seconds") unless metrics.total.zero?
+      logger.info("Avg parse time per object (successful): #{(@total_time_to_parse / metrics.success_count).round(2)} seconds") unless metrics.success_count.zero?
+      logger.info("Avg parse time per object (all): #{(@total_time_to_parse / metrics.total).round(2)} seconds") unless metrics.total.zero?
+      logger.info("Avg complete index time per object (successful): #{(@total_time / metrics.success_count).round(2)} seconds") unless metrics.success_count.zero?
+      logger.info("Avg complete index time per object (all): #{(@total_time / metrics.total).round(2)} seconds") unless metrics.total.zero?
     end
 
     # @return [String] the composed email body
