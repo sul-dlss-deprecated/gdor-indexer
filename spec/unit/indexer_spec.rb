@@ -161,7 +161,7 @@ describe GDor::Indexer do
       allow(GDor::Indexer::SolrDocBuilder).to receive(:new).and_return(sdb)
       allow(resource).to receive(:collections).and_return([double(druid: 'foo', bare_druid: 'foo', identity_md_obj_label: 'bar')])
       doc_hash = @indexer.item_solr_document resource
-      expect(doc_hash).to include druid: @fake_druid, collection: ['foo'], collection_with_title: ['foo-|-bar']
+      expect(doc_hash).to include druid: @fake_druid, collection: ['foo'], collection_title: ['bar'], collection_with_title: ['foo-|-bar']
     end
     it 'has fields populated from the MODS' do
       title = 'fake title in mods'
@@ -355,8 +355,8 @@ describe GDor::Indexer do
     end
 
     it 'email body include validation messages' do
-      @indexer.instance_variable_set(:@validation_messages, ['this is a validation message'])
-      expect(subject).to match(/this is a validation message/)
+      @indexer.instance_variable_set(:@validation_messages, instance_double(File, rewind: 0, read: 'this is a validation message'))
+      expect(subject).to match /this is a validation message/
     end
 
     it 'email includes reference to full log' do
