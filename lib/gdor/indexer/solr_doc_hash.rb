@@ -13,12 +13,14 @@ class GDor::Indexer
     # when exp_val is a Regexp, looks for String value that matches, or Array with a String member that matches
     # @return [Boolean] true if the field is non-trivially present in the hash, false otherwise
     def field_present?(field, exp_val = nil)
-      return false unless include?(field) && Array(self[field]).any? { |v| !v.blank? }
+      return false unless include?(field)
+      return false unless Array(self[field]).any?(&:present?)
+
       case exp_val
       when nil
         true
       when Regexp
-        Array(self[field]).index { |s| exp_val.match(s) }
+        Array(self[field]).any? { |s| exp_val.match(s) }
       else
         Array(self[field]).include? exp_val
       end

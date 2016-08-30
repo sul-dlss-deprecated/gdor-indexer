@@ -20,7 +20,6 @@ describe GDor::Indexer::ModsFields do
   let(:sdb) { sdb_for_mods(mods_xml) }
 
   context 'publication date fields' do
-
     RSpec.shared_examples 'expected (dateIssued)' do |solr_field_sym, mods_field_val, exp_val|
       it "#{exp_val} for #{mods_field_val}" do
         m = mods_origin_info_start_str +

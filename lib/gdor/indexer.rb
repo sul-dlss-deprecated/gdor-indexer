@@ -46,7 +46,7 @@ module GDor
       @total_time_to_parse = 0
       @retries = 0
       @druids_failed_to_ix = []
-      @validation_messages = []
+      @validation_messages = Tempfile.new('gdor-indexer-validation-messages')
       @config ||= Confstruct::Configuration.new options
       @config.configure(YAML.load_file(yml_path)) if yml_path && File.exist?(yml_path)
       yield @config if block_given?
@@ -149,7 +149,7 @@ module GDor
       add_coll_info doc_hash, resource.collections # defined in public_xml_fields
       validation_messages = fields_to_add.validate_item(config)
       validation_messages.concat doc_hash.validate_mods(config)
-      @validation_messages.concat(validation_messages)
+      @validation_messages.puts(validation_messages.join("\n"))
       doc_hash.to_h
     end
 
@@ -175,7 +175,7 @@ module GDor
       doc_hash.combine fields_to_add
       validation_messages = doc_hash.validate_collection(config)
       validation_messages.concat doc_hash.validate_mods(config)
-      @validation_messages.concat(validation_messages)
+      @validation_messages.puts(validation_messages.join("\n"))
       doc_hash.to_h
     end
 
@@ -185,11 +185,13 @@ module GDor
     def add_coll_info(doc_hash, collections)
       if collections
         doc_hash[:collection] = []
+        doc_hash[:collection_title] = []
         doc_hash[:collection_with_title] = []
 
         collections.each do |collection|
           cache_display_type_for_collection collection, doc_hash[:display_type]
           doc_hash[:collection] << collection.bare_druid
+          doc_hash[:collection_title] << coll_title(collection)
           doc_hash[:collection_with_title] << "#{collection.bare_druid}-|-#{coll_title(collection)}"
         end
       end
@@ -260,12 +262,12 @@ module GDor
       record_count_msgs.each do |msg|
         logger.info msg
       end
-      logger.info("Avg solr commit time per object (successful): #{(@total_time_to_solr / metrics.success_count).round(2)} seconds") unless metrics.success_count == 0
-      logger.info("Avg solr commit time per object (all): #{(@total_time_to_solr / metrics.total).round(2)} seconds") unless metrics.total == 0
-      logger.info("Avg parse time per object (successful): #{(@total_time_to_parse / metrics.success_count).round(2)} seconds") unless metrics.success_count == 0
-      logger.info("Avg parse time per object (all): #{(@total_time_to_parse / metrics.total).round(2)} seconds") unless metrics.total == 0
-      logger.info("Avg complete index time per object (successful): #{(@total_time / metrics.success_count).round(2)} seconds") unless metrics.success_count == 0
-      logger.info("Avg complete index time per object (all): #{(@total_time / metrics.total).round(2)} seconds") unless metrics.total == 0
+      logger.info("Avg solr commit time per object (successful): #{(@total_time_to_solr / metrics.success_count).round(2)} seconds") unless metrics.success_count.zero?
+      logger.info("Avg solr commit time per object (all): #{(@total_time_to_solr / metrics.total).round(2)} seconds") unless metrics.total.zero?
+      logger.info("Avg parse time per object (successful): #{(@total_time_to_parse / metrics.success_count).round(2)} seconds") unless metrics.success_count.zero?
+      logger.info("Avg parse time per object (all): #{(@total_time_to_parse / metrics.total).round(2)} seconds") unless metrics.total.zero?
+      logger.info("Avg complete index time per object (successful): #{(@total_time / metrics.success_count).round(2)} seconds") unless metrics.success_count.zero?
+      logger.info("Avg complete index time per object (all): #{(@total_time / metrics.total).round(2)} seconds") unless metrics.total.zero?
     end
 
     # @return [String] the composed email body
@@ -282,7 +284,8 @@ module GDor
       body += "full log is at gdor_indexer/shared/#{config.harvestdor.log_dir}/#{config.harvestdor.log_name} on #{Socket.gethostname}"
       body += "\n"
 
-      body + @validation_messages.join("\n") + "\n"
+      @validation_messages.rewind
+      body + @validation_messages.read + "\n"
     end
 
     # email the results of indexing if we are on one of the harvestdor boxes
