@@ -12,7 +12,7 @@ describe GDor::Indexer do
     @pub_xml = "<publicObject id='druid#{@fake_druid}'></publicObject>"
     @ng_pub_xml = Nokogiri::XML("<publicObject id='druid#{@fake_druid}'></publicObject>")
   end
-  before(:each) do
+  before do
     @indexer = described_class.new(@config_yml_path) do |config|
       config.whitelist = ['druid:ww121ss5000']
     end
@@ -69,7 +69,7 @@ describe GDor::Indexer do
   end
 
   describe '#harvest_and_index' do
-    before :each do
+    before do
       allow(@indexer.harvestdor).to receive(:each_resource)
       allow(@indexer).to receive(:solr_client).and_return(double(commit!: nil))
       allow(@indexer).to receive(:log_results)
@@ -246,7 +246,7 @@ describe GDor::Indexer do
   end #  index_coll_obj_per_config
 
   context '#add_coll_info and supporting methods' do
-    before(:each) do
+    before do
       @coll_druids_array = [collection]
     end
     let(:doc_hash) { GDor::Indexer::SolrDocHash.new({}) }
@@ -288,7 +288,7 @@ describe GDor::Indexer do
     end
 
     context '#coll_display_types_from_items' do
-      before(:each) do
+      before do
         @indexer.coll_display_types_from_items(collection)
       end
       it 'gets single item display_type for single collection (and no dups)' do
@@ -311,7 +311,7 @@ describe GDor::Indexer do
   end # add_coll_info
 
   context '#num_found_in_solr' do
-    before :each do
+    before do
       @collection_response = { 'response' => { 'numFound' => '1', 'docs' => [{ 'id' => 'dm212rn7381', 'url_fulltext' => ['https://purl.stanford.edu/dm212rn7381'] }] } }
       @item_response = { 'response' => { 'numFound' => '265', 'docs' => [{ 'id' => 'dm212rn7381' }] } }
     end
@@ -329,7 +329,7 @@ describe GDor::Indexer do
   end # num_found_in_solr
 
   context '#email_report_body' do
-    before :each do
+    before do
       @indexer.config.notification = 'notification-list@example.com'
       allow(@indexer).to receive(:num_found_in_solr).and_return(500)
       allow(@indexer.harvestdor).to receive(:resources).and_return([collection])
@@ -365,7 +365,7 @@ describe GDor::Indexer do
   end
 
   describe '#email_results' do
-    before :each do
+    before do
       @indexer.config.notification = 'notification-list@example.com'
       allow(@indexer).to receive(:send_email)
       allow(@indexer).to receive(:email_report_body).and_return('Report Body')
