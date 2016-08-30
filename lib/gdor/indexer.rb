@@ -46,7 +46,7 @@ module GDor
       @total_time_to_parse = 0
       @retries = 0
       @druids_failed_to_ix = []
-      @validation_messages = []
+      @validation_messages = Tempfile.new('gdor-indexer-validation-messages')
       @config ||= Confstruct::Configuration.new options
       @config.configure(YAML.load_file(yml_path)) if yml_path && File.exist?(yml_path)
       yield @config if block_given?
@@ -149,7 +149,7 @@ module GDor
       add_coll_info doc_hash, resource.collections # defined in public_xml_fields
       validation_messages = fields_to_add.validate_item(config)
       validation_messages.concat doc_hash.validate_mods(config)
-      @validation_messages.concat(validation_messages)
+      @validation_messages.puts(validation_messages.join("\n"))
       doc_hash.to_h
     end
 
@@ -175,7 +175,7 @@ module GDor
       doc_hash.combine fields_to_add
       validation_messages = doc_hash.validate_collection(config)
       validation_messages.concat doc_hash.validate_mods(config)
-      @validation_messages.concat(validation_messages)
+      @validation_messages.puts(validation_messages.join("\n"))
       doc_hash.to_h
     end
 
@@ -282,7 +282,8 @@ module GDor
       body += "full log is at gdor_indexer/shared/#{config.harvestdor.log_dir}/#{config.harvestdor.log_name} on #{Socket.gethostname}"
       body += "\n"
 
-      body + @validation_messages.join("\n") + "\n"
+      @validation_messages.rewind
+      body + @validation_messages.read + "\n"
     end
 
     # email the results of indexing if we are on one of the harvestdor boxes

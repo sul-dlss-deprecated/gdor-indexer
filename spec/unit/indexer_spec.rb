@@ -355,8 +355,8 @@ describe GDor::Indexer do
     end
 
     it 'email body include validation messages' do
-      @indexer.instance_variable_set(:@validation_messages, ['this is a validation message'])
-      expect(subject).to match(/this is a validation message/)
+      @indexer.instance_variable_set(:@validation_messages, instance_double(File, rewind: 0, read: 'this is a validation message'))
+      expect(subject).to match /this is a validation message/
     end
 
     it 'email includes reference to full log' do
