@@ -105,7 +105,7 @@ describe GDor::Indexer::ModsFields do
         it "logs an info message when it encounters a geographicCode encoding it doesn't translate" do
           m = "<mods #{ns_decl}><subject><geographicCode authority='iso3166'>ca</geographicCode></subject></mods>"
           sdb = sdb_for_mods(m)
-          expect(sdb.smods_rec.sw_logger).to receive(:info).with(/#{fake_druid} has subject geographicCode element with untranslated encoding \(iso3166\): <geographicCode authority=.*>ca<\/geographicCode>/).at_least(1).times
+          expect(sdb.smods_rec.sw_logger).to receive(:info).with(%r{#{fake_druid} has subject geographicCode element with untranslated encoding \(iso3166\): <geographicCode authority=.*>ca</geographicCode>}).at_least(1).times
           sdb.doc_hash_from_mods
         end
       end # geographic_search

@@ -228,12 +228,12 @@ describe GDor::Indexer do
         expect(doc_hash).to include format_main_ssim: 'Archive/Manuscript'
       end
       it 'other values present' do
-        allow_any_instance_of(GDor::Indexer::SolrDocBuilder).to receive(:doc_hash).and_return(GDor::Indexer::SolrDocHash.new({ format_main_ssim: %w(Image Video) }))
+        allow_any_instance_of(GDor::Indexer::SolrDocBuilder).to receive(:doc_hash).and_return(GDor::Indexer::SolrDocHash.new(format_main_ssim: %w(Image Video)))
         doc_hash = @indexer.collection_solr_document collection
         expect(doc_hash).to include format_main_ssim: ['Image', 'Video', 'Archive/Manuscript']
       end
       it 'already has values Archive/Manuscript' do
-        allow_any_instance_of(GDor::Indexer::SolrDocBuilder).to receive(:doc_hash).and_return(GDor::Indexer::SolrDocHash.new({ format_main_ssim: 'Archive/Manuscript' }))
+        allow_any_instance_of(GDor::Indexer::SolrDocBuilder).to receive(:doc_hash).and_return(GDor::Indexer::SolrDocHash.new(format_main_ssim: 'Archive/Manuscript'))
         doc_hash = @indexer.collection_solr_document collection
         expect(doc_hash).to include format_main_ssim: ['Archive/Manuscript']
       end
@@ -246,9 +246,7 @@ describe GDor::Indexer do
   end #  index_coll_obj_per_config
 
   context '#add_coll_info and supporting methods' do
-    before do
-      @coll_druids_array = [collection]
-    end
+    let(:coll_druids_array) { [collection] }
     let(:doc_hash) { GDor::Indexer::SolrDocHash.new({}) }
 
     it 'adds no collection field values to doc_hash if there are none' do
@@ -260,7 +258,7 @@ describe GDor::Indexer do
 
     context 'collection field' do
       it 'is added field to doc hash' do
-        @indexer.add_coll_info(doc_hash, @coll_druids_array)
+        @indexer.add_coll_info(doc_hash, coll_druids_array)
         expect(doc_hash[:collection]).to match_array [@coll_druid_from_test_config]
       end
       it 'adds two values to doc_hash when object belongs to two collections' do
@@ -293,18 +291,18 @@ describe GDor::Indexer do
       end
       it 'gets single item display_type for single collection (and no dups)' do
         allow(@indexer).to receive(:identity_md_obj_label)
-        doc_hash = GDor::Indexer::SolrDocHash.new({ display_type: 'image' })
-        @indexer.add_coll_info(doc_hash, @coll_druids_array)
-        doc_hash = GDor::Indexer::SolrDocHash.new({ display_type: 'image' })
-        @indexer.add_coll_info(doc_hash, @coll_druids_array)
+        doc_hash = GDor::Indexer::SolrDocHash.new(display_type: 'image')
+        @indexer.add_coll_info(doc_hash, coll_druids_array)
+        doc_hash = GDor::Indexer::SolrDocHash.new(display_type: 'image')
+        @indexer.add_coll_info(doc_hash, coll_druids_array)
         expect(@indexer.coll_display_types_from_items(collection)).to match_array ['image']
       end
       it 'gets multiple formats from multiple items for single collection' do
         allow(@indexer).to receive(:identity_md_obj_label)
-        doc_hash = GDor::Indexer::SolrDocHash.new({ display_type: 'image' })
-        @indexer.add_coll_info(doc_hash, @coll_druids_array)
-        doc_hash = GDor::Indexer::SolrDocHash.new({ display_type: 'file' })
-        @indexer.add_coll_info(doc_hash, @coll_druids_array)
+        doc_hash = GDor::Indexer::SolrDocHash.new(display_type: 'image')
+        @indexer.add_coll_info(doc_hash, coll_druids_array)
+        doc_hash = GDor::Indexer::SolrDocHash.new(display_type: 'file')
+        @indexer.add_coll_info(doc_hash, coll_druids_array)
         expect(@indexer.coll_display_types_from_items(collection)).to match_array %w(image file)
       end
     end # coll_display_types_from_items
@@ -360,7 +358,7 @@ describe GDor::Indexer do
     end
 
     it 'email includes reference to full log' do
-      expect(subject).to match(/full log is at gdor_indexer\/shared\/spec\/test_logs\/testcoll\.log/)
+      expect(subject).to match(%r{full log is at gdor_indexer/shared/spec/test_logs/testcoll\.log})
     end
   end
 
@@ -375,7 +373,6 @@ describe GDor::Indexer do
       expect(@indexer).to receive(:send_email) do |_to, opts|
         expect(opts[:subject]).to match(/is finished/)
       end
-
       @indexer.email_results
     end
 
@@ -383,7 +380,6 @@ describe GDor::Indexer do
       expect(@indexer).to receive(:send_email) do |to, _opts|
         expect(to).to eq @indexer.config.notification
       end
-
       @indexer.email_results
     end
 
@@ -391,7 +387,6 @@ describe GDor::Indexer do
       expect(@indexer).to receive(:send_email) do |_to, opts|
         expect(opts[:body]).to eq 'Report Body'
       end
-
       @indexer.email_results
     end
   end
@@ -410,7 +405,7 @@ describe GDor::Indexer do
         expect(mail.from).to match_array ['rspec']
         expect(mail.body).to eq 'Body'
       end
-      @indexer.send_email 'notification-list@example.com', { from: 'rspec', subject: 'Subject', body: 'Body' }
+      @indexer.send_email 'notification-list@example.com', from: 'rspec', subject: 'Subject', body: 'Body'
     end
   end
 
@@ -422,7 +417,6 @@ describe GDor::Indexer do
     it 'can be set as an option' do
       solr_client = double
       @indexer = described_class.new(solr_client: solr_client)
-
       expect(@indexer.solr_client).to eq solr_client
     end
   end

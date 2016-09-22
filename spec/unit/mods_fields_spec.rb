@@ -311,6 +311,5 @@ describe GDor::Indexer::ModsFields do
   end # author fields
 
   # subject fields moved to mods_subject_fields_spec.rb
-
   # publication fields moved to mods_pub_fields_spec.rb
 end
